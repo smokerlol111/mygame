@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=149"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=149"></script><style>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script><style>
 .menuHero{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .gameMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
@@ -87,6 +87,37 @@ function hostBoardHTML(){
  }
  return h+'</div>';
 }
+
+function hostControlsHTML(){
+ if(!state)return '';
+ const rows=(state.players||[]).map(p=>`
+   <div style="display:grid;grid-template-columns:minmax(130px,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+     <div><b>${GameUI.esc(p.name)}</b><div class="muted">Рахунок: ${p.score}</div></div>
+     <div class="row" style="gap:6px;flex-wrap:nowrap">
+       <button class="btn secondary scoreQuick" data-id="${p.id}" data-v="-500" style="padding:8px 10px">−500</button>
+       <button class="btn secondary scoreQuick" data-id="${p.id}" data-v="-100" style="padding:8px 10px">−100</button>
+       <button class="btn scoreQuick" data-id="${p.id}" data-v="100" style="padding:8px 10px">+100</button>
+       <button class="btn scoreQuick" data-id="${p.id}" data-v="500" style="padding:8px 10px">+500</button>
+     </div>
+     <div class="row" style="gap:6px;flex-wrap:nowrap">
+       <input class="scoreCustomInput" data-id="${p.id}" type="number" step="1" placeholder="+250 / -250" style="width:125px;margin:0">
+       <button class="btn gold scoreCustom" data-id="${p.id}" style="padding:8px 12px">Застосувати</button>
+     </div>
+   </div>`).join('');
+ return `<details class="panel" style="margin-top:24px">
+   <summary style="cursor:pointer;font-size:20px;font-weight:800">⚙️ Керування ведучого</summary>
+   <div style="margin-top:14px">
+     <h3 style="margin-bottom:4px">Ручне коригування балів</h3>
+     <p class="muted" style="margin-top:0">Можна дати бонус або штраф незалежно від питань. Зміна одразу з'явиться в OBS і на телефонах.</p>
+     ${rows || '<p class="muted">Гравців ще немає.</p>'}
+     <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)">
+       <button class="btn bad" id="stopGame">⛔ ЗАВЕРШИТИ ГРУ</button>
+       <span class="muted" style="margin-left:10px">Закриє кімнату для всіх гравців та OBS.</span>
+     </div>
+   </div>
+ </details>`;
+}
+
 function render(){if(!state||!data)return;let h='';
  if(state.phase==='lobby'){h=`<h2>Лобі</h2><div class="roomCode">${state.code}</div><p>Гравці відкривають <b>${location.origin}/play?room=${state.code}</b></p><p>OBS: <b>${location.origin}/screen/${state.code}</b></p>${GameUI.playersHTML(state.players)}<div class="row"><button class="btn" id="start">🎯 Почати розіграш першого ходу</button><button class="btn secondary" id="skipFirst">Пропустити розіграш</button><button class="btn secondary" id="newRoom">Нова кімната</button></div>`}
  else if(state.phase==='first_turn_quiz'){
@@ -126,6 +157,18 @@ function render(){if(!state||!data)return;let h='';
  else if(state.phase==='final_question'){h=`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><div class="question">${GameUI.esc(state.current.q)}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><span>${GameUI.esc(p.name)}</span><b>${p.hasFinalAnswer?'✅ відповідь надіслана':'⏳'}</b></div>`).join('')}</div><button class="btn secondary" id="finishFinal">Завершити зараз</button>`}
  else if(state.phase==='final_review'){h=`<h2>Перевірка фіналу</h2><div class="answer"><b>Правильна відповідь:</b> ${GameUI.esc(state.current.a)}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Відповідь: ${GameUI.esc(p.finalAnswer||'—')}</div></div><label><input type="checkbox" class="finalCorrect" data-id="${p.id}" style="width:auto"> правильно</label></div>`).join('')}</div><button class="btn gold" id="scoreFinal">Порахувати результат</button>`}
  else if(state.phase==='final_result'){h=`<h2>🏆 Фінальний результат</h2>${state.finalResults.map((p,i)=>`<div class="finalItem"><span>${i+1}. ${GameUI.esc(p.name)}</span><b>${p.score}</b></div>`).join('')}<div class="row" style="justify-content:center;margin-top:22px"><button class="btn" id="restartSame">🔄 Нова гра з цими гравцями</button><button class="btn secondary" id="backMenu">🏠 Головне меню</button></div>`}
- app.innerHTML=h; bind(); armFirstTurnClock(); }
-function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('startFirstTimer'))$('startFirstTimer').onclick=()=>emit('startFirstTurnTimer',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('skipFirst'))$('skipFirst').onclick=()=>emit('skipFirstTurnQuiz',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealFirst'))$('revealFirst').onclick=()=>emit('revealFirstTurnResults',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealNextFirst'))$('revealNextFirst').onclick=()=>emit('revealNextFirstTurnResult',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('beginRoundOne'))$('beginRoundOne').onclick=()=>emit('beginRoundOne',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('restartSame'))$('restartSame').onclick=()=>emit('restartSameGame'); if($('backMenu'))$('backMenu').onclick=()=>{if(confirm('Закрити кімнату й повернутися до головного меню?'))emit('returnToGameMenu')}; if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й повернутися до вибору гри?'))return;emit('returnToGameMenu',{},()=>{})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('vbCorrect'))$('vbCorrect').onclick=()=>emit('judgeVaBank',{correct:true}); if($('vbWrong'))$('vbWrong').onclick=()=>emit('judgeVaBank',{correct:false}); if($('openDuelBuzz'))$('openDuelBuzz').onclick=()=>emit('openDuelBuzz'); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('startFinalTimer'))$('startFinalTimer').onclick=()=>emit('startFinalTimer',{},r=>{if(r&&r.ok===false)alert(r.error||'Не вдалося запустити таймер')}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));}
+ h+=hostControlsHTML(); app.innerHTML=h; bind(); armFirstTurnClock(); }
+function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('startFirstTimer'))$('startFirstTimer').onclick=()=>emit('startFirstTurnTimer',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('skipFirst'))$('skipFirst').onclick=()=>emit('skipFirstTurnQuiz',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealFirst'))$('revealFirst').onclick=()=>emit('revealFirstTurnResults',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealNextFirst'))$('revealNextFirst').onclick=()=>emit('revealNextFirstTurnResult',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('beginRoundOne'))$('beginRoundOne').onclick=()=>emit('beginRoundOne',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('restartSame'))$('restartSame').onclick=()=>emit('restartSameGame'); if($('backMenu'))$('backMenu').onclick=()=>{if(confirm('Закрити кімнату й повернутися до головного меню?'))emit('returnToGameMenu')}; if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й повернутися до вибору гри?'))return;emit('returnToGameMenu',{},()=>{})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('vbCorrect'))$('vbCorrect').onclick=()=>emit('judgeVaBank',{correct:true}); if($('vbWrong'))$('vbWrong').onclick=()=>emit('judgeVaBank',{correct:false}); if($('openDuelBuzz'))$('openDuelBuzz').onclick=()=>emit('openDuelBuzz'); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('startFinalTimer'))$('startFinalTimer').onclick=()=>emit('startFinalTimer',{},r=>{if(r&&r.ok===false)alert(r.error||'Не вдалося запустити таймер')}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));
+ document.querySelectorAll('.scoreQuick').forEach(b=>b.onclick=()=>emit('adjustScore',{playerId:b.dataset.id,amount:+b.dataset.v},r=>{if(r&&r.ok===false)alert(r.error)}));
+ document.querySelectorAll('.scoreCustom').forEach(b=>b.onclick=()=>{
+   const input=document.querySelector(`.scoreCustomInput[data-id="${b.dataset.id}"]`);
+   const amount=Number(input?.value);
+   if(!Number.isInteger(amount)||amount===0){alert('Введіть ціле число зі знаком, наприклад +250 або -250.');return}
+   emit('adjustScore',{playerId:b.dataset.id,amount},r=>{if(r&&r.ok===false)alert(r.error)});
+ });
+ if($('stopGame'))$('stopGame').onclick=()=>{
+   if(!confirm('Завершити поточну гру? Кімната закриється для всіх гравців та OBS.'))return;
+   emit('closeRoom',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ };
+}
 </script></body></html>

@@ -224,6 +224,30 @@ io.on('connection', socket => {
     emitState(room);
   });
 
+  socket.on('adjustScore', ({ code: c, playerId, amount } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok:false, error:'Немає доступу до цієї кімнати.' });
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return cb({ ok:false, error:'Гравця не знайдено.' });
+
+    const delta = Number(amount);
+    if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 100000)
+      return cb({ ok:false, error:'Вкажіть ціле число від -100000 до 100000, крім 0.' });
+
+    player.score += delta;
+
+    // Якщо коригування зроблено вже після фінального підрахунку —
+    // одразу оновлюємо й фінальну таблицю.
+    if (room.phase === 'final_result' && Array.isArray(room.finalResults)) {
+      room.finalResults = room.players
+        .map(p => ({ id:p.id, name:p.name, score:p.score }))
+        .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, 'uk'));
+    }
+
+    cb({ ok:true, playerId:player.id, score:player.score, delta });
+    emitState(room);
+  });
+
   socket.on('closeRoom', ({ code: c } = {}, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ ok: false, error: 'Немає доступу до цієї кімнати.' });
@@ -635,7 +659,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.9: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.10: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

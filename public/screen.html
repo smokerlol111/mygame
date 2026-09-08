@@ -1,6 +1,6 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=149"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=149"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script>
 <style>
-/* v1.4.9 — larger question text for the stream/OBS view */
+/* v1.4.10 — larger question text for the stream/OBS view */
 #app .question{
   font-size:clamp(30px,3.25vw,52px);
   line-height:1.18;
@@ -30,6 +30,12 @@ function armFirstTurnClock(){
 let code=location.pathname.split('/').filter(Boolean)[1]||new URLSearchParams(location.search).get('code')||'';
 async function ensureGameData(gameId){if(!gameId||gameId===loadedGameId)return;const r=await fetch(`/games/${encodeURIComponent(gameId)}.json`,{cache:'no-store'});if(!r.ok)throw new Error('Game HTTP '+r.status);data=await r.json();loadedGameId=gameId}
 if(code)socket.emit('joinScreen',{code},r=>{if(!r.ok)app.innerHTML=`<div class="panel center"><h2>${r.error}</h2></div>`});else app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
+socket.on('roomClosed',({code:closedCode})=>{
+ if(closedCode!==code)return;
+ state=null;
+ app.innerHTML=`<div class="panel center" style="margin-top:8vh"><div class="huge">🏁</div><h1 style="font-size:46px">ГРУ ЗАВЕРШЕНО</h1></div>`;
+});
+
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;try{await ensureGameData(s.gameId);render()}catch(e){console.error(e);app.innerHTML='<div class="panel center"><h2>Помилка завантаження гри</h2></div>'}});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 function render(){if(!state||!data)return;let h=``;
