@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=145"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=145"></script></head><body class="screen"><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=146"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=146"></script></head><body class="screen"><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');let data=null,state=null,loadedGameId='';
 
 let firstTurnClockHandle=null;
@@ -25,14 +25,17 @@ function render(){if(!state||!data)return;let h=`<div class="top"><div><div clas
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
    const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">30</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
-   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p></div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><span>${GameUI.esc(p.name)}</span><b>${submitted.includes(p.id)?'✅':status==='expired'?'❌':'⏳'}</b></div>`).join('')}</div>`}
+   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:14px auto 0;max-width:760px;text-align:left">
+   ${state.players.map(p=>{const done=submitted.includes(p.id);const label=done?'✅ Відповів':status==='expired'?'❌ Немає відповіді':'⏳ Думає';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border:1px solid #3a2b60;border-radius:12px;background:rgba(255,255,255,.025);font-size:17px"><b>${GameUI.esc(p.name)}</b><span>${label}</span></div>`}).join('')}
+   </div></div>`}
  else if(state.phase==='first_turn_result'){
    const q=state.firstTurnQuiz, results=q.results||[], revealCount=q.revealCount||0;
    const revealed=results.slice(Math.max(0,results.length-revealCount)).reverse();
    h+=`<div class="panel center"><div class="huge">${q.correctAnswer}</div><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><p class="muted">${GameUI.esc(q.unit||'')}</p>
    <div class="finalList" style="margin-top:22px">${revealed.map(r=>{
       const place=results.findIndex(x=>x.id===r.id)+1;
-      return `<div class="finalItem" style="padding:16px 18px"><span class="winner">${place===1?'🥇 ':''}${place}. ${GameUI.esc(r.name)}</span><span>${r.noAnswer?'<b>—</b> <span class="muted">немає відповіді</span>':`Відповідь: <b>${r.answer}</b> &nbsp; • &nbsp; Різниця: <b>${r.delta>0?'+':''}${r.delta}</b>`}</span></div>`;
+      return `<div class="finalItem" style="padding:14px 20px;min-height:58px"><span class="winner" style="font-size:28px">${place===1?'🥇 ':''}${place}. ${GameUI.esc(r.name)}</span><span style="font-size:21px;line-height:1.25">${r.noAnswer?'<b>— НЕМАЄ ВІДПОВІДІ</b>':`Відповідь: <b style="font-size:25px">${r.answer}</b> &nbsp; • &nbsp; Різниця: <b style="font-size:25px">${r.diff}</b>`}</span></div>`;
    }).join('')}</div>
    ${revealCount===0?'<p class="muted" style="margin-top:24px">Готуємо результати…</p>':''}
    </div>`}

@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=145"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=145"></script><style>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=146"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=146"></script><style>
 .menuHero{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .gameMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
@@ -104,7 +104,7 @@ function render(){if(!state||!data)return;let h='';
    const nextIndex=total-1-revealed;
    const nextLabel=revealed>=total?'Усі місця відкриті':revealed===total-1?'🥇 Показати переможця':`Показати ${nextIndex+1} місце`;
    h=`<div class="center"><div class="huge">🎯 ${q.correctAnswer}</div><h2>Правильна відповідь</h2><p class="muted">${GameUI.esc(q.unit||'')}</p></div>
-   <div class="finalList">${results.map((r,i)=>`<div class="finalItem"><span><b>${i+1}. ${GameUI.esc(r.name)}</b></span><span>${r.noAnswer?'— немає відповіді':`Відповідь: <b>${r.answer}</b> • різниця: <b>${r.delta>0?'+':''}${r.delta}</b>`}</span></div>`).join('')}</div>
+   <div class="finalList">${results.map((r,i)=>`<div class="finalItem"><span><b>${i+1}. ${GameUI.esc(r.name)}</b></span><span>${r.noAnswer?'— немає відповіді':`Відповідь: <b>${r.answer}</b> • різниця: <b>${r.diff}</b>`}</span></div>`).join('')}</div>
    <div class="center muted" style="margin:14px 0">OBS відкрито: <b>${revealed}/${total}</b></div>
    <div class="row" style="justify-content:center">
      <button class="btn gold" id="revealNextFirst" ${revealed>=total?'disabled':''}>${nextLabel}</button>
