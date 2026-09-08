@@ -44,7 +44,23 @@ if(playerId&&savedCode&&name&&(!urlCode||urlCode===savedCode)){
   });
 }
 
-socket.on('state',s=>{if(!joined||s.code!==code)return;state=s;render()});
+socket.on('state',s=>{
+  if(!joined||s.code!==code)return;
+  const prevState=state;
+  const prevMe=prevState?.players?.find(p=>p.id===playerId);
+  const nextMe=s.players?.find(p=>p.id===playerId);
+  state=s;
+
+  // During the running final timer, do NOT rebuild the whole phone UI every second.
+  // Replacing the textarea DOM node makes mobile browsers dismiss the keyboard.
+  if(prevState?.phase==='final_question' && s.phase==='final_question' &&
+     !!prevMe?.hasFinalAnswer===!!nextMe?.hasFinalAnswer){
+    const timer=document.getElementById('finalSeconds');
+    if(timer)timer.textContent=String(s.finalSeconds);
+    return;
+  }
+  render();
+});
 socket.on('roomClosed',({code:closedCode,message})=>{if(closedCode!==code)return;clearSession(true);login(urlCode||'');showError(message||'Кімнату закрито.')});
 socket.on('serverRestarting',()=>{ /* Socket.IO сам перепідключиться */ });
 
@@ -68,13 +84,17 @@ function render(){
   else if(state.phase==='cat_question')h+=state.catReceiver===playerId?`<div class="center"><div class="huge">🐈</div><h2>Кіт у мішку — відповідаєте ви!</h2></div>`:`<div class="center"><h2>Кіт у мішку дістався іншому гравцю.</h2></div>`;
   else if(state.phase==='result')h+=`<div class="center"><h2>Результат зафіксовано</h2></div>`;
   else if(state.phase==='final_bets'){let max=Math.max(0,p.score);h+=p.hasBet?`<div class="center"><h2>Ставку прийнято ✅</h2></div>`:`<h2>Фінальна ставка</h2><p>Від 0 до ${max}</p><input id="bet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendBet" class="btn gold">Підтвердити ставку</button>`}
-  else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge">${state.finalSeconds}</div></div>`:`<h2>Фінал • ${state.finalSeconds} с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
+  else if(state.phase==='final_ready'){h+=`<div class="center"><h2>Фінальне питання</h2><p class="muted">Слухайте ведучого. Таймер ще не запущено.</p><div class="huge">30</div></div>`}
+  else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
   app.innerHTML=h;
   document.getElementById('leaveRoom').onclick=leaveRoom;
   if(document.getElementById('buzz'))document.getElementById('buzz').onclick=()=>socket.emit('buzz',{code});
   if(document.getElementById('sendBet'))document.getElementById('sendBet').onclick=()=>socket.emit('submitBet',{code,bet:document.getElementById('bet').value},r=>{if(!r.ok)alert('Не вдалося зберегти ставку')});
-  if(document.getElementById('sendFinal'))document.getElementById('sendFinal').onclick=()=>socket.emit('submitFinalAnswer',{code,answer:document.getElementById('finalAnswer').value});
+  if(document.getElementById('sendFinal'))document.getElementById('sendFinal').onclick=()=>{
+    const answer=document.getElementById('finalAnswer').value;
+    socket.emit('submitFinalAnswer',{code,answer},r=>{if(r&&r.ok===false)alert('Не вдалося надіслати відповідь')});
+  };
 }
 </script></body></html>
