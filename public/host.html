@@ -1,13 +1,33 @@
 <!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
 const socket=io(); let state=null,data=null,code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
-fetch('/questions.json').then(r=>r.json()).then(x=>{data=x; if(storedCode&&hostToken) socket.emit('rejoinHost',{code:storedCode,hostToken},r=>{if(r.ok){code=r.code; renderRoom()}})});
+async function init(){
+ try{
+  const r=await fetch('/questions.json',{cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  data=await r.json();
+  if(storedCode&&hostToken){
+   socket.emit('rejoinHost',{code:storedCode,hostToken},r=>{
+    if(r.ok){code=r.code;state=r.state;renderRoom();render();}
+    else{localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');hostToken='';storedCode='';renderStart();}
+   });
+  }else renderStart();
+ }catch(e){
+  roomBox.innerHTML='';
+  app.innerHTML='<h2>Помилка завантаження гри</h2><p class="muted">Не вдалося завантажити questions.json. Оновіть сторінку або перевірте сервер.</p>';
+  console.error(e);
+ }
+}
+init();
 const app=document.getElementById('app'), roomBox=document.getElementById('roomBox');
-document.getElementById('create').onclick=()=>socket.emit('createRoom',{hostToken:crypto.randomUUID()},r=>{if(!r.ok)return;code=r.code;hostToken=r.hostToken;localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);renderRoom()});
+function renderStart(){roomBox.innerHTML='';app.innerHTML='<button id="create" class="btn">Створити онлайн-кімнату</button>';document.getElementById('create').onclick=createRoom;}
+function createRoom(){socket.emit('createRoom',{hostToken:crypto.randomUUID()},r=>{if(!r.ok)return;code=r.code;hostToken=r.hostToken;state=r.state||state;localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);renderRoom();render()})}
+document.getElementById('create').onclick=createRoom;
 function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${code}</b></div>`}
-socket.on('state',s=>{if(code&&s.code!==code)return;state=s;code=s.code;renderRoom();render()});
+socket.on('state',s=>{if(code&&s.code!==code)return;state=s;code=s.code;renderRoom();if(data)render()});
+socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;renderStart()});
 function emit(ev,p={},cb=()=>{}){socket.emit(ev,{code,...p},cb)}
 function render(){if(!state||!data)return;let h='';
- if(state.phase==='lobby'){h=`<h2>Лобі</h2><div class="roomCode">${state.code}</div><p>Гравці відкривають <b>${location.origin}/play?room=${state.code}</b></p><p>OBS: <b>${location.origin}/screen/${state.code}</b></p>${GameUI.playersHTML(state.players)}<div class="row"><button class="btn" id="start">Почати гру</button></div>`}
+ if(state.phase==='lobby'){h=`<h2>Лобі</h2><div class="roomCode">${state.code}</div><p>Гравці відкривають <b>${location.origin}/play?room=${state.code}</b></p><p>OBS: <b>${location.origin}/screen/${state.code}</b></p>${GameUI.playersHTML(state.players)}<div class="row"><button class="btn" id="start">Почати гру</button><button class="btn secondary" id="newRoom">Нова кімната</button></div>`}
  else if(state.phase==='board'){h=`<div class="top"><h2>${data.rounds[state.round].name}</h2><div class="row">${state.round===0?'<button class="btn secondary" id="nextRound">Раунд 2</button>':'<button class="btn gold" id="finalBets">Фінал</button>'}</div></div>${GameUI.boardHTML(data,state,true)}${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='cat_choose'){h=`<h2>🐈 Кіт у мішку</h2><p class="question">${GameUI.esc(state.current.q)}</p><p class="muted center">Оберіть гравця, який відповідатиме.</p><div class="row" style="justify-content:center">${state.players.map(p=>`<button class="btn secondary catpick" data-id="${p.id}">${GameUI.esc(p.name)}</button>`).join('')}</div>${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='question'){h=`<div class="question">${GameUI.esc(state.current.q)}</div><div class="row" style="justify-content:center"><button class="btn" id="openBuzz">Відкрити кнопку відповіді</button><button class="btn secondary" id="reveal">Ніхто не відповів</button></div>${GameUI.playersHTML(state.players)}`}
@@ -20,5 +40,5 @@ function render(){if(!state||!data)return;let h='';
  else if(state.phase==='final_review'){h=`<h2>Перевірка фіналу</h2><div class="answer"><b>Правильна відповідь:</b> ${GameUI.esc(state.current.a)}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Відповідь: ${GameUI.esc(p.finalAnswer||'—')}</div></div><label><input type="checkbox" class="finalCorrect" data-id="${p.id}" style="width:auto"> правильно</label></div>`).join('')}</div><button class="btn gold" id="scoreFinal">Порахувати результат</button>`}
  else if(state.phase==='final_result'){h=`<h2>🏆 Фінальний результат</h2>${state.finalResults.map((p,i)=>`<div class="finalItem"><span>${i+1}. ${GameUI.esc(p.name)}</span><b>${p.score}</b></div>`).join('')}`}
  app.innerHTML=h; bind(); }
-function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));}
+function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й створити нову?'))return;emit('closeRoom',{},()=>{localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;createRoom()})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));}
 </script></body></html>
