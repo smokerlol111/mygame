@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=141"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=141"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=143"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=143"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -99,6 +99,12 @@ function render(){
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
+  else if(state.phase==='first_turn_quiz'){
+    const submitted=state.firstTurnQuiz?.submittedPlayerIds||[];
+    if(submitted.includes(playerId)) h+=`<div class="center"><div class="huge">🎯</div><h2>Відповідь зафіксовано ✅</h2><p class="muted">Чекаємо на інших гравців.</p></div>`;
+    else h+=`<div class="center"><div class="huge">🎯</div><h2>Розіграш першого ходу</h2></div><div class="question" style="font-size:1.2rem">${GameUI.esc(state.firstTurnQuiz?.question||'')}</div><input id="firstTurnAnswer" type="number" min="0" step="1" inputmode="numeric" placeholder="Введіть число"><br><br><button id="sendFirstTurn" class="btn gold">Підтвердити відповідь</button>`;
+  }
+  else if(state.phase==='first_turn_result'){const pos=(state.firstTurnQuiz?.results||[]).findIndex(x=>x.id===playerId);h+=`<div class="center"><div class="huge">${pos>=0?pos+1:'—'}</div><h2>Ваш порядок вибору</h2><p class="muted">Чекаємо початку 1 раунду.</p></div>`}
   else if(state.phase==='board'){
     const chooser=state.players.find(x=>x.id===state.turnPlayerId);
     if(state.turnPlayerId===playerId && gameData){
@@ -136,6 +142,10 @@ function render(){
   app.innerHTML=h;
   document.getElementById('leaveRoom').onclick=leaveRoom;
   if(document.getElementById('buzz'))document.getElementById('buzz').onclick=()=>socket.emit('buzz',{code});
+  if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
+    const answer=document.getElementById('firstTurnAnswer').value;
+    socket.emit('submitFirstTurnAnswer',{code,answer},r=>{if(r&&r.ok===false)alert(r.error)});
+  };
   document.querySelectorAll('.phoneTile').forEach(b=>b.onclick=()=>socket.emit('chooseTile',{code,ci:+b.dataset.ci,qi:+b.dataset.qi},r=>{if(r&&r.ok===false)alert(r.error)}));
   document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>socket.emit('selectCatReceiver',{code,playerId:b.dataset.id},r=>{if(r&&r.ok===false)alert(r.error)}));
   document.querySelectorAll('.duelpick').forEach(b=>b.onclick=()=>socket.emit('selectDuelOpponent',{code,playerId:b.dataset.id},r=>{if(r&&r.ok===false)alert(r.error)}));

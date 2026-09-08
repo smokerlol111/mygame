@@ -81,7 +81,15 @@ function publicState(room) {
     players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
-    finalResults: room.finalResults || null
+    finalResults: room.finalResults || null,
+    firstTurnQuiz: room.firstTurnQuiz ? {
+      title: room.firstTurnQuiz.title,
+      question: room.firstTurnQuiz.question,
+      unit: room.firstTurnQuiz.unit,
+      submittedPlayerIds: Object.keys(room.firstTurnAnswers || {}),
+      results: room.phase === 'first_turn_result' ? room.firstTurnResults : null,
+      correctAnswer: room.phase === 'first_turn_result' ? room.firstTurnQuiz.answer : null
+    } : null
   };
 }
 
@@ -146,7 +154,9 @@ io.on('connection', socket => {
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
       specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
-      finalSeconds: 30, finalTimer: null, finalResults: null
+      finalSeconds: 30, finalTimer: null, finalResults: null,
+      firstTurnQuiz: selectedGame.firstTurnQuiz || null,
+      firstTurnAnswers: {}, firstTurnResults: null
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
@@ -232,9 +242,64 @@ io.on('connection', socket => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return;
     if (room.players.length < 1) return cb({ ok:false, error:'Потрібен хоча б один гравець.' });
+    room.round = 0; room.used = {}; room.finalResults = null;
+    room.specialCells = randomSpecialCells(room);
+    room.turnPlayerId = null;
+    room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
+    room.firstTurnAnswers = {}; room.firstTurnResults = null;
+    room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
+    room.phase = room.firstTurnQuiz ? 'first_turn_quiz' : 'board';
+    if (!room.firstTurnQuiz) room.turnPlayerId = room.players[0]?.id || null;
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('submitFirstTurnAnswer', ({ code: c, answer }, cb = () => {}) => {
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== 'first_turn_quiz' || !room.firstTurnQuiz)
+      return cb({ok:false,error:'Розіграш зараз недоступний.'});
+    if (Object.prototype.hasOwnProperty.call(room.firstTurnAnswers,p.id))
+      return cb({ok:false,error:'Відповідь уже зафіксована.'});
+    const n = Math.round(Number(answer));
+    if (!Number.isFinite(n) || n < 0 || n > 1000000000)
+      return cb({ok:false,error:'Введіть коректне невід’ємне число.'});
+    room.firstTurnAnswers[p.id] = n;
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('revealFirstTurnResults', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== 'first_turn_quiz' || !room.firstTurnQuiz)
+      return cb({ok:false,error:'Розіграш зараз недоступний.'});
+    if (room.players.some(p => !Object.prototype.hasOwnProperty.call(room.firstTurnAnswers,p.id)))
+      return cb({ok:false,error:'Ще не всі гравці відповіли.'});
+    const correct = Number(room.firstTurnQuiz.answer);
+    const collator = new Intl.Collator('uk',{sensitivity:'base'});
+    room.firstTurnResults = room.players.map(p => {
+      const answer = room.firstTurnAnswers[p.id];
+      return {id:p.id,name:p.name,answer,diff:Math.abs(answer-correct),delta:answer-correct};
+    }).sort((a,b)=>a.diff-b.diff || collator.compare(a.name,b.name));
+    room.turnPlayerId = room.firstTurnResults[0]?.id || room.players[0]?.id || null;
+    room.phase = 'first_turn_result';
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('beginRoundOne', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== 'first_turn_result')
+      return cb({ok:false,error:'Спочатку відкрийте результати розіграшу.'});
+    room.phase = 'board'; room.round = 0;
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('skipFirstTurnQuiz', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !['lobby','first_turn_quiz'].includes(room.phase))
+      return cb({ok:false,error:'Розіграш зараз не можна пропустити.'});
+    room.firstTurnAnswers = {}; room.firstTurnResults = null;
+    room.turnPlayerId = room.players[0]?.id || null;
     room.phase = 'board'; room.round = 0; room.used = {}; room.finalResults = null;
     room.specialCells = randomSpecialCells(room);
-    room.turnPlayerId = room.players[0]?.id || null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
   });
@@ -460,6 +525,8 @@ io.on('connection', socket => {
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
     room.finalSeconds = 30; room.finalResults = null;
+    room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
+    room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
   });
@@ -481,7 +548,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.1: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.3: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
