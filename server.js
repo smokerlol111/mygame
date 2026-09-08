@@ -19,7 +19,7 @@ app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.h
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.1', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.2', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -54,6 +54,9 @@ function publicState(room) {
 
 function emitState(room) {
   io.to(room.code).emit('state', publicState(room));
+  // Hidden service information is sent only to the authenticated HOST socket.
+  // Players and the OBS screen never receive the special-cell map.
+  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {} });
 }
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
@@ -111,7 +114,7 @@ io.on('connection', socket => {
     socket.data.hostToken = token;
     socket.data.roomCode = roomCode;
     socket.join(roomCode);
-    cb({ ok: true, code: roomCode, hostToken: token, state: publicState(room) });
+    cb({ ok: true, code: roomCode, hostToken: token, state: publicState(room), specialCells: room.specialCells || {} });
     emitState(room);
   });
 
@@ -122,7 +125,7 @@ io.on('connection', socket => {
     socket.data.hostToken = hostToken;
     socket.data.roomCode = room.code;
     socket.join(room.code);
-    cb({ ok: true, code: room.code, state: publicState(room) });
+    cb({ ok: true, code: room.code, state: publicState(room), specialCells: room.specialCells || {} });
     emitState(room);
   });
 
@@ -415,7 +418,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.1: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.2: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

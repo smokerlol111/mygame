@@ -1,5 +1,5 @@
 <!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
-const socket=io(); let state=null,data=null,code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+const socket=io(); let state=null,data=null,hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
 async function init(){
  try{
   const r=await fetch('/questions.json',{cache:'no-store'});
@@ -7,7 +7,7 @@ async function init(){
   data=await r.json();
   if(storedCode&&hostToken){
    socket.emit('rejoinHost',{code:storedCode,hostToken},r=>{
-    if(r.ok){code=r.code;state=r.state;renderRoom();render();}
+    if(r.ok){code=r.code;state=r.state;hostSpecialCells=r.specialCells||{};renderRoom();render();}
     else{localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');hostToken='';storedCode='';renderStart();}
    });
   }else renderStart();
@@ -20,15 +20,30 @@ async function init(){
 init();
 const app=document.getElementById('app'), roomBox=document.getElementById('roomBox');
 function renderStart(){roomBox.innerHTML='';app.innerHTML='<button id="create" class="btn">Створити онлайн-кімнату</button>';document.getElementById('create').onclick=createRoom;}
-function createRoom(){socket.emit('createRoom',{hostToken:crypto.randomUUID()},r=>{if(!r.ok)return;code=r.code;hostToken=r.hostToken;state=r.state||state;localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);renderRoom();render()})}
+function createRoom(){socket.emit('createRoom',{hostToken:crypto.randomUUID()},r=>{if(!r.ok)return;code=r.code;hostToken=r.hostToken;state=r.state||state;hostSpecialCells=r.specialCells||{};localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);renderRoom();render()})}
 document.getElementById('create').onclick=createRoom;
 function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${code}</b></div>`}
 socket.on('state',s=>{if(code&&s.code!==code)return;state=s;code=s.code;renderRoom();if(data)render()});
-socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;renderStart()});
+socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};if(data&&state)render()});
+socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;hostSpecialCells={};renderStart()});
 function emit(ev,p={},cb=()=>{}){socket.emit(ev,{code,...p},cb)}
+function hostBoardHTML(){
+ const r=data.rounds[state.round]; let h='<div class="grid">';
+ r.categories.forEach(c=>h+=`<div class="cat">${GameUI.esc(c.name)}</div>`);
+ for(let qi=0;qi<5;qi++){
+  r.categories.forEach((c,ci)=>{
+   const q=c.questions[qi], key=`${state.round}:${ci}:${qi}`, used=state.used[key];
+   const special=hostSpecialCells[key];
+   const mark=q.cat?'🐈':special==='va_bank'?'🎰':special==='duel'?'⚔️':'';
+   const title=q.cat?'Кіт у мішку':special==='va_bank'?'ВА-БАНК':special==='duel'?'ДУЕЛЬ':'';
+   h+=`<button class="tile ${used?'used':''} ${q.cat?'catTile':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span style="font-size:.55em;vertical-align:middle">${mark}</span>`:''}</button>`;
+  });
+ }
+ return h+'</div>';
+}
 function render(){if(!state||!data)return;let h='';
  if(state.phase==='lobby'){h=`<h2>Лобі</h2><div class="roomCode">${state.code}</div><p>Гравці відкривають <b>${location.origin}/play?room=${state.code}</b></p><p>OBS: <b>${location.origin}/screen/${state.code}</b></p>${GameUI.playersHTML(state.players)}<div class="row"><button class="btn" id="start">Почати гру</button><button class="btn secondary" id="newRoom">Нова кімната</button></div>`}
- else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h=`<div class="top"><div><h2>${data.rounds[state.round].name}</h2><div class="muted">🎯 Питання обирає: <b>${GameUI.esc(chooser?.name||'—')}</b></div></div><div class="row">${state.round===0?'<button class="btn secondary" id="nextRound">Раунд 2</button>':'<button class="btn gold" id="finalBets">Фінал</button>'}</div></div>${GameUI.boardHTML(data,state,true)}${GameUI.playersHTML(state.players)}`}
+ else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h=`<div class="top"><div><h2>${data.rounds[state.round].name}</h2><div class="muted">🎯 Питання обирає: <b>${GameUI.esc(chooser?.name||'—')}</b></div></div><div class="row">${state.round===0?'<button class="btn secondary" id="nextRound">Раунд 2</button>':'<button class="btn gold" id="finalBets">Фінал</button>'}</div></div>${state.round===1?'<div class="muted center" style="margin:8px 0 12px">Службові позначки ведучого: 🐈 Кіт у мішку • 🎰 ВА-БАНК • ⚔️ Дуель</div>':''}${hostBoardHTML()}${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='va_bank_bet'){let p=state.players.find(x=>x.id===state.vaBankPlayer);h=`<div class="center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p class="muted">Ставку на телефоні робить <b>${GameUI.esc(p?.name||'гравець')}</b>.</p></div>${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='va_bank_question'){let p=state.players.find(x=>x.id===state.vaBankPlayer);h=`<div class="center"><div class="huge">🎰 ВА-БАНК • ${state.vaBankBet}</div></div><div class="question">${GameUI.esc(state.current.q)}</div><p class="center muted">Відповідає тільки ${GameUI.esc(p?.name||'гравець')}</p><div class="row" style="justify-content:center"><button class="btn good" id="vbCorrect">Правильно +${state.vaBankBet}</button><button class="btn bad" id="vbWrong">Неправильно −${state.vaBankBet}</button></div>${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='duel_choose'){let p=state.players.find(x=>x.id===state.turnPlayerId);h=`<div class="center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p class="muted">${GameUI.esc(p?.name||'Гравець')} обирає суперника на телефоні.</p></div>${GameUI.playersHTML(state.players)}`}
