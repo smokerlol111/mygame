@@ -1,4 +1,19 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script></head><body><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script>
+<style>
+.mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
+.mobileCategoryName{font-size:16px;font-weight:800;line-height:1.2;margin:0 2px 8px;text-align:left;overflow-wrap:anywhere}
+.mobileValues{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.mobileValues .phoneTile{min-width:0;padding:12px 2px;font-size:13px;line-height:1;font-weight:800}
+.mobileValues .phoneTile:disabled{opacity:.32}
+@media (max-width:380px){
+  .mobileCategory{padding:8px}
+  .mobileValues{gap:4px}
+  .mobileValues .phoneTile{padding:11px 1px;font-size:12px}
+  .mobileCategoryName{font-size:15px}
+}
+</style>
+</head><body><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
 let gameData=null; fetch('/questions.json').then(r=>r.json()).then(d=>{gameData=d;if(state)render()});
 const params=new URLSearchParams(location.search);
@@ -81,7 +96,7 @@ function render(){
     const chooser=state.players.find(x=>x.id===state.turnPlayerId);
     if(state.turnPlayerId===playerId && gameData){
       const cats=gameData.rounds[state.round].categories;
-      h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">${cats.map((c,ci)=>c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} style="padding:12px 3px;font-size:14px">${used?'—':q.value}</button>`}).join('')).join('')}</div><p class="muted center">Стовпці відповідають категоріям на головному екрані.</p>`;
+      h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div class="mobileBoard">${cats.map((c,ci)=>`<section class="mobileCategory"><div class="mobileCategoryName">${GameUI.esc(c.name)}</div><div class="mobileValues">${c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''}>${used?'—':q.value}</button>`}).join('')}</div></section>`).join('')}</div>`;
     } else h+=`<div class="center"><h2>Питання обирає ${GameUI.esc(chooser?.name||'інший гравець')}</h2><p class="muted">Чекаємо вашої черги.</p></div>`;
   }
   else if(state.phase==='question')h+=`<div class="center"><h2>Увага, питання!</h2><p class="muted">Кнопка відповіді ще закрита.</p></div>`;
