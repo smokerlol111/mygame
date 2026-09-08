@@ -19,7 +19,7 @@ app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.h
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.2.6', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.0', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -41,6 +41,10 @@ function publicState(room) {
     buzzer: room.buzzer,
     catChooser: room.catChooser,
     catReceiver: room.catReceiver,
+    turnPlayerId: room.turnPlayerId,
+    vaBankPlayer: room.vaBankPlayer,
+    vaBankBet: room.vaBankBet,
+    duelPlayers: room.duelPlayers || [],
     players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
@@ -64,12 +68,31 @@ function resetQuestionState(room) {
   room.answeringLocked = new Set();
   room.catChooser = null;
   room.catReceiver = null;
+  room.vaBankPlayer = null;
+  room.vaBankBet = null;
+  room.duelPlayers = [];
+}
+function advanceTurn(room) {
+  if (!room.players.length) { room.turnPlayerId = null; return; }
+  const i = room.players.findIndex(p => p.id === room.turnPlayerId);
+  room.turnPlayerId = room.players[(i < 0 ? 0 : (i + 1) % room.players.length)].id;
 }
 function finishTile(room) {
   if (room.current && room.current.type !== 'final') room.used[`${room.round}:${room.current.ci}:${room.current.qi}`] = true;
+  advanceTurn(room);
   room.current = null;
   resetQuestionState(room);
   room.phase = 'board';
+}
+function randomSpecialCells(room) {
+  const candidates = [];
+  questions.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => {
+    if (!q.cat) candidates.push(`1:${ci}:${qi}`);
+  }));
+  for (let i=candidates.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1)); [candidates[i],candidates[j]]=[candidates[j],candidates[i]];
+  }
+  return { [candidates[0]]:'va_bank', [candidates[1]]:'va_bank', [candidates[2]]:'duel' };
 }
 
 io.on('connection', socket => {
@@ -80,7 +103,9 @@ io.on('connection', socket => {
       code: roomCode, hostToken: token, hostSocket: socket.id,
       players: [], phase: 'lobby', round: 0, used: {}, current: null,
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
-      catChooser: null, catReceiver: null, finalSeconds: 30, finalTimer: null, finalResults: null
+      catChooser: null, catReceiver: null, turnPlayerId: null,
+      specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
+      finalSeconds: 30, finalTimer: null, finalResults: null
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
@@ -130,7 +155,11 @@ io.on('connection', socket => {
     }
     const pid = socket.data.playerId;
     const idx = room.players.findIndex(x => x.id === pid);
-    if (idx >= 0) room.players.splice(idx, 1);
+    if (idx >= 0) {
+      const wasTurn = room.turnPlayerId === pid;
+      room.players.splice(idx, 1);
+      if (wasTurn) room.turnPlayerId = room.players.length ? room.players[Math.min(idx, room.players.length-1)].id : null;
+    }
     socket.leave(room.code);
     socket.data.playerId = null;
     socket.data.roomCode = null;
@@ -163,24 +192,39 @@ io.on('connection', socket => {
     if (!isHost(socket, room)) return;
     if (room.players.length < 1) return cb({ ok:false, error:'Потрібен хоча б один гравець.' });
     room.phase = 'board'; room.round = 0; room.used = {}; room.finalResults = null;
+    room.specialCells = randomSpecialCells(room);
+    room.turnPlayerId = room.players[0]?.id || null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
   });
 
   socket.on('chooseTile', ({ code: c, ci, qi }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room) || room.phase !== 'board') return;
+    if (!room || room.phase !== 'board') return cb({ok:false,error:'Зараз не можна обирати питання.'});
+    const pid = socket.data.playerId;
+    const host = isHost(socket, room);
+    if (!host && pid !== room.turnPlayerId) return cb({ok:false,error:'Зараз питання обирає інший гравець.'});
     ci = Number(ci); qi = Number(qi);
     const q = questions.rounds[room.round]?.categories[ci]?.questions[qi];
     if (!q) return cb({ok:false,error:'Невірна клітинка.'});
     const key = `${room.round}:${ci}:${qi}`;
     if (room.used[key]) return cb({ok:false,error:'Цю клітинку вже зіграно.'});
     resetQuestionState(room);
-    room.current = { type: q.cat ? 'cat' : 'normal', ci, qi, value: q.value, q: q.cat ? q.cat.q : q.q, a: q.cat ? q.cat.a : q.a };
-    if (q.cat && room.round === 1) {
+    const special = q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal');
+    room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
+
+    if (special === 'cat') {
       room.phase = 'cat_choose';
-      room.catChooser = room.players.length ? room.players.reduce((a,b)=>a.score>=b.score?a:b).id : null;
-    } else room.phase = 'question';
+      room.catChooser = room.turnPlayerId;
+    } else if (special === 'va_bank') {
+      room.phase = 'va_bank_bet';
+      room.vaBankPlayer = room.turnPlayerId;
+    } else if (special === 'duel') {
+      room.phase = 'duel_choose';
+      room.duelPlayers = room.turnPlayerId ? [room.turnPlayerId] : [];
+    } else {
+      room.phase = 'question';
+    }
     cb({ok:true}); emitState(room);
   });
 
@@ -195,6 +239,7 @@ io.on('connection', socket => {
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
     if (!room || !p || room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return;
+    if (room.current?.type === 'duel' && !room.duelPlayers.includes(p.id)) return;
     room.buzzer = p.id; room.phase = 'answering'; emitState(room);
   });
 
@@ -214,7 +259,9 @@ io.on('connection', socket => {
       room.buzzer = null;
       // Important: do not auto-finish just because another player is temporarily disconnected.
       // Auto-reveal only when EVERY player in the room has already answered incorrectly.
-      const eligiblePlayers = room.players;
+      const eligiblePlayers = room.current?.type === 'duel'
+        ? room.players.filter(x => room.duelPlayers.includes(x.id))
+        : room.players;
       const everyoneWrong = eligiblePlayers.length > 0 && eligiblePlayers.every(x => room.answeringLocked.has(x.id));
       if (everyoneWrong) {
         room.revealAnswer = true;
@@ -224,6 +271,43 @@ io.on('connection', socket => {
         room.phase = 'buzz';
       }
     }
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('submitVaBankBet', ({ code: c, bet }, cb = () => {}) => {
+    const room=getRoom(c);
+    const p=room?.players.find(x=>x.id===socket.data.playerId);
+    if(!room || !p || room.phase!=='va_bank_bet' || p.id!==room.vaBankPlayer) return cb({ok:false,error:'Ставку зараз зробити не можна.'});
+    const max=Math.max(0,p.score);
+    const n=Math.floor(Number(bet));
+    if(!Number.isFinite(n) || n<0 || n>max) return cb({ok:false,error:`Ставка має бути від 0 до ${max}.`});
+    room.vaBankBet=n; room.phase='va_bank_question'; cb({ok:true}); emitState(room);
+  });
+
+  socket.on('judgeVaBank', ({ code:c, correct }, cb=()=>{}) => {
+    const room=getRoom(c);
+    if(!isHost(socket,room) || room.phase!=='va_bank_question' || !room.vaBankPlayer) return;
+    const p=room.players.find(x=>x.id===room.vaBankPlayer); if(!p)return;
+    p.score += correct ? room.vaBankBet : -room.vaBankBet;
+    room.revealAnswer=true; room.resultReason=correct?'correct':'va_bank_wrong'; room.phase='result';
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('selectDuelOpponent', ({ code:c, playerId }, cb=()=>{}) => {
+    const room=getRoom(c);
+    const chooser=room?.players.find(x=>x.id===socket.data.playerId);
+    const host=isHost(socket,room);
+    if(!room || room.phase!=='duel_choose') return cb({ok:false,error:'Дуель зараз недоступна.'});
+    if(!host && (!chooser || chooser.id!==room.turnPlayerId)) return cb({ok:false,error:'Суперника обирає гравець, чия черга.'});
+    if(playerId===room.turnPlayerId) return cb({ok:false,error:'Не можна обрати себе.'});
+    if(!room.players.some(p=>p.id===playerId)) return cb({ok:false,error:'Гравця не знайдено.'});
+    room.duelPlayers=[room.turnPlayerId,playerId]; room.phase='duel_question'; cb({ok:true}); emitState(room);
+  });
+
+  socket.on('openDuelBuzz', ({ code:c }, cb=()=>{}) => {
+    const room=getRoom(c);
+    if(!isHost(socket,room) || room.phase!=='duel_question') return;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;
     cb({ok:true}); emitState(room);
   });
 
@@ -239,9 +323,12 @@ io.on('connection', socket => {
 
   socket.on('selectCatReceiver', ({ code: c, playerId }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room) || room.phase !== 'cat_choose' || !room.current) return;
+    const chooser = room?.players.find(x => x.id === socket.data.playerId);
+    const host = isHost(socket, room);
+    if (!room || room.phase !== 'cat_choose' || !room.current || (!host && chooser?.id !== room.catChooser)) return;
     const p = room.players.find(x => x.id === playerId);
     if (!p) return cb({ok:false,error:'Гравця не знайдено.'});
+    if (p.id === room.catChooser && room.players.length > 1) return cb({ok:false,error:'Кота в мішку треба передати іншому гравцеві.'});
     room.catReceiver = p.id; room.phase = 'cat_question'; cb({ok:true}); emitState(room);
   });
 
@@ -328,7 +415,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.2.6: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.0: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
