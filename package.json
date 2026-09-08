@@ -1,0 +1,17 @@
+{
+  "name": "svoja-gra-kinohardkor-v1-2-1",
+  "version": "1.2.1",
+  "private": true,
+  "description": "СВОЯ ГРА — КІНОХАРДКОР v1.2.1: онлайн-гра для 4 гравців, готова до Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
