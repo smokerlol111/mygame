@@ -1,31 +1,60 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=133"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=133"></script></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
-const socket=io(); let state=null,data=null,hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=140"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=140"></script><style>
+.menuHero{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.gameMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.gameCard:hover{outline:2px solid var(--accent2)}
+.gameIcon{font-size:40px}.gameCard h2{margin:0 0 6px}.gameCard p{margin:0}.gamePlay{font-weight:900;color:#d7c8ff}
+</style></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
+const socket=io(); let state=null,data=null,gamesList=[],selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+async function loadGameData(gameId){
+ const r=await fetch(`/games/${encodeURIComponent(gameId)}.json`,{cache:'no-store'});
+ if(!r.ok) throw new Error('Game HTTP '+r.status);
+ data=await r.json();
+}
 async function init(){
  try{
-  const r=await fetch('/questions.json',{cache:'no-store'});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  data=await r.json();
+  const gr=await fetch('/games',{cache:'no-store'});
+  if(!gr.ok) throw new Error('Games HTTP '+gr.status);
+  gamesList=await gr.json();
   if(storedCode&&hostToken){
-   socket.emit('rejoinHost',{code:storedCode,hostToken},r=>{
-    if(r.ok){code=r.code;state=r.state;hostSpecialCells=r.specialCells||{};renderRoom();render();}
-    else{localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');hostToken='';storedCode='';renderStart();}
+   socket.emit('rejoinHost',{code:storedCode,hostToken},async r=>{
+    if(r.ok){
+      code=r.code; state=r.state; selectedGameId=r.gameId||state.gameId; hostSpecialCells=r.specialCells||{};
+      await loadGameData(selectedGameId); renderRoom(); render();
+    } else {
+      localStorage.removeItem('sgHostToken'); localStorage.removeItem('sgRoomCode');
+      hostToken=''; storedCode=''; renderStart();
+    }
    });
-  }else renderStart();
+  } else renderStart();
  }catch(e){
   roomBox.innerHTML='';
-  app.innerHTML='<h2>Помилка завантаження гри</h2><p class="muted">Не вдалося завантажити questions.json. Оновіть сторінку або перевірте сервер.</p>';
+  app.innerHTML='<h2>Помилка завантаження меню</h2><p class="muted">Не вдалося завантажити список ігор. Оновіть сторінку.</p>';
   console.error(e);
  }
 }
 init();
 const app=document.getElementById('app'), roomBox=document.getElementById('roomBox');
-function renderStart(){roomBox.innerHTML='';app.innerHTML='<button id="create" class="btn">Створити онлайн-кімнату</button>';document.getElementById('create').onclick=createRoom;}
-function createRoom(){socket.emit('createRoom',{hostToken:crypto.randomUUID()},r=>{if(!r.ok)return;code=r.code;hostToken=r.hostToken;state=r.state||state;hostSpecialCells=r.specialCells||{};localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);renderRoom();render()})}
-document.getElementById('create').onclick=createRoom;
+function renderStart(){
+ roomBox.innerHTML='';
+ const cards=gamesList.map(g=>`<button class="gameCard" data-game="${GameUI.esc(g.id)}"><div class="gameIcon">${GameUI.esc(g.icon||'🎮')}</div><div><h2>${GameUI.esc(g.title)}</h2><p class="muted">${GameUI.esc(g.description||'')}</p></div><div class="gamePlay">Грати →</div></button>`).join('');
+ app.innerHTML=`<div class="menuHero"><div><h2>🎮 Оберіть гру</h2><p class="muted">Створіть кімнату з потрібним набором категорій і запитань.</p></div></div><div class="gameMenu">${cards||'<p>Немає доступних ігор.</p>'}</div>`;
+ document.querySelectorAll('.gameCard').forEach(b=>b.onclick=()=>createRoom(b.dataset.game));
+}
+async function createRoom(gameId){
+ selectedGameId=gameId;
+ await loadGameData(gameId);
+ socket.emit('createRoom',{hostToken:crypto.randomUUID(),gameId},r=>{
+   if(!r.ok){alert(r.error||'Не вдалося створити кімнату');return}
+   code=r.code;hostToken=r.hostToken;state=r.state||state;hostSpecialCells=r.specialCells||{};
+   localStorage.setItem('sgHostToken',hostToken);localStorage.setItem('sgRoomCode',code);
+   renderRoom();render();
+ });
+}
 function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${code}</b></div>`}
-socket.on('state',s=>{if(code&&s.code!==code)return;state=s;code=s.code;renderRoom();if(data)render()});
+socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if(s.gameId&&s.gameId!==selectedGameId){selectedGameId=s.gameId;await loadGameData(selectedGameId)}renderRoom();if(data)render()});
 socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};if(data&&state)render()});
-socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;hostSpecialCells={};renderStart()});
+socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;data=null;selectedGameId='';hostSpecialCells={};renderStart()});
 function emit(ev,p={},cb=()=>{}){socket.emit(ev,{code,...p},cb)}
 function hostBoardHTML(){
  const r=data.rounds[state.round]; let h='<div class="grid">';
@@ -58,7 +87,7 @@ function render(){if(!state||!data)return;let h='';
  else if(state.phase==='final_ready'){h=`<h2>Фінал — питання відкрите</h2><div class="question">${GameUI.esc(state.current.q)}</div><p class="center muted">Прочитайте запитання вголос. Таймер ще не запущено, поля відповіді на телефонах закриті.</p><div class="row" style="justify-content:center"><button class="btn gold" id="startFinalTimer">▶ Запустити 30 секунд</button></div>${GameUI.playersHTML(state.players)}`}
  else if(state.phase==='final_question'){h=`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><div class="question">${GameUI.esc(state.current.q)}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><span>${GameUI.esc(p.name)}</span><b>${p.hasFinalAnswer?'✅ відповідь надіслана':'⏳'}</b></div>`).join('')}</div><button class="btn secondary" id="finishFinal">Завершити зараз</button>`}
  else if(state.phase==='final_review'){h=`<h2>Перевірка фіналу</h2><div class="answer"><b>Правильна відповідь:</b> ${GameUI.esc(state.current.a)}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Відповідь: ${GameUI.esc(p.finalAnswer||'—')}</div></div><label><input type="checkbox" class="finalCorrect" data-id="${p.id}" style="width:auto"> правильно</label></div>`).join('')}</div><button class="btn gold" id="scoreFinal">Порахувати результат</button>`}
- else if(state.phase==='final_result'){h=`<h2>🏆 Фінальний результат</h2>${state.finalResults.map((p,i)=>`<div class="finalItem"><span>${i+1}. ${GameUI.esc(p.name)}</span><b>${p.score}</b></div>`).join('')}`}
+ else if(state.phase==='final_result'){h=`<h2>🏆 Фінальний результат</h2>${state.finalResults.map((p,i)=>`<div class="finalItem"><span>${i+1}. ${GameUI.esc(p.name)}</span><b>${p.score}</b></div>`).join('')}<div class="row" style="justify-content:center;margin-top:22px"><button class="btn" id="restartSame">🔄 Нова гра з цими гравцями</button><button class="btn secondary" id="backMenu">🏠 Головне меню</button></div>`}
  app.innerHTML=h; bind(); }
-function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й створити нову?'))return;emit('closeRoom',{},()=>{localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;createRoom()})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('vbCorrect'))$('vbCorrect').onclick=()=>emit('judgeVaBank',{correct:true}); if($('vbWrong'))$('vbWrong').onclick=()=>emit('judgeVaBank',{correct:false}); if($('openDuelBuzz'))$('openDuelBuzz').onclick=()=>emit('openDuelBuzz'); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('startFinalTimer'))$('startFinalTimer').onclick=()=>emit('startFinalTimer',{},r=>{if(r&&r.ok===false)alert(r.error||'Не вдалося запустити таймер')}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));}
+function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('restartSame'))$('restartSame').onclick=()=>emit('restartSameGame'); if($('backMenu'))$('backMenu').onclick=()=>{if(confirm('Закрити кімнату й повернутися до головного меню?'))emit('returnToGameMenu')}; if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й повернутися до вибору гри?'))return;emit('returnToGameMenu',{},()=>{})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('vbCorrect'))$('vbCorrect').onclick=()=>emit('judgeVaBank',{correct:true}); if($('vbWrong'))$('vbWrong').onclick=()=>emit('judgeVaBank',{correct:false}); if($('openDuelBuzz'))$('openDuelBuzz').onclick=()=>emit('openDuelBuzz'); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('startFinalTimer'))$('startFinalTimer').onclick=()=>emit('startFinalTimer',{},r=>{if(r&&r.ok===false)alert(r.error||'Не вдалося запустити таймер')}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));}
 </script></body></html>

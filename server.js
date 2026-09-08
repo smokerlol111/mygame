@@ -9,8 +9,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: true, credentials: true } });
 const PORT = process.env.PORT || 3000;
-const questions = JSON.parse(fs.readFileSync(path.join(__dirname, 'questions.json'), 'utf8'));
+const gamesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, 'games', 'index.json'), 'utf8'));
+const games = new Map();
+for (const meta of gamesIndex.filter(g => g.enabled !== false)) {
+  const game = JSON.parse(fs.readFileSync(path.join(__dirname, 'games', meta.file), 'utf8'));
+  games.set(meta.id, { ...game, id: meta.id, menuTitle: meta.title || game.menuTitle || game.title, menuIcon: meta.icon || game.menuIcon || '🎮', description: meta.description || game.description || '' });
+}
+const DEFAULT_GAME_ID = gamesIndex.find(g => g.enabled !== false)?.id || 'kinohardkor';
 const rooms = new Map();
+
+function getGameById(id) { return games.get(String(id || DEFAULT_GAME_ID)) || games.get(DEFAULT_GAME_ID); }
+function getRoomGame(room) { return room?.gameData || getGameById(room?.gameId); }
 
 // Always serve the current deployed UI. This prevents Safari/iPhone from
 // keeping an older play/host/screen page after a new Render deployment.
@@ -33,9 +42,15 @@ app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html
 app.get('/host', (_, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
+app.get('/games', (_, res) => res.json(gamesIndex.filter(g => g.enabled !== false).map(({file, ...g}) => g)));
+app.get('/games/:id.json', (req, res) => {
+  const meta = gamesIndex.find(g => g.id === req.params.id && g.enabled !== false);
+  if (!meta) return res.status(404).json({ error: 'Гру не знайдено.' });
+  res.sendFile(path.join(__dirname, 'games', meta.file));
+});
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.3', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.4.0', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -49,7 +64,9 @@ function code() {
 function publicState(room) {
   return {
     code: room.code,
-    title: questions.title,
+    title: getRoomGame(room).title,
+    gameId: room.gameId,
+    gameMenuTitle: getRoomGame(room).menuTitle || getRoomGame(room).title,
     phase: room.phase,
     round: room.round,
     used: room.used,
@@ -79,7 +96,8 @@ function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
 function isHost(socket, room) { return room && socket.data.hostToken && socket.data.hostToken === room.hostToken; }
 function currentQuestion(room) {
   if (!room.current || room.current.type === 'final') return null;
-  return questions.rounds[room.round].categories[room.current.ci].questions[room.current.qi];
+  const game = getRoomGame(room);
+  return game.rounds[room.round].categories[room.current.ci].questions[room.current.qi];
 }
 function resetQuestionState(room) {
   room.buzzer = null;
@@ -105,7 +123,8 @@ function finishTile(room) {
 }
 function randomSpecialCells(room) {
   const candidates = [];
-  questions.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => {
+  const game = getRoomGame(room);
+  game.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => {
     if (!q.cat) candidates.push(`1:${ci}:${qi}`);
   }));
   for (let i=candidates.length-1;i>0;i--) {
@@ -115,11 +134,14 @@ function randomSpecialCells(room) {
 }
 
 io.on('connection', socket => {
-  socket.on('createRoom', ({ hostToken } = {}, cb = () => {}) => {
+  socket.on('createRoom', ({ hostToken, gameId } = {}, cb = () => {}) => {
+    const selectedGame = getGameById(gameId);
+    if (!selectedGame) return cb({ ok:false, error:'Гру не знайдено.' });
     const roomCode = code();
     const token = hostToken || crypto.randomUUID();
     const room = {
       code: roomCode, hostToken: token, hostSocket: socket.id,
+      gameId: selectedGame.id || gameId || DEFAULT_GAME_ID, gameData: selectedGame,
       players: [], phase: 'lobby', round: 0, used: {}, current: null,
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
@@ -130,7 +152,7 @@ io.on('connection', socket => {
     socket.data.hostToken = token;
     socket.data.roomCode = roomCode;
     socket.join(roomCode);
-    cb({ ok: true, code: roomCode, hostToken: token, state: publicState(room), specialCells: room.specialCells || {} });
+    cb({ ok: true, code: roomCode, hostToken: token, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {} });
     emitState(room);
   });
 
@@ -141,7 +163,7 @@ io.on('connection', socket => {
     socket.data.hostToken = hostToken;
     socket.data.roomCode = room.code;
     socket.join(room.code);
-    cb({ ok: true, code: room.code, state: publicState(room), specialCells: room.specialCells || {} });
+    cb({ ok: true, code: room.code, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {} });
     emitState(room);
   });
 
@@ -224,7 +246,8 @@ io.on('connection', socket => {
     const host = isHost(socket, room);
     if (!host && pid !== room.turnPlayerId) return cb({ok:false,error:'Зараз питання обирає інший гравець.'});
     ci = Number(ci); qi = Number(qi);
-    const q = questions.rounds[room.round]?.categories[ci]?.questions[qi];
+    const game = getRoomGame(room);
+    const q = game.rounds[room.round]?.categories[ci]?.questions[qi];
     if (!q) return cb({ok:false,error:'Невірна клітинка.'});
     const key = `${room.round}:${ci}:${qi}`;
     if (room.used[key]) return cb({ok:false,error:'Цю клітинку вже зіграно.'});
@@ -383,7 +406,8 @@ io.on('connection', socket => {
   socket.on('startFinalQuestion', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c); if (!isHost(socket, room) || room.phase !== 'final_bets') return;
     if (room.players.some(p => p.bet === null)) return cb({ok:false,error:'Не всі гравці зробили ставки.'});
-    room.current = { type:'final', q:questions.final.q, a:questions.final.a };
+    const game = getRoomGame(room);
+    room.current = { type:'final', q:game.final.q, a:game.final.a };
     room.phase = 'final_ready';
     room.finalSeconds = 30;
     clearInterval(room.finalTimer); room.finalTimer = null;
@@ -427,6 +451,29 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'final_result'; cb({ok:true}); emitState(room);
   });
 
+  socket.on('restartSameGame', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може перезапустити гру.'});
+    clearInterval(room.finalTimer); room.finalTimer = null;
+    room.phase = 'lobby'; room.round = 0; room.used = {}; room.current = null;
+    room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
+    room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
+    room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
+    room.finalSeconds = 30; room.finalResults = null;
+    room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('returnToGameMenu', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може закрити кімнату.'});
+    clearInterval(room.finalTimer);
+    io.to(room.code).emit('roomClosed', { code: room.code, reason: 'Ведучий повернувся в головне меню.' });
+    rooms.delete(room.code);
+    socket.data.roomCode = null;
+    cb({ok:true});
+  });
+
   socket.on('disconnect', () => {
     const room = getRoom(socket.data.roomCode); if (!room) return;
     const p = room.players.find(x => x.id === socket.data.playerId);
@@ -434,7 +481,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.3: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.0: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
