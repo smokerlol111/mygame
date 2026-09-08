@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=133"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=133"></script></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
 const socket=io(); let state=null,data=null,hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
 async function init(){
  try{
@@ -36,7 +36,7 @@ function hostBoardHTML(){
    const special=hostSpecialCells[key];
    const mark=q.cat?'🐈':special==='va_bank'?'🎰':special==='duel'?'⚔️':'';
    const title=q.cat?'Кіт у мішку':special==='va_bank'?'ВА-БАНК':special==='duel'?'ДУЕЛЬ':'';
-   h+=`<button class="tile ${used?'used':''} ${q.cat?'catTile':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span style="font-size:.55em;vertical-align:middle">${mark}</span>`:''}</button>`;
+   h+=`<button class="tile ${used?'used':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span style="font-size:.55em;vertical-align:middle">${mark}</span>`:''}</button>`;
   });
  }
  return h+'</div>';

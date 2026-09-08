@@ -12,14 +12,30 @@ const PORT = process.env.PORT || 3000;
 const questions = JSON.parse(fs.readFileSync(path.join(__dirname, 'questions.json'), 'utf8'));
 const rooms = new Map();
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Always serve the current deployed UI. This prevents Safari/iPhone from
+// keeping an older play/host/screen page after a new Render deployment.
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/socket.io/')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  maxAge: 0
+}));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/host', (_, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.2', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.3.3', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -418,7 +434,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.2: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.3.3: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

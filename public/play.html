@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css"><script src="/socket.io/socket.io.js"></script><script src="/common.js"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=133"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=133"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -15,7 +15,7 @@
 </style>
 </head><body><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
-let gameData=null; fetch('/questions.json').then(r=>r.json()).then(d=>{gameData=d;if(state)render()});
+let gameData=null; fetch('/questions.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{gameData=d;if(state)render()});
 const params=new URLSearchParams(location.search);
 const urlCode=(params.get('room')||'').trim().toUpperCase();
 const savedCode=(localStorage.getItem('sgCode')||'').trim().toUpperCase();
