@@ -91,6 +91,7 @@ function publicState(room) {
       duration: 30,
       endsAt: room.firstTurnTimerStatus === 'running' ? room.firstTurnEndsAt : null,
       results: room.phase === 'first_turn_result' ? room.firstTurnResults : null,
+      revealCount: room.phase === 'first_turn_result' ? (room.firstTurnRevealCount || 0) : 0,
       correctAnswer: room.phase === 'first_turn_result' ? room.firstTurnQuiz.answer : null
     } : null
   };
@@ -160,7 +161,8 @@ io.on('connection', socket => {
       finalSeconds: 30, finalTimer: null, finalResults: null,
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
-      firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null
+      firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
+      firstTurnRevealCount: 0
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
@@ -254,6 +256,8 @@ io.on('connection', socket => {
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.firstTurnTimerStatus = 'ready'; room.firstTurnEndsAt = null;
+    room.firstTurnRevealCount = 0;
+    room.firstTurnRevealCount = 0;
     room.firstTurnTimerStatus = 'ready'; room.firstTurnEndsAt = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     room.phase = room.firstTurnQuiz ? 'first_turn_quiz' : 'board';
@@ -344,14 +348,28 @@ io.on('connection', socket => {
     room.players.sort((x,y)=>(order.get(x.id) ?? 999) - (order.get(y.id) ?? 999));
     room.turnPlayerId = room.players[0]?.id || null;
 
+    room.firstTurnRevealCount = 0;
     room.phase = 'first_turn_result';
     cb({ok:true}); emitState(room);
+  });
+
+  socket.on('revealNextFirstTurnResult', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== 'first_turn_result' || !room.firstTurnResults)
+      return cb({ok:false,error:'Результати розіграшу зараз недоступні.'});
+    const total = room.firstTurnResults.length;
+    if ((room.firstTurnRevealCount || 0) >= total)
+      return cb({ok:false,error:'Усі результати вже відкриті.'});
+    room.firstTurnRevealCount = (room.firstTurnRevealCount || 0) + 1;
+    cb({ok:true,revealCount:room.firstTurnRevealCount,total}); emitState(room);
   });
 
   socket.on('beginRoundOne', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || room.phase !== 'first_turn_result')
       return cb({ok:false,error:'Спочатку відкрийте результати розіграшу.'});
+    if ((room.firstTurnRevealCount || 0) < (room.firstTurnResults?.length || 0))
+      return cb({ok:false,error:'Спочатку відкрийте всі місця від останнього до першого.'});
     room.phase = 'board'; room.round = 0;
     cb({ok:true}); emitState(room);
   });
@@ -363,6 +381,7 @@ io.on('connection', socket => {
     clearTimeout(room.firstTurnTimer); room.firstTurnTimer = null;
     room.firstTurnTimerStatus = 'ready'; room.firstTurnEndsAt = null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
+    room.firstTurnRevealCount = 0;
     room.turnPlayerId = room.players[0]?.id || null;
     room.phase = 'board'; room.round = 0; room.used = {}; room.finalResults = null;
     room.specialCells = randomSpecialCells(room);
@@ -616,7 +635,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.4: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.5: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
