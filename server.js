@@ -18,7 +18,7 @@ app.get('/host', (_, res) => res.sendFile(path.join(__dirname, 'public', 'host.h
 app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.2.1', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.2.2', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -40,7 +40,7 @@ function publicState(room) {
     buzzer: room.buzzer,
     catChooser: room.catChooser,
     catReceiver: room.catReceiver,
-    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer })),
+    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
     finalResults: room.finalResults || null
@@ -85,7 +85,7 @@ io.on('connection', socket => {
     socket.data.hostToken = token;
     socket.data.roomCode = roomCode;
     socket.join(roomCode);
-    cb({ ok: true, code: roomCode, hostToken: token });
+    cb({ ok: true, code: roomCode, hostToken: token, state: publicState(room) });
     emitState(room);
   });
 
@@ -96,7 +96,7 @@ io.on('connection', socket => {
     socket.data.hostToken = hostToken;
     socket.data.roomCode = room.code;
     socket.join(room.code);
-    cb({ ok: true, code: room.code });
+    cb({ ok: true, code: room.code, state: publicState(room) });
     emitState(room);
   });
 
@@ -118,6 +118,34 @@ io.on('connection', socket => {
     socket.join(room.code);
     cb({ ok: true, playerId: p.id, code: room.code, name: p.name });
     emitState(room);
+  });
+
+  socket.on('leavePlayer', ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c || socket.data.roomCode);
+    if (!room) {
+      socket.data.playerId = null;
+      socket.data.roomCode = null;
+      return cb({ ok: true });
+    }
+    const pid = socket.data.playerId;
+    const idx = room.players.findIndex(x => x.id === pid);
+    if (idx >= 0) room.players.splice(idx, 1);
+    socket.leave(room.code);
+    socket.data.playerId = null;
+    socket.data.roomCode = null;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on('closeRoom', ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: 'Немає доступу до цієї кімнати.' });
+    if (room.finalTimer) clearInterval(room.finalTimer);
+    io.to(room.code).emit('roomClosed', { code: room.code, message: 'Ведучий закрив кімнату.' });
+    rooms.delete(room.code);
+    socket.leave(room.code);
+    socket.data.roomCode = null;
+    cb({ ok: true });
   });
 
   socket.on('joinScreen', ({ code: c }, cb = () => {}) => {
@@ -267,7 +295,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.2.1: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.2.2: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
