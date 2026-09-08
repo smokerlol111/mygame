@@ -19,7 +19,7 @@ app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.h
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.2.4', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok: true, version: '1.2.5', rooms: rooms.size }));
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -212,7 +212,9 @@ io.on('connection', socket => {
     } else {
       room.answeringLocked.add(p.id);
       room.buzzer = null;
-      const eligiblePlayers = room.players.filter(x => x.connected !== false);
+      // Important: do not auto-finish just because another player is temporarily disconnected.
+      // Auto-reveal only when EVERY player in the room has already answered incorrectly.
+      const eligiblePlayers = room.players;
       const everyoneWrong = eligiblePlayers.length > 0 && eligiblePlayers.every(x => room.answeringLocked.has(x.id));
       if (everyoneWrong) {
         room.revealAnswer = true;
@@ -312,7 +314,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.2.4: http://0.0.0.0:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.2.5: http://0.0.0.0:${PORT}`));
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
