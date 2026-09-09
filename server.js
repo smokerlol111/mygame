@@ -51,7 +51,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.3', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.4', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -151,6 +151,7 @@ function randomSpecialCells(room) {
 }
 
 io.on('connection', socket => {
+  socket.data.seasonAdminToken = crypto.randomUUID();
   socket.on('createRoom', ({ hostToken, gameId } = {}, cb = () => {}) => {
     const selectedGame = getGameById(gameId);
     if (!selectedGame) return cb({ ok:false, error:'Гру не знайдено.' });
@@ -631,6 +632,22 @@ io.on('connection', socket => {
   });
 
 
+  socket.on('seasonAdminInit', async (_, cb=()=>{})=>{
+    try{cb({ok:true,adminToken:socket.data.seasonAdminToken,seasons:await storage.listSeasons()})}
+    catch(e){cb({ok:false,error:e.message})}
+  });
+  function isSeasonAdmin(token){return !!token&&token===socket.data.seasonAdminToken}
+  socket.on('seasonAdminCreate', async ({adminToken,name}={},cb=()=>{})=>{
+    if(!isSeasonAdmin(adminToken))return cb({ok:false,error:'Немає доступу.'});
+    try{const id=await storage.createSeason(name);cb({ok:true,id,seasons:await storage.listSeasons()})}
+    catch(e){cb({ok:false,error:e.message})}
+  });
+  socket.on('seasonAdminSetStatus', async ({adminToken,seasonId,status}={},cb=()=>{})=>{
+    if(!isSeasonAdmin(adminToken))return cb({ok:false,error:'Немає доступу.'});
+    try{await storage.setSeasonStatus(seasonId,status);cb({ok:true,seasons:await storage.listSeasons()})}
+    catch(e){cb({ok:false,error:e.message})}
+  });
+
   socket.on('seasonListHost', async ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
   socket.on('createSeason', async ({code:c,name}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{const id=await storage.createSeason(name);cb({ok:true,id,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
   socket.on('setSeasonStatus', async ({code:c,seasonId,status}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{await storage.setSeasonStatus(seasonId,status);cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
@@ -671,7 +688,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.3: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.4: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

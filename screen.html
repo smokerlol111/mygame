@@ -1,0 +1,73 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script>
+<style>
+/* v1.5.4 — larger question text for the stream/OBS view */
+#app .question{
+  font-size:clamp(30px,3.25vw,52px);
+  line-height:1.18;
+  font-weight:800;
+  max-width:1120px;
+  margin-left:auto;
+  margin-right:auto;
+}
+</style>
+</head><body class="screen"><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
+const socket=io(),app=document.getElementById('app');let data=null,state=null,loadedGameId='';
+
+let firstTurnClockHandle=null;
+function armFirstTurnClock(){
+  if(firstTurnClockHandle){clearInterval(firstTurnClockHandle);firstTurnClockHandle=null}
+  const el=document.getElementById('firstTurnTimer');
+  const end=Number(state?.firstTurnQuiz?.endsAt||0);
+  if(!el||!end||state?.firstTurnQuiz?.timerStatus!=='running')return;
+  const tick=()=>{
+    const left=Math.max(0,Math.ceil((end-Date.now())/1000));
+    el.textContent=String(left);
+    if(left<=0&&firstTurnClockHandle){clearInterval(firstTurnClockHandle);firstTurnClockHandle=null}
+  };
+  tick();
+  firstTurnClockHandle=setInterval(tick,200);
+}
+let code=location.pathname.split('/').filter(Boolean)[1]||new URLSearchParams(location.search).get('code')||'';
+async function ensureGameData(gameId){if(!gameId||gameId===loadedGameId)return;const r=await fetch(`/games/${encodeURIComponent(gameId)}.json`,{cache:'no-store'});if(!r.ok)throw new Error('Game HTTP '+r.status);data=await r.json();loadedGameId=gameId}
+if(code)socket.emit('joinScreen',{code},r=>{if(!r.ok)app.innerHTML=`<div class="panel center"><h2>${r.error}</h2></div>`});else app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
+socket.on('roomClosed',({code:closedCode})=>{
+ if(closedCode!==code)return;
+ state=null;
+ app.innerHTML=`<div class="panel center" style="margin-top:8vh"><div class="huge">🏁</div><h1 style="font-size:46px">ГРУ ЗАВЕРШЕНО</h1></div>`;
+});
+
+socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;try{await ensureGameData(s.gameId);render()}catch(e){console.error(e);app.innerHTML='<div class="panel center"><h2>Помилка завантаження гри</h2></div>'}});
+socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
+function render(){if(!state||!data)return;let h=``;
+ if(state.phase==='lobby')h+=`<div class="panel center"><div class="roomCode">${state.code}</div><h2>Приєднуйтесь з телефону</h2></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='first_turn_quiz'){
+   const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
+   const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">30</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
+   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:14px auto 0;max-width:760px;text-align:left">
+   ${state.players.map(p=>{const done=submitted.includes(p.id);const label=done?'✅ Відповів':status==='expired'?'❌ Немає відповіді':'⏳ Думає';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border:1px solid #3a2b60;border-radius:12px;background:rgba(255,255,255,.025);font-size:17px"><b>${GameUI.esc(p.name)}</b><span>${label}</span></div>`}).join('')}
+   </div></div>`}
+ else if(state.phase==='first_turn_result'){
+   const q=state.firstTurnQuiz, results=q.results||[], revealCount=q.revealCount||0;
+   const revealed=results.slice(Math.max(0,results.length-revealCount)).reverse();
+   h+=`<div class="panel center"><div class="huge">${q.correctAnswer}</div><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><p class="muted">${GameUI.esc(q.unit||'')}</p>
+   <div class="finalList" style="margin-top:22px">${revealed.map(r=>{
+      const place=results.findIndex(x=>x.id===r.id)+1;
+      return `<div class="finalItem" style="padding:14px 20px;min-height:58px"><span class="winner" style="font-size:28px">${place===1?'🥇 ':''}${place}. ${GameUI.esc(r.name)}</span><span style="font-size:21px;line-height:1.25">${r.noAnswer?'<b>— НЕМАЄ ВІДПОВІДІ</b>':`Відповідь: <b style="font-size:25px">${r.answer}</b> &nbsp; • &nbsp; Різниця: <b style="font-size:25px">${r.diff}</b>`}</span></div>`;
+   }).join('')}</div>
+   ${revealCount===0?'<p class="muted" style="margin-top:24px">Готуємо результати…</p>':''}
+   </div>`}
+ else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h+=`<div class="center" style="margin:8px 0 22px;font-size:30px;line-height:1.2;font-weight:700">🎯 Питання обирає: <b style="font-size:36px">${GameUI.esc(chooser?.name||'—')}</b></div>${GameUI.boardHTML(data,state,false)}${GameUI.playersHTML(state.players)}`;}
+ else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
+ else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='duel_question')h+=`<div class="panel center"><div class="huge">⚔️ ДУЕЛЬ</div><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='cat_choose')h+=`<div class="panel center"><div class="huge">🐈</div><h1>КІТ У МІШКУ</h1><p>Ведучий обирає гравця</p></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='final_bets')h+=`<div class="panel center"><div class="huge">ФІНАЛ</div><h2>Таємні ставки</h2></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='final_ready')h+=`<div class="panel"><div class="center"><div class="huge">ФІНАЛ</div><p class="muted">Таймер ще не запущено</p></div><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='final_question')h+=`<div class="panel"><div class="center"><div class="huge">${state.finalSeconds}</div></div><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='final_review')h+=`<div class="panel center"><h1>Фінал завершено</h1><p>Ведучий перевіряє відповіді</p></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='final_result')h+=`<div class="panel center"><h1>🏆 ФІНАЛЬНИЙ РЕЗУЛЬТАТ</h1>${state.finalResults.map((p,i)=>`<div class="finalItem"><span class="winner">${i+1}. ${GameUI.esc(p.name)}</span><span class="winner">${p.score}</span></div>`).join('')}</div>`;
+ app.innerHTML=h;armFirstTurnClock()}
+</script></body></html>

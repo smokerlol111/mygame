@@ -1,0 +1,10 @@
+[
+  {
+    "id": "kinohardkor",
+    "title": "Кінохардкор",
+    "icon": "🎬",
+    "description": "Фільми, франшизи та кінофакти",
+    "file": "kinohardkor.json",
+    "enabled": true
+  }
+]
