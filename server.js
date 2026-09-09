@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const storage = require('./storage');
 
 const app = express();
 const server = http.createServer(app);
@@ -50,7 +51,9 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok: true, version: '1.4.1', rooms: rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.0', rooms:rooms.size }));
+app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
+app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
 function code() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -82,6 +85,8 @@ function publicState(room) {
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
     finalResults: room.finalResults || null,
+    savedSeasonGameId: room.savedSeasonGameId || null,
+    savedSeasonId: room.savedSeasonId || null,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
       question: room.firstTurnQuiz.question,
@@ -158,7 +163,7 @@ io.on('connection', socket => {
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
       specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
-      finalSeconds: 30, finalTimer: null, finalResults: null,
+      finalSeconds: 30, finalTimer: null, finalResults: null, savedSeasonGameId: null, savedSeasonId: null,
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
@@ -625,6 +630,12 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'final_result'; cb({ok:true}); emitState(room);
   });
 
+  socket.on('seasonListHost', async ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('createSeason', async ({code:c,name}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{const id=await storage.createSeason(name);cb({ok:true,id,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('setSeasonStatus', async ({code:c,seasonId,status}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{await storage.setSeasonStatus(seasonId,status);cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('saveSeasonResult', async ({code:c,seasonId,isGrandFinal=false}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});if(room.phase!=='final_result'||!room.finalResults)return cb({ok:false,error:'Спочатку завершіть фінал.'});try{const id=await storage.saveGame({seasonId,roomCode:room.code,gameId:room.gameId,title:getRoomGame(room).menuTitle||getRoomGame(room).title,results:room.finalResults,isGrandFinal});room.savedSeasonGameId=id;room.savedSeasonId=seasonId;cb({ok:true,id});emitState(room)}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('correctSavedSeasonResult', async ({code:c,gameId,results}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{await storage.updateGameResults(gameId,results);cb({ok:true})}catch(e){cb({ok:false,error:e.message})}});
+
   socket.on('restartSameGame', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може перезапустити гру.'});
@@ -634,7 +645,7 @@ io.on('connection', socket => {
     room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
-    room.finalSeconds = 30; room.finalResults = null;
+    room.finalSeconds = 30; room.finalResults = null; room.savedSeasonGameId = null; room.savedSeasonId = null;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
@@ -659,7 +670,7 @@ io.on('connection', socket => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`СВОЯ ГРА v1.4.10: http://0.0.0.0:${PORT}`));
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.0: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
