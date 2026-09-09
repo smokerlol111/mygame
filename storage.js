@@ -30,8 +30,19 @@ async function saveGame({seasonId,roomCode,gameId,title,results,isGrandFinal=fal
  const id=slugId('game');if(usePostgres){try{await pool.query(`INSERT INTO quiz_games(id,season_id,room_code,game_id,title,is_grand_final,results) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,[id,seasonId,roomCode,gameId,title,!!isGrandFinal,JSON.stringify(normalized)]);}catch(e){if(e.code==='23505')throw Error('Результат цієї гри вже збережено.');throw e;}}
  else{if(fileData.games.some(g=>g.roomCode===roomCode))throw Error('Результат цієї гри вже збережено.');if(!fileData.seasons.some(s=>s.id===seasonId))throw Error('Сезон не знайдено.');fileData.games.push({id,seasonId,roomCode,gameId,title,playedAt:nowIso(),isGrandFinal:!!isGrandFinal,results:normalized});saveFile();}return id;}
 async function updateGameResults(gameId,results){const normalized=normalizeResults(results);if(usePostgres){const r=await pool.query(`UPDATE quiz_games SET results=$2::jsonb WHERE id=$1`,[gameId,JSON.stringify(normalized)]);if(!r.rowCount)throw Error('Гру не знайдено.');}else{const g=fileData.games.find(x=>x.id===gameId);if(!g)throw Error('Гру не знайдено.');g.results=normalized;saveFile();}}
+async function deleteGame(gameId){
+ if(usePostgres){
+  const r=await pool.query(`DELETE FROM quiz_games WHERE id=$1`,[gameId]);
+  if(!r.rowCount)throw Error('Збережену гру не знайдено.');
+ }else{
+  const before=fileData.games.length;
+  fileData.games=fileData.games.filter(g=>g.id!==gameId);
+  if(fileData.games.length===before)throw Error('Збережену гру не знайдено.');
+  saveFile();
+ }
+}
 async function gamesForSeason(seasonId){if(usePostgres){const {rows}=await pool.query(`SELECT id,season_id AS "seasonId",room_code AS "roomCode",game_id AS "gameId",title,played_at AS "playedAt",is_grand_final AS "isGrandFinal",results FROM quiz_games WHERE season_id=$1 ORDER BY played_at DESC`,[seasonId]);return rows;}return fileData.games.filter(g=>g.seasonId===seasonId).sort((a,b)=>String(b.playedAt).localeCompare(String(a.playedAt)));}
 function leaderboardFromGames(games){const m=new Map();for(const g of games)for(const r of(g.results||[])){const k=String(r.name).trim().toLocaleLowerCase('uk');let p=m.get(k);if(!p){p={name:r.name,games:0,wins:0,podiums:0,seasonPoints:0,totalGameScore:0};m.set(k,p)}p.games++;if(r.place===1)p.wins++;if(r.place<=3)p.podiums++;p.seasonPoints+=Number(r.seasonPoints)||0;p.totalGameScore+=Number(r.score)||0;}return[...m.values()].sort((a,b)=>b.seasonPoints-a.seasonPoints||b.wins-a.wins||b.podiums-a.podiums||b.totalGameScore-a.totalGameScore||a.name.localeCompare(b.name,'uk'));}
 async function seasonDetails(id){const seasons=await listSeasons(),season=seasons.find(s=>s.id===id);if(!season)return null;const games=await gamesForSeason(id),leaderboard=leaderboardFromGames(games);return{...season,games,leaderboard,champion:season.status==='completed'&&games.length?leaderboard[0]||null:null};}
 async function publicData(){const seasons=await listSeasons(),out=[];for(const s of seasons)out.push(await seasonDetails(s.id));return{seasons:out,points:POINTS,storage:usePostgres?'postgres':'json'};}
-module.exports={init,createSeason,listSeasons,setSeasonStatus,saveGame,updateGameResults,seasonDetails,publicData,POINTS};
+module.exports={init,createSeason,listSeasons,setSeasonStatus,saveGame,updateGameResults,deleteGame,seasonDetails,publicData,POINTS};
