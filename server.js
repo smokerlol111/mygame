@@ -51,7 +51,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.1', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.2', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -87,7 +87,6 @@ function publicState(room) {
     finalResults: room.finalResults || null,
     savedSeasonGameId: room.savedSeasonGameId || null,
     savedSeasonId: room.savedSeasonId || null,
-    testSeasonResult: !!room.testSeasonResult,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
       question: room.firstTurnQuiz.question,
@@ -164,7 +163,7 @@ io.on('connection', socket => {
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
       specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
-      finalSeconds: 30, finalTimer: null, finalResults: null, savedSeasonGameId: null, savedSeasonId: null, testSeasonResult: false,
+      finalSeconds: 30, finalTimer: null, finalResults: null, savedSeasonGameId: null, savedSeasonId: null,
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
@@ -631,35 +630,6 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'final_result'; cb({ok:true}); emitState(room);
   });
 
-  socket.on('createSeasonTestResult', ({code:c}={},cb=()=>{})=>{
-    const room=getRoom(c);
-    if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});
-    if(room.savedSeasonGameId)return cb({ok:false,error:'У цій кімнаті вже є збережений результат.'});
-    clearInterval(room.finalTimer); room.finalTimer=null;
-    if(room.firstTurnTimer)clearTimeout(room.firstTurnTimer); room.firstTurnTimer=null;
-    room.finalResults=[
-      {id:'test_1',name:'Тест Гравець 1',score:3200},
-      {id:'test_2',name:'Тест Гравець 2',score:2500},
-      {id:'test_3',name:'Тест Гравець 3',score:1800},
-      {id:'test_4',name:'Тест Гравець 4',score:900}
-    ];
-    room.testSeasonResult=true;
-    room.revealAnswer=true;
-    room.phase='final_result';
-    cb({ok:true}); emitState(room);
-  });
-
-  socket.on('deleteCurrentSeasonTestResult', async ({code:c}={},cb=()=>{})=>{
-    const room=getRoom(c);
-    if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});
-    if(!room.testSeasonResult)return cb({ok:false,error:'Це не тестовий результат.'});
-    try{
-      if(room.savedSeasonGameId)await storage.deleteGame(room.savedSeasonGameId);
-      room.savedSeasonGameId=null; room.savedSeasonId=null; room.finalResults=null;
-      room.testSeasonResult=false; room.revealAnswer=false; room.phase='lobby'; room.round=0; room.used={}; room.current=null;
-      cb({ok:true}); emitState(room);
-    }catch(e){cb({ok:false,error:e.message});}
-  });
 
   socket.on('seasonListHost', async ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
   socket.on('createSeason', async ({code:c,name}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{const id=await storage.createSeason(name);cb({ok:true,id,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
@@ -676,7 +646,7 @@ io.on('connection', socket => {
     room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
-    room.finalSeconds = 30; room.finalResults = null; room.savedSeasonGameId = null; room.savedSeasonId = null; room.testSeasonResult = false;
+    room.finalSeconds = 30; room.finalResults = null; room.savedSeasonGameId = null; room.savedSeasonId = null;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
@@ -701,7 +671,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.1: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.2: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
