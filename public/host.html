@@ -1,11 +1,27 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=153"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=153"></script><style>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=155"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=155"></script><style>
 .menuHero{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .gameMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
 .gameCard:hover{outline:2px solid var(--accent2)}
 .gameIcon{font-size:40px}.gameCard h2{margin:0 0 6px}.gameCard p{margin:0}.gamePlay{font-weight:900;color:#d7c8ff}
-</style></head><body><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
-const socket=io(); let state=null,data=null,gamesList=[],selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+</style></head><body><div id="netBadge" style="position:fixed;right:14px;bottom:14px;z-index:9999;padding:8px 12px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800">🟡 Підключення…</div><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
+const socket=io(); let state=null,data=null,gamesList=[],seasonAdminToken='',selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+function setNetBadge(ok){
+ const el=document.getElementById('netBadge');if(!el)return;
+ el.textContent=ok?'🟢 Сервер підключено':'🔴 З’єднання втрачено';
+}
+function restoreHostConnection(){
+ if(!code||!hostToken)return;
+ socket.emit('rejoinHost',{code,hostToken},async r=>{
+   if(!r?.ok)return;
+   state=r.state;selectedGameId=r.gameId||state.gameId;hostSpecialCells=r.specialCells||{};
+   try{if(!data||selectedGameId!==state.gameId)await loadGameData(selectedGameId)}catch(e){console.error(e)}
+   renderRoom();if(data)render();
+ });
+}
+socket.on('connect',()=>{setNetBadge(true);if(code&&hostToken)restoreHostConnection()});
+socket.on('disconnect',()=>setNetBadge(false));
+
 
 let firstTurnClockHandle=null;
 function armFirstTurnClock(){
@@ -54,9 +70,33 @@ const app=document.getElementById('app'), roomBox=document.getElementById('roomB
 function renderStart(){
  roomBox.innerHTML='';
  const cards=gamesList.map(g=>`<button class="gameCard" data-game="${GameUI.esc(g.id)}"><div class="gameIcon">${GameUI.esc(g.icon||'🎮')}</div><div><h2>${GameUI.esc(g.title)}</h2><p class="muted">${GameUI.esc(g.description||'')}</p></div><div class="gamePlay">Грати →</div></button>`).join('');
- app.innerHTML=`<div class="menuHero"><div><h2>🎮 Оберіть гру</h2><p class="muted">Створіть кімнату з потрібним набором категорій і запитань.</p></div></div><div class="gameMenu">${cards||'<p>Немає доступних ігор.</p>'}</div><div class="row" style="margin-top:20px"><a class="btn gold" href="/seasons" target="_blank">🏆 Сезони та результати</a></div>`;
+ app.innerHTML=`<div class="menuHero"><div><h2>🎮 Оберіть гру</h2><p class="muted">Створіть кімнату з потрібним набором категорій і запитань.</p></div></div>
+ <div class="gameMenu">${cards||'<p>Немає доступних ігор.</p>'}</div>
+ <div class="panel" style="margin-top:22px"><h2 style="margin-top:0">🏆 Керування сезонами</h2><div id="startSeasonAdmin"><p class="muted">Завантаження сезонів…</p></div></div>
+ <div class="row" style="margin-top:20px"><a class="btn gold" href="/seasons" target="_blank">🏆 Публічні сезони та результати</a></div>`;
  document.querySelectorAll('.gameCard').forEach(b=>b.onclick=()=>createRoom(b.dataset.game));
+ loadStartSeasonAdmin();
 }
+
+function seasonPointsWordStart(n){n=Math.abs(Number(n)||0)%100;const n10=n%10;if(n>10&&n<20)return 'балів';if(n10===1)return 'бал';if(n10>=2&&n10<=4)return 'бали';return 'балів'}
+function loadStartSeasonAdmin(){
+ const area=document.getElementById('startSeasonAdmin');if(!area)return;
+ socket.emit('seasonAdminInit',{},r=>{
+   if(!r?.ok){area.innerHTML=`<p>${GameUI.esc(r?.error||'Помилка')}</p>`;return}
+   seasonAdminToken=r.adminToken||seasonAdminToken;
+   fetch('/api/seasons',{cache:'no-store'}).then(x=>x.json()).then(payload=>{
+     const detailed=payload.seasons||[],active=detailed.find(s=>s.status==='active'),completed=detailed.filter(s=>s.status==='completed');
+     const activeHtml=active?`<div style="padding:14px;border:1px solid #6e53a8;border-radius:14px"><div class="top"><div><h3 style="margin:0">🟢 ${GameUI.esc(active.name)}</h3><div class="muted">${active.games.length} ігор • ${active.leaderboard.length} гравців</div></div><button class="btn bad startFinishSeason" data-id="${active.id}" data-name="${GameUI.esc(active.name)}">🏁 Завершити сезон</button></div>${active.leaderboard.length?`<div class="muted" style="margin-top:10px">Лідер: <b>${GameUI.esc(active.leaderboard[0].name)}</b> — ${active.leaderboard[0].seasonPoints} ${seasonPointsWordStart(active.leaderboard[0].seasonPoints)}</div>`:''}</div>`:`<div class="center"><h3>Немає активного сезону</h3><p class="muted">Створіть наступний сезон для нових ігор.</p></div>`;
+     const archiveHtml=completed.length?`<div style="margin-top:16px"><h3>📚 Архів сезонів</h3>${completed.map(s=>`<div class="finalItem"><span><b>${GameUI.esc(s.name)}</b>${s.champion?` • 🏆 ${GameUI.esc(s.champion.name)}`:''}<div class="muted">${s.games.length} ігор</div></span><button class="btn secondary startReopenSeason" data-id="${s.id}">↩ Відновити</button></div>`).join('')}</div>`:'';
+     const createHtml=!active?`<div class="row" style="margin-top:16px"><input id="startNewSeasonName" value="Сезон ${detailed.length+1}" style="max-width:260px"><button class="btn gold" id="startCreateSeason">➕ Створити наступний сезон</button></div>`:'';
+     area.innerHTML=activeHtml+createHtml+archiveHtml;
+     area.querySelectorAll('.startFinishSeason').forEach(b=>b.onclick=()=>{if(!confirm(`Завершити «${b.dataset.name}»? Сезон перейде в архів, а лідер стане чемпіоном.`))return;socket.emit('seasonAdminSetStatus',{adminToken:seasonAdminToken,seasonId:b.dataset.id,status:'completed'},x=>{if(!x?.ok)alert(x?.error||'Помилка');else loadStartSeasonAdmin()})});
+     area.querySelectorAll('.startReopenSeason').forEach(b=>b.onclick=()=>{if(!confirm('Відновити цей сезон як активний?'))return;socket.emit('seasonAdminSetStatus',{adminToken:seasonAdminToken,seasonId:b.dataset.id,status:'active'},x=>{if(!x?.ok)alert(x?.error||'Помилка');else loadStartSeasonAdmin()})});
+     const create=document.getElementById('startCreateSeason');if(create)create.onclick=()=>{const name=document.getElementById('startNewSeasonName').value.trim();if(!name)return alert('Вкажіть назву сезону.');socket.emit('seasonAdminCreate',{adminToken:seasonAdminToken,name},x=>{if(!x?.ok)alert(x?.error||'Помилка');else loadStartSeasonAdmin()})};
+   }).catch(()=>{area.innerHTML='<p>Не вдалося завантажити деталі сезонів.</p>'});
+ });
+}
+
 async function createRoom(gameId){
  selectedGameId=gameId;
  await loadGameData(gameId);
@@ -136,6 +176,16 @@ function hostControlsHTML(){
      <p class="muted" style="margin-top:0">Можна дати бонус або штраф незалежно від питань. Зміна одразу з'явиться в OBS і на телефонах.</p>
      ${rows || '<p class="muted">Гравців ще немає.</p>'}
      <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)">
+       <h3 style="margin:0 0 6px">🚨 Аварійне керування</h3>
+       <p class="muted" style="margin-top:0">Використовуй лише якщо під час ефіру завис логічний етап.</p>
+       <div class="row">
+         <button class="btn gold" id="pauseGame">${state.paused?'▶ ПРОДОВЖИТИ':'⏸ ПАУЗА'}</button>
+         <button class="btn secondary" id="emergencyBuzz">🔔 Повернути BUZZ</button>
+         <button class="btn secondary" id="emergencyReveal">👁 Відкрити відповідь</button>
+         <button class="btn secondary" id="emergencyBoard">⏭ Закрити питання → дошка</button>
+       </div>
+     </div>
+     <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)">
        <button class="btn bad" id="stopGame">⛔ ЗАВЕРШИТИ ГРУ</button>
        <span class="muted" style="margin-left:10px">Закриє кімнату для всіх гравців та OBS.</span>
      </div>
@@ -144,6 +194,10 @@ function hostControlsHTML(){
 }
 
 function render(){if(!state||!data)return;let h='';
+ if(state.phase==='paused'){
+   h=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Гра зупинена. Таймери та дії гравців заблоковано.</p><p>Попередній етап: <b>${GameUI.esc(state.pausedPhase||'—')}</b></p></div>`;
+ }
+ else
  if(state.phase==='lobby'){h=`<h2>Лобі</h2><div class="roomCode">${state.code}</div><p>Гравці відкривають <b>${location.origin}/play?room=${state.code}</b></p><p>OBS: <b>${location.origin}/screen/${state.code}</b></p>${GameUI.playersHTML(state.players)}<div class="row"><button class="btn" id="start">🎯 Почати розіграш першого ходу</button><button class="btn secondary" id="skipFirst">Пропустити розіграш</button><button class="btn secondary" id="newRoom">Нова кімната</button></div>`}
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
@@ -191,6 +245,13 @@ function bind(){const $=id=>document.getElementById(id); if($('start'))$('start'
    if(!Number.isInteger(amount)||amount===0){alert('Введіть ціле число зі знаком, наприклад +250 або -250.');return}
    emit('adjustScore',{playerId:b.dataset.id,amount},r=>{if(r&&r.ok===false)alert(r.error)});
  });
+ if($('pauseGame'))$('pauseGame').onclick=()=>emit('togglePause',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ if($('emergencyBuzz'))$('emergencyBuzz').onclick=()=>emit('emergencyReopenBuzz',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ if($('emergencyReveal'))$('emergencyReveal').onclick=()=>emit('emergencyRevealQuestion',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ if($('emergencyBoard'))$('emergencyBoard').onclick=()=>{
+   if(!confirm('Закрити поточне питання та повернутися на дошку?'))return;
+   emit('emergencyFinishTile',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ };
  if($('stopGame'))$('stopGame').onclick=()=>{
    if(!confirm('Завершити поточну гру? Кімната закриється для всіх гравців та OBS.'))return;
    emit('closeRoom',{},r=>{if(r&&r.ok===false)alert(r.error)});

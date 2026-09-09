@@ -1,6 +1,6 @@
 <!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script>
 <style>
-/* v1.5.3 — larger question text for the stream/OBS view */
+/* v1.5.5 — larger question text for the stream/OBS view */
 #app .question{
   font-size:clamp(30px,3.25vw,52px);
   line-height:1.18;
@@ -29,7 +29,11 @@ function armFirstTurnClock(){
 }
 let code=location.pathname.split('/').filter(Boolean)[1]||new URLSearchParams(location.search).get('code')||'';
 async function ensureGameData(gameId){if(!gameId||gameId===loadedGameId)return;const r=await fetch(`/games/${encodeURIComponent(gameId)}.json`,{cache:'no-store'});if(!r.ok)throw new Error('Game HTTP '+r.status);data=await r.json();loadedGameId=gameId}
-if(code)socket.emit('joinScreen',{code},r=>{if(!r.ok)app.innerHTML=`<div class="panel center"><h2>${r.error}</h2></div>`});else app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
+function setObsNet(ok){const el=document.getElementById('obsNet');if(el){el.textContent=ok?'🟢 LIVE':'🔴 OFFLINE';el.style.opacity=ok?'.45':'1'}}
+function joinObs(){if(!code)return;socket.emit('joinScreen',{code},r=>{if(!r?.ok)app.innerHTML=`<div class="panel center"><h2>${r?.error||'Кімнату не знайдено.'}</h2></div>`})}
+if(code)joinObs();else app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
+socket.on('connect',()=>{setObsNet(true);joinObs()});
+socket.on('disconnect',()=>setObsNet(false));
 socket.on('roomClosed',({code:closedCode})=>{
  if(closedCode!==code)return;
  state=null;
@@ -39,6 +43,11 @@ socket.on('roomClosed',({code:closedCode})=>{
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;try{await ensureGameData(s.gameId);render()}catch(e){console.error(e);app.innerHTML='<div class="panel center"><h2>Помилка завантаження гри</h2></div>'}});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 function render(){if(!state||!data)return;let h=``;
+ if(state.phase==='paused'){
+   app.innerHTML=`<div class="panel center" style="margin-top:8vh;padding:56px"><div class="huge">⏸</div><h1 style="font-size:54px">ТЕХНІЧНА ПАУЗА</h1><p class="muted" style="font-size:24px">Скоро продовжимо</p></div>`;
+   return;
+ }
+
  if(state.phase==='lobby')h+=`<div class="panel center"><div class="roomCode">${state.code}</div><h2>Приєднуйтесь з телефону</h2></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';

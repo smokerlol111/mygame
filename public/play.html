@@ -13,7 +13,7 @@
   .mobileCategoryName{font-size:15px}
 }
 </style>
-</head><body><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
 let gameData=null, loadedGameId='';
 
@@ -43,6 +43,23 @@ const urlCode=(params.get('room')||'').trim().toUpperCase();
 const savedCode=(localStorage.getItem('sgCode')||'').trim().toUpperCase();
 let state=null, code=urlCode||savedCode, playerId=localStorage.getItem('sgPlayerId')||'', name=localStorage.getItem('sgPlayerName')||'';
 let joined=false, reconnectTried=false;
+
+function setNetBadge(ok){const el=document.getElementById('netBadge');if(el)el.textContent=ok?'🟢 Онлайн':'🔴 Немає зв’язку'}
+socket.on('connect',()=>{
+ setNetBadge(true);
+ if(joined&&playerId&&code&&name){
+   socket.emit('joinPlayer',{code,name,playerId},r=>{
+     if(r?.ok){
+       playerId=r.playerId;code=r.code;name=r.name;joined=true;
+       localStorage.setItem('sgPlayerId',playerId);
+       localStorage.setItem('sgCode',code);
+       localStorage.setItem('sgPlayerName',name);
+     }
+   });
+ }
+});
+socket.on('disconnect',()=>setNetBadge(false));
+
 
 function clearSession(keepName=true){
   playerId=''; code=''; state=null; joined=false;
@@ -114,6 +131,10 @@ function render(){
   if(!state)return;
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
+  if(state.phase==='paused'){
+    h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
+    app.innerHTML=h; const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+  }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
     const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';

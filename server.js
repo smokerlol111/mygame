@@ -51,7 +51,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.4', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.5', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -71,6 +71,8 @@ function publicState(room) {
     gameId: room.gameId,
     gameMenuTitle: getRoomGame(room).menuTitle || getRoomGame(room).title,
     phase: room.phase,
+    paused: !!room.paused,
+    pausedPhase: room.pausedPhase || null,
     round: room.round,
     used: room.used,
     current: room.current,
@@ -138,6 +140,75 @@ function finishTile(room) {
   resetQuestionState(room);
   room.phase = 'board';
 }
+
+function expireFirstTurn(room){
+  room.firstTurnTimer = null;
+  room.firstTurnTimerStatus = 'expired';
+  room.firstTurnEndsAt = null;
+  emitState(room);
+}
+function startFirstTurnCountdown(room, ms){
+  const duration = Math.max(0, Number(ms)||0);
+  clearTimeout(room.firstTurnTimer);
+  room.firstTurnTimerStatus = 'running';
+  room.firstTurnEndsAt = Date.now() + duration;
+  room.firstTurnTimer = setTimeout(()=>expireFirstTurn(room), duration);
+}
+function startFinalCountdown(room){
+  clearInterval(room.finalTimer);
+  room.finalTimer = setInterval(() => {
+    if(room.paused) return;
+    room.finalSeconds--;
+    if (room.finalSeconds <= 0) {
+      room.finalSeconds = 0;
+      clearInterval(room.finalTimer);
+      room.finalTimer = null;
+      room.phase = 'final_review';
+    }
+    emitState(room);
+  }, 1000);
+}
+function pauseRoom(room){
+  if(room.paused) return;
+  room.paused = true;
+  room.pausedPhase = room.phase;
+
+  if(room.firstTurnTimerStatus === 'running'){
+    room.pauseFirstTurnRemaining = Math.max(0, Number(room.firstTurnEndsAt||0) - Date.now());
+    clearTimeout(room.firstTurnTimer); room.firstTurnTimer = null;
+    room.firstTurnEndsAt = null;
+    room.firstTurnTimerStatus = 'paused';
+  } else room.pauseFirstTurnRemaining = null;
+
+  if(room.phase === 'final_question' && room.finalTimer){
+    room.pauseFinalRemaining = Math.max(0, Number(room.finalSeconds)||0);
+    clearInterval(room.finalTimer); room.finalTimer = null;
+  } else room.pauseFinalRemaining = null;
+
+  room.phase = 'paused';
+}
+function resumeRoom(room){
+  if(!room.paused) return;
+  const previous = room.pausedPhase || 'board';
+  room.paused = false;
+  room.pausedPhase = null;
+  room.phase = previous;
+
+  if(room.firstTurnTimerStatus === 'paused'){
+    const ms = Math.max(0, Number(room.pauseFirstTurnRemaining)||0);
+    room.pauseFirstTurnRemaining = null;
+    if(ms <= 0) expireFirstTurn(room);
+    else startFirstTurnCountdown(room, ms);
+  }
+
+  if(previous === 'final_question' && room.pauseFinalRemaining !== null){
+    room.finalSeconds = Math.max(0, Number(room.pauseFinalRemaining)||0);
+    room.pauseFinalRemaining = null;
+    if(room.finalSeconds <= 0) room.phase = 'final_review';
+    else startFinalCountdown(room);
+  }
+}
+
 function randomSpecialCells(room) {
   const candidates = [];
   const game = getRoomGame(room);
@@ -168,7 +239,8 @@ io.on('connection', socket => {
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
-      firstTurnRevealCount: 0
+      firstTurnRevealCount: 0,
+      paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
@@ -228,6 +300,40 @@ io.on('connection', socket => {
     socket.data.roomCode = null;
     cb({ ok: true });
     emitState(room);
+  });
+
+  socket.on('togglePause', ({code:c}={}, cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});
+    if(room.phase==='lobby'||room.phase==='final_result')return cb({ok:false,error:'Пауза на цьому етапі не потрібна.'});
+    if(room.paused) resumeRoom(room); else pauseRoom(room);
+    cb({ok:true,paused:room.paused}); emitState(room);
+  });
+
+  socket.on('emergencyReopenBuzz', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||!room.current)return cb({ok:false,error:'Немає активного питання.'});
+    if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
+    if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
+      return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null;
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('emergencyRevealQuestion', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного звичайного питання.'});
+    if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
+    room.buzzer=null; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('emergencyFinishTile', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного питання.'});
+    if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
+    finishTile(room);
+    cb({ok:true}); emitState(room);
   });
 
   socket.on('adjustScore', ({ code: c, playerId, amount } = {}, cb = () => {}) => {
@@ -290,6 +396,7 @@ io.on('connection', socket => {
     room.firstTurnRevealCount = 0;
     room.firstTurnTimerStatus = 'ready'; room.firstTurnEndsAt = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
+    room.paused=false; room.pausedPhase=null; room.pauseFirstTurnRemaining=null; room.pauseFinalRemaining=null;
     room.phase = room.firstTurnQuiz ? 'first_turn_quiz' : 'board';
     if (!room.firstTurnQuiz) room.turnPlayerId = room.players[0]?.id || null;
     cb({ok:true}); emitState(room);
@@ -304,16 +411,7 @@ io.on('connection', socket => {
     if (room.firstTurnTimerStatus === 'expired')
       return cb({ok:false,error:'Час уже вийшов.'});
 
-    clearTimeout(room.firstTurnTimer);
-    room.firstTurnTimerStatus = 'running';
-    room.firstTurnEndsAt = Date.now() + 30000;
-    room.firstTurnTimer = setTimeout(() => {
-      room.firstTurnTimer = null;
-      room.firstTurnTimerStatus = 'expired';
-      room.firstTurnEndsAt = null;
-      emitState(room);
-    }, 30000);
-
+    startFirstTurnCountdown(room, 30000);
     cb({ok:true}); emitState(room);
   });
 
@@ -323,7 +421,7 @@ io.on('connection', socket => {
     if (!room || !p || room.phase !== 'first_turn_quiz' || !room.firstTurnQuiz)
       return cb({ok:false,error:'Розіграш зараз недоступний.'});
     if (room.firstTurnTimerStatus !== 'running')
-      return cb({ok:false,error:room.firstTurnTimerStatus === 'expired' ? 'Час вийшов.' : 'Дочекайтеся запуску таймера.'});
+      return cb({ok:false,error:room.firstTurnTimerStatus === 'expired' ? 'Час вийшов.' : room.firstTurnTimerStatus === 'paused' ? 'Гра на паузі.' : 'Дочекайтеся запуску таймера.'});
     if (Date.now() >= Number(room.firstTurnEndsAt || 0)) {
       clearTimeout(room.firstTurnTimer); room.firstTurnTimer = null;
       room.firstTurnTimerStatus = 'expired'; room.firstTurnEndsAt = null;
@@ -598,17 +696,7 @@ io.on('connection', socket => {
     const room = getRoom(c); if (!isHost(socket, room) || room.phase !== 'final_ready') return;
     room.phase = 'final_question';
     room.finalSeconds = 30;
-    clearInterval(room.finalTimer);
-    room.finalTimer = setInterval(() => {
-      room.finalSeconds--;
-      if (room.finalSeconds <= 0) {
-        room.finalSeconds = 0;
-        clearInterval(room.finalTimer);
-        room.finalTimer = null;
-        room.phase = 'final_review';
-      }
-      emitState(room);
-    }, 1000);
+    startFinalCountdown(room);
     cb({ok:true}); emitState(room);
   });
 
@@ -659,7 +747,7 @@ io.on('connection', socket => {
     if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може перезапустити гру.'});
     clearInterval(room.finalTimer); room.finalTimer = null;
     clearTimeout(room.firstTurnTimer); room.firstTurnTimer = null;
-    room.phase = 'lobby'; room.round = 0; room.used = {}; room.current = null;
+    room.phase = 'lobby'; room.paused=false; room.pausedPhase=null; room.pauseFirstTurnRemaining=null; room.pauseFinalRemaining=null; room.round = 0; room.used = {}; room.current = null;
     room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
@@ -688,7 +776,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.4: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.5: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
