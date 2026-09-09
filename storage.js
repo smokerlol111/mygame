@@ -18,13 +18,32 @@ async function init(){
  }
  console.log(`Season storage: ${usePostgres?'PostgreSQL':`JSON (${jsonPath})`}`);
 }
-async function createSeason(name){const clean=String(name||'').trim().slice(0,80);if(!clean)throw Error('Вкажіть назву сезону.');const id=slugId('season');
+async function createSeason(name){
+ const clean=String(name||'').trim().slice(0,80);if(!clean)throw Error('Вкажіть назву сезону.');
+ const seasons=await listSeasons();
+ if(seasons.some(s=>s.status==='active'))throw Error('Спочатку завершіть активний сезон.');
+ const id=slugId('season');
  if(usePostgres)await pool.query(`INSERT INTO quiz_seasons(id,name,status) VALUES($1,$2,'active')`,[id,clean]);
- else{fileData.seasons.push({id,name:clean,status:'active',createdAt:nowIso(),completedAt:null});saveFile();}return id;}
+ else{fileData.seasons.push({id,name:clean,status:'active',createdAt:nowIso(),completedAt:null});saveFile();}
+ return id;
+}
 async function listSeasons(){if(usePostgres){const {rows}=await pool.query(`SELECT id,name,status,created_at AS "createdAt",completed_at AS "completedAt" FROM quiz_seasons ORDER BY created_at DESC`);return rows;}return [...fileData.seasons].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
-async function setSeasonStatus(id,status){if(!['active','completed'].includes(status))throw Error('Невірний статус.');
- if(usePostgres){const r=await pool.query(`UPDATE quiz_seasons SET status=$2,completed_at=CASE WHEN $2='completed' THEN NOW() ELSE NULL END WHERE id=$1`,[id,status]);if(!r.rowCount)throw Error('Сезон не знайдено.');}
- else{const s=fileData.seasons.find(x=>x.id===id);if(!s)throw Error('Сезон не знайдено.');s.status=status;s.completedAt=status==='completed'?nowIso():null;saveFile();}}
+async function setSeasonStatus(id,status){
+ if(!['active','completed'].includes(status))throw Error('Невірний статус.');
+ const seasons=await listSeasons();
+ const season=seasons.find(s=>s.id===id);if(!season)throw Error('Сезон не знайдено.');
+ if(status==='completed'){
+   const games=await gamesForSeason(id);
+   if(!games.length)throw Error('Не можна завершити сезон без збережених ігор.');
+ }
+ if(status==='active'&&seasons.some(s=>s.id!==id&&s.status==='active'))
+   throw Error('Уже є інший активний сезон. Спочатку завершіть його.');
+ if(usePostgres){
+   await pool.query(`UPDATE quiz_seasons SET status=$2,completed_at=CASE WHEN $2='completed' THEN NOW() ELSE NULL END WHERE id=$1`,[id,status]);
+ }else{
+   const s=fileData.seasons.find(x=>x.id===id);s.status=status;s.completedAt=status==='completed'?nowIso():null;saveFile();
+ }
+}
 function normalizeResults(results){return(results||[]).slice().sort((a,b)=>b.score-a.score||String(a.name).localeCompare(String(b.name),'uk')).map((r,i)=>({playerId:r.id||r.playerId||'',name:String(r.name||'Гравець').slice(0,40),score:Number(r.score)||0,place:i+1,seasonPoints:POINTS[i]||0}));}
 async function saveGame({seasonId,roomCode,gameId,title,results,isGrandFinal=false}){const normalized=normalizeResults(results);if(!seasonId)throw Error('Оберіть сезон.');if(!normalized.length)throw Error('Немає результатів.');
  const id=slugId('game');if(usePostgres){try{await pool.query(`INSERT INTO quiz_games(id,season_id,room_code,game_id,title,is_grand_final,results) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,[id,seasonId,roomCode,gameId,title,!!isGrandFinal,JSON.stringify(normalized)]);}catch(e){if(e.code==='23505')throw Error('Результат цієї гри вже збережено.');throw e;}}
