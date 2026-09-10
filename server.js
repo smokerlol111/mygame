@@ -87,6 +87,7 @@ function publicState(room) {
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
     finalResults: room.finalResults || null,
+    finalRevealCount: room.finalRevealCount || 0,
     savedSeasonGameId: room.savedSeasonGameId || null,
     savedSeasonId: room.savedSeasonId || null,
     firstTurnQuiz: room.firstTurnQuiz ? {
@@ -235,7 +236,7 @@ io.on('connection', socket => {
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
       specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
-      finalSeconds: 30, finalTimer: null, finalResults: null, savedSeasonGameId: null, savedSeasonId: null,
+      finalSeconds: 30, finalTimer: null, finalResults: null, finalRevealCount: 0, savedSeasonGameId: null, savedSeasonId: null,
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
@@ -386,7 +387,7 @@ io.on('connection', socket => {
     if (!isHost(socket, room)) return;
     if (room.players.length < 1) return cb({ ok:false, error:'Потрібен хоча б один гравець.' });
     clearTimeout(room.firstTurnTimer); room.firstTurnTimer = null;
-    room.round = 0; room.used = {}; room.finalResults = null;
+    room.round = 0; room.used = {}; room.finalResults = null; room.finalRevealCount = 0;
     room.specialCells = randomSpecialCells(room);
     room.turnPlayerId = null;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
@@ -511,7 +512,7 @@ io.on('connection', socket => {
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.firstTurnRevealCount = 0;
     room.turnPlayerId = room.players[0]?.id || null;
-    room.phase = 'board'; room.round = 0; room.used = {}; room.finalResults = null;
+    room.phase = 'board'; room.round = 0; room.used = {}; room.finalResults = null; room.finalRevealCount = 0;
     room.specialCells = randomSpecialCells(room);
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
@@ -668,7 +669,7 @@ io.on('connection', socket => {
 
   socket.on('startFinalBets', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c); if (!isHost(socket, room)) return;
-    room.phase = 'final_bets'; room.current = null; room.finalResults = null;
+    room.phase = 'final_bets'; room.current = null; room.finalResults = null; room.finalRevealCount = 0;
     room.players.forEach(p => { p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
   });
@@ -714,9 +715,26 @@ io.on('connection', socket => {
   socket.on('scoreFinal', ({ code: c, results }, cb = () => {}) => {
     const room = getRoom(c); if (!isHost(socket, room) || room.phase !== 'final_review') return;
     const map = new Map((results || []).map(r => [r.playerId, !!r.correct]));
-    room.players.forEach(p => { const ok = map.get(p.id) || false; p.score += ok ? (p.bet || 0) : -(p.bet || 0); });
-    room.finalResults = room.players.slice().sort((a,b)=>b.score-a.score).map(p=>({id:p.id,name:p.name,score:p.score}));
+    const details = room.players.map(p => {
+      const correct = map.get(p.id) || false;
+      const beforeScore = p.score;
+      const bet = p.bet || 0;
+      p.score += correct ? bet : -bet;
+      return {id:p.id,name:p.name,beforeScore,bet,correct,finalAnswer:p.finalAnswer||'',score:p.score};
+    });
+    room.finalResults = details.sort((a,b)=>b.score-a.score);
+    room.finalRevealCount = 0;
     room.revealAnswer = true; room.phase = 'final_result'; cb({ok:true}); emitState(room);
+  });
+
+  socket.on('revealNextFinalResult', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== 'final_result' || !Array.isArray(room.finalResults))
+      return cb({ok:false,error:'Фінальні результати ще не готові.'});
+    const total = room.finalResults.length;
+    if ((room.finalRevealCount || 0) < total) room.finalRevealCount = (room.finalRevealCount || 0) + 1;
+    cb({ok:true,revealCount:room.finalRevealCount,total});
+    emitState(room);
   });
 
 
@@ -751,7 +769,7 @@ io.on('connection', socket => {
     room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
-    room.finalSeconds = 30; room.finalResults = null; room.savedSeasonGameId = null; room.savedSeasonId = null;
+    room.finalSeconds = 30; room.finalResults = null; room.finalRevealCount = 0; room.savedSeasonGameId = null; room.savedSeasonId = null;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
