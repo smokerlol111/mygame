@@ -83,7 +83,8 @@ function publicState(room) {
     vaBankPlayer: room.vaBankPlayer,
     vaBankBet: room.vaBankBet,
     duelPlayers: room.duelPlayers || [],
-    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    answeringLocked: Array.from(room.answeringLocked || []),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
     finalResults: room.finalResults || null,
@@ -269,7 +270,7 @@ io.on('connection', socket => {
     if (!p) {
       if (room.players.length >= 4) return cb({ ok: false, error: 'У кімнаті вже 4 гравці.' });
       const clean = String(name || '').trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
-      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '' };
+      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '', falseStartUntil: 0 };
       room.players.push(p);
     } else {
       p.socketId = socket.id; p.connected = true;
@@ -518,6 +519,14 @@ io.on('connection', socket => {
     cb({ok:true}); emitState(room);
   });
 
+  socket.on('playCue', ({code:c,type}={},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)) return cb({ok:false,error:'Немає доступу.'});
+    if(!['gong'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
+    io.to(room.code).emit('cue',{type,at:Date.now()});
+    cb({ok:true});
+  });
+
   socket.on('chooseTile', ({ code: c, ci, qi }, cb = () => {}) => {
     const room = getRoom(c);
     if (!room || room.phase !== 'board') return cb({ok:false,error:'Зараз не можна обирати питання.'});
@@ -531,6 +540,7 @@ io.on('connection', socket => {
     const key = `${room.round}:${ci}:${qi}`;
     if (room.used[key]) return cb({ok:false,error:'Цю клітинку вже зіграно.'});
     resetQuestionState(room);
+    room.players.forEach(p=>p.falseStartUntil=0);
     const special = q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal');
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
 
@@ -553,15 +563,25 @@ io.on('connection', socket => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
     room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;
+    io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
 
-  socket.on('buzz', ({ code: c }) => {
+  socket.on('buzz', ({ code: c }, cb=()=>{}) => {
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
-    if (!room || !p || room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return;
-    if (room.current?.type === 'duel' && !room.duelPlayers.includes(p.id)) return;
-    room.buzzer = p.id; room.phase = 'answering'; emitState(room);
+    if (!room || !p || !room.current) return cb({ok:false,error:'Питання зараз неактивне.'});
+    const duel = room.current?.type === 'duel';
+    if (duel && !room.duelPlayers.includes(p.id)) return cb({ok:false,error:'Ви не берете участі в цій дуелі.'});
+    // Visible dark BUZZ before the host opens answering: an early press is a false start.
+    if (room.phase === 'question' || room.phase === 'duel_question') {
+      if (Number(p.falseStartUntil||0) <= Date.now()) p.falseStartUntil = Date.now()+3000;
+      emitState(room);
+      return cb({ok:false,falseStart:true,until:p.falseStartUntil});
+    }
+    if (room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return cb({ok:false});
+    if (Number(p.falseStartUntil||0) > Date.now()) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
+    room.buzzer = p.id; room.phase = 'answering'; cb({ok:true}); emitState(room);
   });
 
   socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
@@ -629,6 +649,7 @@ io.on('connection', socket => {
     const room=getRoom(c);
     if(!isHost(socket,room) || room.phase!=='duel_question') return;
     room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;
+    io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
 
@@ -794,7 +815,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.5.8: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.0: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

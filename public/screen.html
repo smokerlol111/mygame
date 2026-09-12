@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=160"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=160"></script>
 <style>
 /* v1.5.10 — larger question text for the stream/OBS view */
 #app .question{
@@ -11,7 +11,22 @@
 }
 </style>
 </head><body class="screen"><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
-const socket=io(),app=document.getElementById('app');let data=null,state=null,loadedGameId='';
+const socket=io(),app=document.getElementById('app');
+let cueAudioCtx=null;
+function playCueSound(type){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  cueAudioCtx=cueAudioCtx||new AC();if(cueAudioCtx.state==='suspended')cueAudioCtx.resume();
+  const ctx=cueAudioCtx,now=ctx.currentTime;
+  if(type==='gong'){
+   [196,293.66,392].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.16/(i+1),now+.02);g.gain.exponentialRampToValueAtTime(.0001,now+1.7);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+1.75)});
+  }else if(type==='buzz_open'){
+   [660,880].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,now+i*.11);g.gain.exponentialRampToValueAtTime(.08,now+i*.11+.01);g.gain.exponentialRampToValueAtTime(.0001,now+i*.11+.09);o.connect(g).connect(ctx.destination);o.start(now+i*.11);o.stop(now+i*.11+.1)});
+  }
+ }catch(e){console.warn('Audio cue:',e)}
+}
+socket.on('cue',e=>playCueSound(e?.type));
+let data=null,state=null,loadedGameId='';
 
 let firstTurnClockHandle=null;
 function armFirstTurnClock(){

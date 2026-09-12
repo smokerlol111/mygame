@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=1410"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1410"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=160"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=160"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -15,6 +15,21 @@
 </style>
 </head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
+let cueAudioCtx=null;
+function playCueSound(type){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  cueAudioCtx=cueAudioCtx||new AC();if(cueAudioCtx.state==='suspended')cueAudioCtx.resume();
+  const ctx=cueAudioCtx,now=ctx.currentTime;
+  if(type==='gong'){
+   [196,293.66,392].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.16/(i+1),now+.02);g.gain.exponentialRampToValueAtTime(.0001,now+1.7);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+1.75)});
+  }else if(type==='buzz_open'){
+   [660,880].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,now+i*.11);g.gain.exponentialRampToValueAtTime(.08,now+i*.11+.01);g.gain.exponentialRampToValueAtTime(.0001,now+i*.11+.09);o.connect(g).connect(ctx.destination);o.start(now+i*.11);o.stop(now+i*.11+.1)});
+  }
+ }catch(e){console.warn('Audio cue:',e)}
+}
+socket.on('cue',e=>playCueSound(e?.type));
+
 let gameData=null, loadedGameId='';
 
 let firstTurnClockHandle=null;
@@ -127,6 +142,17 @@ function leaveRoom(){
     clearSession(true); history.replaceState(null,'','/play'); login('');
   });
 }
+let penaltyClock=null;
+function buzzButtonHTML(open){
+ const p=me(),until=Number(p?.falseStartUntil||0),left=Math.max(0,until-Date.now());
+ if(left>0)return `<div class="center"><button id="buzz" class="btn buzz penalty">🔒 ФАЛЬСТАРТ<br><span id="penaltyTime">${(left/1000).toFixed(1)}</span> с</button><p class="muted">Після завершення штрафу кнопка активується автоматично.</p></div>`;
+ return `<div class="center"><button id="buzz" class="btn buzz ${open?'ready':'waiting'}">${open?'⚡ ВІДПОВІДАТИ!':'🌑 ЧЕКАЙ'}</button><p class="muted">${open?'Кнопка відкрита — можна тиснути.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
+}
+function armPenaltyClock(){
+ if(penaltyClock){clearInterval(penaltyClock);penaltyClock=null}
+ const p=me(),until=Number(p?.falseStartUntil||0);if(until<=Date.now())return;
+ penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=Math.max(0,until-Date.now());if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
+}
 function render(){
   if(!state)return;
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
@@ -156,10 +182,10 @@ function render(){
       h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div class="mobileBoard">${cats.map((c,ci)=>`<section class="mobileCategory"><div class="mobileCategoryName">${GameUI.esc(c.name)}</div><div class="mobileValues">${c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''}>${used?'—':q.value}</button>`}).join('')}</div></section>`).join('')}</div>`;
     } else h+=`<div class="center"><h2>Питання обирає ${GameUI.esc(chooser?.name||'інший гравець')}</h2><p class="muted">Чекаємо вашої черги.</p></div>`;
   }
-  else if(state.phase==='question')h+=`<div class="center"><h2>Увага, питання!</h2><p class="muted">Кнопка відповіді ще закрита.</p></div>`;
+  else if(state.phase==='question')h+=buzzButtonHTML(false);
   else if(state.phase==='buzz'){
     if(state.current?.type==='duel' && !state.duelPlayers.includes(playerId)) h+=`<div class="center"><h2>⚔️ Дуель</h2><p class="muted">Відповідають учасники дуелі.</p></div>`;
-    else h+=`<button id="buzz" class="btn buzz">Я ВІДПОВІДАЮ!</button>`;
+    else h+=buzzButtonHTML(true);
   }
   else if(state.phase==='answering')h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;
   else if(state.phase==='va_bank_bet'){
@@ -171,7 +197,7 @@ function render(){
     if(state.turnPlayerId===playerId){h+=`<div class="center"><div class="huge">⚔️</div><h2>ДУЕЛЬ!</h2><p>Оберіть суперника</p></div><div class="row" style="justify-content:center">${state.players.filter(x=>x.id!==playerId).map(x=>`<button class="btn secondary duelpick" data-id="${x.id}">${GameUI.esc(x.name)}</button>`).join('')}</div>`}
     else h+=`<div class="center"><div class="huge">⚔️</div><h2>ДУЕЛЬ!</h2><p class="muted">Суперника обирає ${GameUI.esc(state.players.find(x=>x.id===state.turnPlayerId)?.name||'гравець')}.</p></div>`;
   }
-  else if(state.phase==='duel_question')h+=state.duelPlayers.includes(playerId)?`<div class="center"><div class="huge">⚔️</div><h2>Ви в дуелі!</h2><p class="muted">Слухайте питання. Ведучий скоро відкриє BUZZ.</p></div>`:`<div class="center"><h2>⚔️ Триває дуель</h2><p class="muted">У цьому питанні відповідають двоє гравців.</p></div>`;
+  else if(state.phase==='duel_question')h+=state.duelPlayers.includes(playerId)?buzzButtonHTML(false):`<div class="center"><h2>⚔️ Триває дуель</h2><p class="muted">У цьому питанні відповідають двоє гравців.</p></div>`;
   else if(state.phase==='cat_choose'){
     if(state.catChooser===playerId){h+=`<div class="center"><div class="huge">🐈</div><h2>Кіт у мішку!</h2><p>Передайте питання іншому гравцеві</p></div><div class="row" style="justify-content:center">${state.players.filter(x=>x.id!==playerId).map(x=>`<button class="btn secondary catpick" data-id="${x.id}">${GameUI.esc(x.name)}</button>`).join('')}</div>`}
     else h+=`<div class="center"><h2>🐈 Кіт у мішку</h2><p>Гравець обирає, кому передати питання.</p></div>`;
@@ -185,8 +211,9 @@ function render(){
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
   app.innerHTML=h;
   armFirstTurnClock();
+  armPenaltyClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
-  if(document.getElementById('buzz'))document.getElementById('buzz').onclick=()=>socket.emit('buzz',{code});
+  if(document.getElementById('buzz'))document.getElementById('buzz').onclick=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p)p.falseStartUntil=Number(r.until||Date.now()+3000);render()}});
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;
     socket.emit('submitFirstTurnAnswer',{code,answer},r=>{

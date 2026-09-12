@@ -25,3 +25,10 @@ body:before{content:'';position:fixed;inset:0;pointer-events:none;background:lin
 .screen .tile{background:linear-gradient(145deg,#48278c,#25134f 76%);border-color:#9977e4;color:#ffd86b;text-shadow:0 0 20px rgba(255,216,107,.34)}
 .screen .player{border-color:#67518e}
 .screen .player.active{outline:3px solid var(--gold);box-shadow:0 0 30px rgba(255,214,90,.2)}
+
+/* v1.6.0 — Mechanics Update: touch + visible BUZZ states */
+.btn,.tile,.phoneTile{touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+@media (pointer:coarse){.btn{min-height:58px;padding:16px 20px}.phoneTile{min-height:54px!important}.buzz{min-height:210px;font-size:clamp(30px,8vw,44px)}}
+.buzz.waiting{background:linear-gradient(145deg,#332b45,#1b1726);color:#a9a1b8;border:2px solid #4d455d;box-shadow:none}
+.buzz.ready{background:linear-gradient(145deg,#a855f7,#6d28d9);color:#fff;border:2px solid #d8b4fe;box-shadow:0 0 34px rgba(168,85,247,.48),0 12px 35px rgba(109,40,217,.36)}
+.buzz.penalty{background:linear-gradient(145deg,#5a2633,#32151d);color:#ffd6dd;border:2px solid #fb7185;box-shadow:0 0 24px rgba(251,113,133,.18)}
