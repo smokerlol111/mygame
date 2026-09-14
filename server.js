@@ -543,6 +543,13 @@ io.on('connection', socket => {
     room.players.forEach(p=>p.falseStartUntil=0);
     const special = q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal');
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
+    if (q.type === 'imageReveal' && special === 'normal') {
+      room.current.questionType = 'imageReveal';
+      room.current.image = q.image;
+      room.current.revealValues = Array.isArray(q.revealValues) && q.revealValues.length ? q.revealValues : [q.value];
+      room.current.revealStage = 0;
+      room.current.value = room.current.revealValues[0];
+    }
 
     if (special === 'cat') {
       room.phase = 'cat_choose';
@@ -557,6 +564,21 @@ io.on('connection', socket => {
       room.phase = 'question';
     }
     cb({ok:true}); emitState(room);
+  });
+
+  socket.on('revealImageStep', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current || room.current.questionType !== 'imageReveal')
+      return cb({ok:false,error:'Це не питання із зображенням.'});
+    if (!['question'].includes(room.phase))
+      return cb({ok:false,error:'Зображення можна відкривати тільки до відкриття BUZZ.'});
+    const values = room.current.revealValues || [room.current.value];
+    if (room.current.revealStage >= values.length-1)
+      return cb({ok:false,error:'Зображення вже повністю відкрите.'});
+    room.current.revealStage += 1;
+    room.current.value = values[room.current.revealStage];
+    cb({ok:true,value:room.current.value,stage:room.current.revealStage});
+    emitState(room);
   });
 
   socket.on('openBuzz', ({ code: c }, cb = () => {}) => {
@@ -815,7 +837,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.2: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.3: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

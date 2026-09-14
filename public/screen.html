@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=162"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=162"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=163"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=163"></script>
 <style>
 /* v1.5.10 — larger question text for the stream/OBS view */
 #app .question{
@@ -9,6 +9,13 @@
   margin-left:auto;
   margin-right:auto;
 }
+</style>
+
+<style>
+.imageRevealWrap{max-width:980px;margin:16px auto;text-align:center}
+.imageRevealFrame{overflow:hidden;border-radius:18px;border:2px solid rgba(255,255,255,.18);background:#090514;box-shadow:0 16px 50px rgba(0,0,0,.42)}
+.imageRevealImg{display:block;width:100%;max-height:58vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
+.imageRevealValue{display:inline-block;margin:0 0 12px;padding:8px 18px;border-radius:999px;font-weight:900;font-size:clamp(24px,3vw,42px);background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 </style>
 </head><body class="screen"><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');
@@ -61,6 +68,19 @@ socket.on('roomClosed',({code:closedCode})=>{
 
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;try{await ensureGameData(s.gameId);render()}catch(e){console.error(e);app.innerHTML='<div class="panel center"><h2>Помилка завантаження гри</h2></div>'}});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
+
+function imageRevealHTML(cur,host=false){
+ if(!cur||cur.questionType!=='imageReveal')return '';
+ const stage=Number(cur.revealStage||0), last=(cur.revealValues?.length||5)-1;
+ const blur=[28,20,13,7,0][Math.min(stage,4)] ?? 0;
+ const scale=[1.12,1.09,1.06,1.03,1][Math.min(stage,4)] ?? 1;
+ return `<div class="imageRevealWrap">
+   <div class="imageRevealValue">${cur.value} БАЛІВ</div>
+   <div class="imageRevealFrame"><img src="${GameUI.esc(cur.image||'')}" class="imageRevealImg" style="filter:blur(${blur}px);transform:scale(${scale})"></div>
+   <div class="muted center">Відкриття ${stage+1}/${last+1}</div>
+   ${host&&stage<last?'<div class="row" style="justify-content:center;margin-top:12px"><button class="btn gold" id="revealImageStep">👁 ВІДКРИТИ ЩЕ → '+GameUI.esc(String(cur.revealValues[stage+1]))+' БАЛІВ</button></div>':''}
+ </div>`;
+}
 function render(){if(!state||!data)return;let h=``;
  if(state.phase==='paused'){
    app.innerHTML=`<div class="panel center" style="margin-top:8vh;padding:56px"><div class="huge">⏸</div><h1 style="font-size:54px">ТЕХНІЧНА ПАУЗА</h1><p class="muted" style="font-size:24px">Скоро продовжимо</p></div>`;
@@ -86,7 +106,7 @@ function render(){if(!state||!data)return;let h=``;
    ${revealCount===0?'<p class="muted" style="margin-top:24px">Готуємо результати…</p>':''}
    </div>`}
  else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h+=`<div class="center" style="margin:8px 0 22px;font-size:30px;line-height:1.2;font-weight:700">🎯 Питання обирає: <b style="font-size:36px">${GameUI.esc(chooser?.name||'—')}</b></div>${GameUI.boardHTML(data,state,false)}${GameUI.playersHTML(state.players)}`;}
- else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
+ else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
  else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
