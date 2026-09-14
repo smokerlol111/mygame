@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=160"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=160"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=162"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=162"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -16,17 +16,21 @@
 </head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
 let cueAudioCtx=null;
+const cueAudio={
+ question:new Audio('/sounds/question.mp3'),
+ buzz_open:new Audio('/sounds/buzz.mp3')
+};
+Object.values(cueAudio).forEach(a=>{a.preload='auto';});
 function playCueSound(type){
+ const key=type==='gong'?'question':type;
+ const a=cueAudio[key];
+ if(!a)return;
  try{
-  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-  cueAudioCtx=cueAudioCtx||new AC();if(cueAudioCtx.state==='suspended')cueAudioCtx.resume();
-  const ctx=cueAudioCtx,now=ctx.currentTime;
-  if(type==='gong'){
-   [196,293.66,392].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.16/(i+1),now+.02);g.gain.exponentialRampToValueAtTime(.0001,now+1.7);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+1.75)});
-  }else if(type==='buzz_open'){
-   [660,880].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,now+i*.11);g.gain.exponentialRampToValueAtTime(.08,now+i*.11+.01);g.gain.exponentialRampToValueAtTime(.0001,now+i*.11+.09);o.connect(g).connect(ctx.destination);o.start(now+i*.11);o.stop(now+i*.11+.1)});
-  }
- }catch(e){console.warn('Audio cue:',e)}
+  a.pause();
+  a.currentTime=0;
+  const p=a.play();
+  if(p&&p.catch)p.catch(()=>{});
+ }catch(e){}
 }
 socket.on('cue',e=>playCueSound(e?.type));
 
