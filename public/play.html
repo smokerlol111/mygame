@@ -235,7 +235,7 @@ function render(){
   armFirstTurnClock();
   armPenaltyClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
-  if(document.getElementById('buzz'))document.getElementById('buzz').onclick=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p)p.falseStartUntil=Number(r.until||Date.now()+3000);render()}});
+  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p)p.falseStartUntil=Number(r.until||Date.now()+3000);render()}});
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;
     socket.emit('submitFirstTurnAnswer',{code,answer},r=>{
