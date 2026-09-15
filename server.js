@@ -627,28 +627,31 @@ io.on('connection', socket => {
     cb({ok:true}); emitState(room);
   });
 
- socket.on('buzz', ({ code: c, reactionTime }, cb=()=>{}) => {
+
+socket.on('buzz', ({ code: c, reactionTime }, cb = () => {}) => {
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
 
-    if (!room  !p  !room.current)
+    if (!room || !p || !room.current) {
         return cb({
             ok: false,
             error: 'Питання зараз неактивне.'
         });
+    }
 
     const duel = room.current?.type === 'duel';
 
-    if (duel && !room.duelPlayers.includes(p.id))
+    if (duel && !room.duelPlayers.includes(p.id)) {
         return cb({
             ok: false,
             error: 'Ви не берете участі в цій дуелі.'
         });
-
-    // Visible dark BUZZ before the host opens answering: an early press is a false start.
-    if (room.phase === 'question'  room.phase === 'duel_question') {
-        if (Number(p.falseStartUntil  0) <= Date.now())
+    }
+ss
+    if (room.phase === 'question' || room.phase === 'duel_question') {
+        if (Number(p.falseStartUntil || 0) <= Date.now()) {
             p.falseStartUntil = Date.now() + 3000;
+        }
 
         emitState(room);
 
@@ -660,25 +663,29 @@ io.on('connection', socket => {
     }
 
     if (
-        room.phase !== 'buzz' 
-        room.buzzer 
+        room.phase !== 'buzz' ||
+        room.buzzer ||
         room.answeringLocked.has(p.id)
-    )
-        return cb({ok: false});
+    ) {
+        return cb({ ok: false });
+    }
 
-    if (Number(p.falseStartUntil || 0) > Date.now())
+    if (Number(p.falseStartUntil || 0) > Date.now()) {
         return cb({
             ok: false,
             falseStart: true,
             until: p.falseStartUntil
         });
+    }
 
-    if (!Number.isFinite(reactionTime))
-        return cb({ok: false});
+    if (!Number.isFinite(reactionTime)) {
+        return cb({ ok: false });
+    }
 
     // Only the first buzz from each player counts.
-    if (room.buzzCandidates.some(x => x.playerId === p.id))
-        return cb({ok: false});
+    if (room.buzzCandidates.some(x => x.playerId === p.id)) {
+        return cb({ ok: false });
+    }
 
     room.buzzCandidates.push({
         playerId: p.id,
@@ -690,7 +697,7 @@ io.on('connection', socket => {
         reactionTime
     });
 
-    cb({ok: true});
+    cb({ ok: true });
 
     if (!room.buzzTimer) {
         room.buzzTimer = setTimeout(() => {
@@ -716,7 +723,6 @@ io.on('connection', socket => {
         }, 100);
     }
 });
-
   socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current || !room.buzzer) return;
