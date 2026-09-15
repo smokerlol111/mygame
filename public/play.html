@@ -151,16 +151,22 @@ function leaveRoom(){
     clearSession(true); history.replaceState(null,'','/play'); login('');
   });
 }
-let penaltyClock=null;
+let penaltyClock=null, penaltyLocalUntil=0, penaltySourceUntil=0;
+function penaltyLeftMs(){
+ const p=me(); if(!p)return 0;
+ const sourceUntil=Number(p.falseStartUntil||0), remaining=Math.max(0,Number(p.falseStartRemainingMs||0));
+ if(sourceUntil!==penaltySourceUntil){ penaltySourceUntil=sourceUntil; penaltyLocalUntil=remaining>0?Date.now()+remaining:0; }
+ return Math.max(0,penaltyLocalUntil-Date.now());
+}
 function buzzButtonHTML(open){
- const p=me(),until=Number(p?.falseStartUntil||0),left=Math.max(0,until-Date.now());
+ const left=penaltyLeftMs();
  if(left>0)return `<div class="center"><button id="buzz" class="btn buzz penalty">🔒 ФАЛЬСТАРТ<br><span id="penaltyTime">${(left/1000).toFixed(1)}</span> с</button><p class="muted">Після завершення штрафу кнопка активується автоматично.</p></div>`;
  return `<div class="center"><button id="buzz" class="btn buzz ${open?'ready':'waiting'}">${open?'⚡ ВІДПОВІДАТИ!':'🌑 ЧЕКАЙ'}</button><p class="muted">${open?'Кнопка відкрита — можна тиснути.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
 }
 function armPenaltyClock(){
  if(penaltyClock){clearInterval(penaltyClock);penaltyClock=null}
- const p=me(),until=Number(p?.falseStartUntil||0);if(until<=Date.now())return;
- penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=Math.max(0,until-Date.now());if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
+ const leftNow=penaltyLeftMs();if(leftNow<=0)return;
+ penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=penaltyLeftMs();if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
 }
 function playerImageRevealHTML(cur){
  if(!cur||cur.questionType!=='imageReveal')return '';
@@ -235,7 +241,7 @@ function render(){
   armFirstTurnClock();
   armPenaltyClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
-  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p)p.falseStartUntil=Number(r.until||Date.now()+3000);render()}});
+  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;
     socket.emit('submitFirstTurnAnswer',{code,answer},r=>{

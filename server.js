@@ -83,7 +83,7 @@ function publicState(room) {
     vaBankPlayer: room.vaBankPlayer,
     vaBankBet: room.vaBankBet,
     duelPlayers: room.duelPlayers || [],
-    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     answeringLocked: Array.from(room.answeringLocked || []),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
@@ -837,7 +837,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.4: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.5: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
