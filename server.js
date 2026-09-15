@@ -622,7 +622,7 @@ io.on('connection', socket => {
   socket.on('openBuzz', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
-    room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;room.buzzCandidates = []; room.buzzTimer = nul;
+    room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;room.buzzCandidates = []; room.buzzTimer = null;
     io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
@@ -748,7 +748,7 @@ if (!room.buzzTimer) {
   socket.on('openDuelBuzz', ({ code:c }, cb=()=>{}) => {
     const room=getRoom(c);
     if(!isHost(socket,room) || room.phase!=='duel_question') return;
-    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;room.buzzCandidates = [];room.buzzTimer = nul
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;room.buzzCandidates = [];room.buzzTimer = null;
     io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
