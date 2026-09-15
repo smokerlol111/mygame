@@ -42,7 +42,6 @@ socket.on('cue',e=>playCueSound(e?.type));
 let gameData=null, loadedGameId='';
 
 let firstTurnClockHandle=null;
-let buzzOpenedAt=0;
 function armFirstTurnClock(){
   if(firstTurnClockHandle){clearInterval(firstTurnClockHandle);firstTurnClockHandle=null}
   const el=document.getElementById('firstTurnTimer');
@@ -139,9 +138,6 @@ socket.on('state',async s=>{
     const timer=document.getElementById('finalSeconds');
     if(timer)timer.textContent=String(s.finalSeconds);
     return;
-  }
-  if (s.phase === 'buzz' && prevState?.phase !== 'buzz') {
-    buzzOpenedAt = performance.now();
   }
   render();
 });
@@ -250,26 +246,7 @@ function render(){
   armNumericClock();
   armPenaltyClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
- if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>{
-    const reactionTime=performance.now()-buzzOpenedAt;
-
-    console.log('[BUZZ]', {
-        player:name,
-        reactionTime
-    });
-
-    socket.emit('buzz',{code,reactionTime},r=>{
-        if(r?.falseStart){
-            const p=me();
-            if(p){
-                p.falseStartUntil=Number(r.until||0);
-                p.falseStartRemainingMs=3000;
-                penaltySourceUntil=0;
-            }
-            render();
-        }
-    });
-};
+  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
   if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;
