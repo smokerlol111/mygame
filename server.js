@@ -91,6 +91,12 @@ function publicState(room) {
     finalRevealCount: room.finalRevealCount || 0,
     savedSeasonGameId: room.savedSeasonGameId || null,
     savedSeasonId: room.savedSeasonId || null,
+    numericChallenge: room.numericChallenge ? {
+      question: room.numericChallenge.question, unit: room.numericChallenge.unit || '', value: room.numericChallenge.value,
+      submittedPlayerIds: Object.keys(room.numericAnswers || {}), endsAt: room.numericEndsAt || null,
+      results: room.phase === 'numeric_result' ? room.numericResults : null, revealCount: room.numericRevealCount || 0,
+      correctAnswer: room.phase === 'numeric_result' ? room.numericChallenge.answer : null
+    } : null,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
       question: room.firstTurnQuiz.question,
@@ -212,14 +218,17 @@ function resumeRoom(room){
 }
 
 function randomSpecialCells(room) {
-  const candidates = [];
   const game = getRoomGame(room);
-  game.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => {
-    if (!q.cat) candidates.push(`1:${ci}:${qi}`);
-  }));
-  for (let i=candidates.length-1;i>0;i--) {
-    const j=Math.floor(Math.random()*(i+1)); [candidates[i],candidates[j]]=[candidates[j],candidates[i]];
+  const pools = game.specialPools || null;
+  if (pools) {
+    const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+    const vb=shuffle(pools.vaBank||[]).slice(0,2);
+    const duel=shuffle((pools.duel||[]).filter(k=>!vb.includes(k))).slice(0,1);
+    const out={}; vb.forEach(k=>out[k]='va_bank'); duel.forEach(k=>out[k]='duel'); return out;
   }
+  const candidates = [];
+  game.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => { if (!q.cat) candidates.push(`1:${ci}:${qi}`); }));
+  for (let i=candidates.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
   return { [candidates[0]]:'va_bank', [candidates[1]]:'va_bank', [candidates[2]]:'duel' };
 }
 
@@ -242,6 +251,7 @@ io.on('connection', socket => {
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
       firstTurnRevealCount: 0,
+      numericChallenge: null, numericAnswers: {}, numericSubmittedAt: {}, numericResults: null, numericEndsAt: null, numericTimer: null, numericRevealCount: 0,
       paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null
     };
     rooms.set(roomCode, room);
@@ -560,11 +570,39 @@ io.on('connection', socket => {
     } else if (special === 'duel') {
       room.phase = 'duel_choose';
       room.duelPlayers = room.turnPlayerId ? [room.turnPlayerId] : [];
+    } else if (q.type === 'numericClosest' && special === 'normal') {
+      room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||15)};
+      room.numericAnswers={}; room.numericSubmittedAt={}; room.numericResults=null; room.numericRevealCount=0;
+      room.numericEndsAt=Date.now()+room.numericChallenge.seconds*1000; room.phase='numeric_question';
+      clearTimeout(room.numericTimer); room.numericTimer=setTimeout(()=>{ if(room.phase==='numeric_question'){ room.numericEndsAt=null; emitState(room); } },room.numericChallenge.seconds*1000);
     } else {
       room.phase = 'question';
     }
     cb({ok:true}); emitState(room);
   });
+
+  socket.on('submitNumericAnswer', ({code:c,answer},cb=()=>{})=>{
+    const room=getRoom(c), p=room?.players.find(x=>x.id===socket.data.playerId);
+    if(!room||!p||room.phase!=='numeric_question'||!room.numericChallenge) return cb({ok:false,error:'Числове питання зараз неактивне.'});
+    if(!room.numericEndsAt||Date.now()>room.numericEndsAt) return cb({ok:false,error:'Час вийшов.'});
+    if(Object.prototype.hasOwnProperty.call(room.numericAnswers,p.id)) return cb({ok:false,error:'Відповідь уже зафіксована.'});
+    const n=Number(answer); if(!Number.isFinite(n)) return cb({ok:false,error:'Введіть число.'});
+    room.numericAnswers[p.id]=n; room.numericSubmittedAt[p.id]=Date.now(); cb({ok:true}); emitState(room);
+  });
+
+  socket.on('finishNumericQuestion', ({code:c},cb=()=>{})=>{
+    const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_question'||!room.numericChallenge) return cb({ok:false});
+    const all=room.players.every(p=>Object.prototype.hasOwnProperty.call(room.numericAnswers,p.id));
+    if(!all && room.numericEndsAt && Date.now()<room.numericEndsAt) return cb({ok:false,error:'Ще є час і не всі відповіли.'});
+    clearTimeout(room.numericTimer); room.numericTimer=null; room.numericEndsAt=null; const correct=room.numericChallenge.answer;
+    const answered=room.players.filter(p=>Object.prototype.hasOwnProperty.call(room.numericAnswers,p.id)).map(p=>({id:p.id,name:p.name,answer:room.numericAnswers[p.id],diff:Math.abs(room.numericAnswers[p.id]-correct),at:room.numericSubmittedAt[p.id]})).sort((a,b)=>a.diff-b.diff||a.at-b.at);
+    const missing=room.players.filter(p=>!Object.prototype.hasOwnProperty.call(room.numericAnswers,p.id)).map(p=>({id:p.id,name:p.name,noAnswer:true,diff:null}));
+    room.numericResults=[...answered,...missing]; if(answered[0]){ const w=room.players.find(p=>p.id===answered[0].id); if(w) w.score+=room.numericChallenge.value; }
+    room.revealAnswer=true; room.phase='numeric_result'; room.numericRevealCount=0; cb({ok:true}); emitState(room);
+  });
+
+  socket.on('revealNextNumeric', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); const total=room.numericResults?.length||0; if(room.numericRevealCount<total)room.numericRevealCount++; cb({ok:true});emitState(room); });
+  socket.on('finishNumericResult', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); if((room.numericRevealCount||0)<(room.numericResults?.length||0))return cb({ok:false,error:'Спочатку відкрийте всі місця.'}); const key=`${room.round}:${room.current.ci}:${room.current.qi}`; room.used[key]=true; room.turnPlayerId=room.numericResults?.[0]?.id||room.turnPlayerId; room.phase='board'; room.current=null; room.numericChallenge=null; room.numericAnswers={}; room.numericResults=null; cb({ok:true});emitState(room); });
 
   socket.on('revealImageStep', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
@@ -837,7 +875,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.5: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.6: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);

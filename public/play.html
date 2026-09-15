@@ -172,14 +172,16 @@ function playerImageRevealHTML(cur){
  if(!cur||cur.questionType!=='imageReveal')return '';
  const stage=Number(cur.revealStage||0), total=(cur.revealValues?.length||5);
  const blurs=[26,18,11,5,0], scales=[1.10,1.075,1.05,1.025,1];
- const blur=blurs[Math.min(stage,blurs.length-1)], scale=scales[Math.min(stage,scales.length-1)];
+ const single=total===1; const blur=single?0:blurs[Math.min(stage,blurs.length-1)], scale=single?1:scales[Math.min(stage,scales.length-1)];
  return `<div class="playerImageRevealWrap">
    <div class="playerImageRevealValue">${GameUI.esc(String(cur.value))} БАЛІВ</div>
    <div class="playerImageRevealFrame"><img src="${GameUI.esc(cur.image||'')}" class="playerImageRevealImg" style="filter:blur(${blur}px);transform:scale(${scale})"></div>
-   <div class="playerImageRevealStage">Відкриття ${Math.min(stage+1,total)}/${total}</div>
+   ${single?'':`<div class="playerImageRevealStage">Відкриття ${Math.min(stage+1,total)}/${total}</div>`}
  </div>`;
 }
 
+let numericClockHandle=null;
+function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),end=Number(state?.numericChallenge?.endsAt||0);if(!el||!end)return;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
 function render(){
   if(!state)return;
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
@@ -202,6 +204,8 @@ function render(){
     }
   }
   else if(state.phase==='first_turn_result'){const pos=(state.firstTurnQuiz?.results||[]).findIndex(x=>x.id===playerId);h+=`<div class="center"><div class="huge">${pos>=0?pos+1:'—'}</div><h2>Ваш порядок вибору</h2><p class="muted">Чекаємо початку 1 раунду.</p></div>`}
+  else if(state.phase==='numeric_question'){const n=state.numericChallenge||{},sub=n.submittedPlayerIds||[],done=sub.includes(playerId),left=n.endsAt?Math.max(0,Math.ceil((n.endsAt-Date.now())/1000)):0;h+=`<div class="center"><div class="huge">🔢 <span id="numericTimer">${left}</span></div><h2>Числове питання • ${n.value} балів</h2></div><div class="question" style="font-size:1.2rem">${GameUI.esc(n.question||'')}</div>${done?'<div class="center"><h2>Відповідь зафіксовано ✅</h2><p class="muted">Змінити її вже не можна.</p></div>':left>0?'<input id="numericAnswer" type="number" step="any" inputmode="decimal" placeholder="Введіть число" autocomplete="off"><br><br><button id="sendNumeric" class="btn gold">Підтвердити відповідь</button>':'<div class="center"><h2>⏱ Час вийшов</h2></div>'}`}
+  else if(state.phase==='numeric_result'){const n=state.numericChallenge||{},pos=(n.results||[]).findIndex(x=>x.id===playerId);h+=`<div class="center"><div class="huge">${pos>=0?pos+1:'—'}</div><h2>Ваше місце</h2><p class="muted">Правильна відповідь: ${GameUI.esc(String(n.correctAnswer??''))}</p></div>`}
   else if(state.phase==='board'){
     const chooser=state.players.find(x=>x.id===state.turnPlayerId);
     if(state.turnPlayerId===playerId && gameData){
@@ -239,9 +243,11 @@ function render(){
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
   app.innerHTML=h;
   armFirstTurnClock();
+  armNumericClock();
   armPenaltyClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
   if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;
     socket.emit('submitFirstTurnAnswer',{code,answer},r=>{

@@ -6,5 +6,13 @@
     "description": "Фільми, франшизи та кінофакти",
     "file": "kinohardkor.json",
     "enabled": true
+  },
+  {
+    "id": "general-knowledge",
+    "title": "Загальні знання",
+    "icon": "🧠",
+    "description": "Шкільні знання, логіка, факти та пастки",
+    "file": "general_knowledge.json",
+    "enabled": true
   }
 ]
