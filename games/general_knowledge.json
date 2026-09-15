@@ -58,7 +58,7 @@
               "a": "38 хвилин.",
               "type": "numericClosest",
               "numericAnswer": 38,
-              "seconds": 15
+              "seconds": 30
             },
             {
               "value": 500,
@@ -86,7 +86,7 @@
               "a": "435.",
               "type": "numericClosest",
               "numericAnswer": 435,
-              "seconds": 15
+              "seconds": 30
             },
             {
               "value": 400,
