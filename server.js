@@ -622,107 +622,28 @@ io.on('connection', socket => {
   socket.on('openBuzz', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
-    room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;room.buzzCandidates = []; room.buzzTimer = null;
+    room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;
     io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
 
-
-socket.on('buzz', ({ code: c, reactionTime }, cb = () => {}) => {
+  socket.on('buzz', ({ code: c }, cb=()=>{}) => {
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
-
-    if (!room || !p || !room.current) {
-        return cb({
-            ok: false,
-            error: 'Питання зараз неактивне.'
-        });
-    }
-
+    if (!room || !p || !room.current) return cb({ok:false,error:'Питання зараз неактивне.'});
     const duel = room.current?.type === 'duel';
-
-    if (duel && !room.duelPlayers.includes(p.id)) {
-        return cb({
-            ok: false,
-            error: 'Ви не берете участі в цій дуелі.'
-        });
-    }
-ss
+    if (duel && !room.duelPlayers.includes(p.id)) return cb({ok:false,error:'Ви не берете участі в цій дуелі.'});
+    // Visible dark BUZZ before the host opens answering: an early press is a false start.
     if (room.phase === 'question' || room.phase === 'duel_question') {
-        if (Number(p.falseStartUntil || 0) <= Date.now()) {
-            p.falseStartUntil = Date.now() + 3000;
-        }
-
-        emitState(room);
-
-        return cb({
-            ok: false,
-            falseStart: true,
-            until: p.falseStartUntil
-        });
+      if (Number(p.falseStartUntil||0) <= Date.now()) p.falseStartUntil = Date.now()+3000;
+      emitState(room);
+      return cb({ok:false,falseStart:true,until:p.falseStartUntil});
     }
+    if (room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return cb({ok:false});
+    if (Number(p.falseStartUntil||0) > Date.now()) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
+    room.buzzer = p.id; room.phase = 'answering'; cb({ok:true}); emitState(room);
+  });
 
-    if (
-        room.phase !== 'buzz' ||
-        room.buzzer ||
-        room.answeringLocked.has(p.id)
-    ) {
-        return cb({ ok: false });
-    }
-
-    if (Number(p.falseStartUntil || 0) > Date.now()) {
-        return cb({
-            ok: false,
-            falseStart: true,
-            until: p.falseStartUntil
-        });
-    }
-
-    if (!Number.isFinite(reactionTime)) {
-        return cb({ ok: false });
-    }
-
-    // Only the first buzz from each player counts.
-    if (room.buzzCandidates.some(x => x.playerId === p.id)) {
-        return cb({ ok: false });
-    }
-
-    room.buzzCandidates.push({
-        playerId: p.id,
-        reactionTime
-    });
-
-    console.log('[BUZZ]', {
-        player: p.name,
-        reactionTime
-    });
-
-    cb({ ok: true });
-
-    if (!room.buzzTimer) {
-        room.buzzTimer = setTimeout(() => {
-            const winner = room.buzzCandidates
-                .sort((a, b) => a.reactionTime - b.reactionTime)[0];
-
-            if (!winner) {
-                room.buzzTimer = null;
-                return;
-            }
-
-            room.buzzer = winner.playerId;
-            room.phase = 'answering';
-
-            console.log('[BUZZ WINNER]', {
-                playerId: winner.playerId,
-                reactionTime: winner.reactionTime,
-                candidates: room.buzzCandidates
-            });
-
-            room.buzzTimer = null;
-            emitState(room);
-        }, 100);
-    }
-});
   socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current || !room.buzzer) return;
@@ -787,7 +708,7 @@ ss
   socket.on('openDuelBuzz', ({ code:c }, cb=()=>{}) => {
     const room=getRoom(c);
     if(!isHost(socket,room) || room.phase!=='duel_question') return;
-    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;room.buzzCandidates = [];room.buzzTimer = null;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;
     io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
     cb({ok:true}); emitState(room);
   });
