@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=163"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=163"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=164"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=164"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -12,6 +12,11 @@
   .mobileValues .phoneTile{padding:11px 1px;font-size:12px}
   .mobileCategoryName{font-size:15px}
 }
+.playerImageRevealWrap{margin:16px 0;text-align:center}
+.playerImageRevealFrame{overflow:hidden;border-radius:16px;border:2px solid rgba(255,255,255,.16);background:#090514;box-shadow:0 12px 34px rgba(0,0,0,.38)}
+.playerImageRevealImg{display:block;width:100%;max-height:48vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
+.playerImageRevealValue{display:inline-block;margin:0 0 10px;padding:7px 15px;border-radius:999px;font-weight:900;font-size:22px;background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
+.playerImageRevealStage{margin-top:5px;font-size:13px;opacity:.72}
 </style>
 </head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
@@ -157,6 +162,18 @@ function armPenaltyClock(){
  const p=me(),until=Number(p?.falseStartUntil||0);if(until<=Date.now())return;
  penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=Math.max(0,until-Date.now());if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
 }
+function playerImageRevealHTML(cur){
+ if(!cur||cur.questionType!=='imageReveal')return '';
+ const stage=Number(cur.revealStage||0), total=(cur.revealValues?.length||5);
+ const blurs=[26,18,11,5,0], scales=[1.10,1.075,1.05,1.025,1];
+ const blur=blurs[Math.min(stage,blurs.length-1)], scale=scales[Math.min(stage,scales.length-1)];
+ return `<div class="playerImageRevealWrap">
+   <div class="playerImageRevealValue">${GameUI.esc(String(cur.value))} БАЛІВ</div>
+   <div class="playerImageRevealFrame"><img src="${GameUI.esc(cur.image||'')}" class="playerImageRevealImg" style="filter:blur(${blur}px);transform:scale(${scale})"></div>
+   <div class="playerImageRevealStage">Відкриття ${Math.min(stage+1,total)}/${total}</div>
+ </div>`;
+}
+
 function render(){
   if(!state)return;
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
@@ -186,12 +203,13 @@ function render(){
       h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div class="mobileBoard">${cats.map((c,ci)=>`<section class="mobileCategory"><div class="mobileCategoryName">${GameUI.esc(c.name)}</div><div class="mobileValues">${c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''}>${used?'—':q.value}</button>`}).join('')}</div></section>`).join('')}</div>`;
     } else h+=`<div class="center"><h2>Питання обирає ${GameUI.esc(chooser?.name||'інший гравець')}</h2><p class="muted">Чекаємо вашої черги.</p></div>`;
   }
-  else if(state.phase==='question')h+=buzzButtonHTML(false);
+  else if(state.phase==='question')h+=playerImageRevealHTML(state.current)+buzzButtonHTML(false);
   else if(state.phase==='buzz'){
+    h+=playerImageRevealHTML(state.current);
     if(state.current?.type==='duel' && !state.duelPlayers.includes(playerId)) h+=`<div class="center"><h2>⚔️ Дуель</h2><p class="muted">Відповідають учасники дуелі.</p></div>`;
     else h+=buzzButtonHTML(true);
   }
-  else if(state.phase==='answering')h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;
+  else if(state.phase==='answering'){h+=playerImageRevealHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
   else if(state.phase==='va_bank_bet'){
     if(state.vaBankPlayer===playerId){let max=Math.max(0,p.score);h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2></div><p>Ваша ставка: від 0 до ${max}</p><input id="vbBet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendVbBet" class="btn gold">Підтвердити ставку</button>`}
     else h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2><p class="muted">Гравець робить ставку.</p></div>`;
