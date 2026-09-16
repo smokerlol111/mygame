@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const storage = require('./storage');
+const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +43,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/host', (_, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (_, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
+app.get('/audience', (_, res) => res.sendFile(path.join(__dirname, 'public', 'audience.html')));
+app.get('/audience/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'audience.html')));
+app.get('/audience-qr/:code', async (req,res)=>{try{const c=String(req.params.code||'').toUpperCase();const base=`${req.protocol}://${req.get('host')}`;const svg=await QRCode.toString(`${base}/audience/${encodeURIComponent(c)}`,{type:'svg',margin:1,width:360,errorCorrectionLevel:'M'});res.type('image/svg+xml').send(svg)}catch(e){res.status(500).send('QR error')}});
+
 app.get('/questions.json', (_, res) => res.sendFile(path.join(__dirname, 'questions.json')));
 app.get('/games', (_, res) => res.json(gamesIndex.filter(g => g.enabled !== false).map(({file, ...g}) => g)));
 app.get('/games/:id.json', (req, res) => {
@@ -51,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.5.5', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.6.8', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -97,6 +102,13 @@ function publicState(room) {
       results: room.phase === 'numeric_result' ? room.numericResults : null, revealCount: room.numericRevealCount || 0,
       correctAnswer: room.phase === 'numeric_result' ? room.numericChallenge.answer : null
     } : null,
+    audience: room.audienceRoundIndex !== null ? (()=>{
+      const rounds=getRoomGame(room).audienceRounds||[]; const ar=rounds[room.audienceRoundIndex]||null; const aq=ar?.questions?.[room.audienceQuestionIndex]||null;
+      const submitted=Object.keys(room.audienceAnswers||{});
+      const counts=aq?aq.options.map((_,i)=>Object.values(room.audienceAnswers||{}).filter(x=>x.option===i).length):[];
+      const ranking=(room.audienceRanking||[]).map(x=>({id:x.id,name:x.name,correct:x.correct,timeMs:x.timeMs,eligible:x.eligible}));
+      return {roundIndex:room.audienceRoundIndex,title:ar?.title||'',questionIndex:room.audienceQuestionIndex,totalQuestions:ar?.questions?.length||0,question:aq?aq.q:'',options:aq?aq.options:[],correct:['audience_result','audience_podium'].includes(room.phase)?aq?.correct:null,fact:['audience_result','audience_podium'].includes(room.phase)?aq?.fact:'',endsAt:room.audienceEndsAt||null,joined:room.audience.length,submitted:submitted.length,submittedPlayerIds:submitted,counts,ranking:room.phase==='audience_podium'?ranking:[],revealCount:room.audienceRevealCount||0,winner:room.phase==='audience_podium'&&room.audienceRevealCount>=Math.min(5,ranking.length)?ranking[0]||null:null};
+    })() : null,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
       question: room.firstTurnQuiz.question,
@@ -116,7 +128,7 @@ function emitState(room) {
   io.to(room.code).emit('state', publicState(room));
   // Hidden service information is sent only to the authenticated HOST socket.
   // Players and the OBS screen never receive the special-cell map.
-  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {} });
+  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
 }
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
@@ -252,6 +264,7 @@ io.on('connection', socket => {
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
       firstTurnRevealCount: 0,
       numericChallenge: null, numericAnswers: {}, numericSubmittedAt: {}, numericResults: null, numericEndsAt: null, numericTimer: null, numericRevealCount: 0,
+      audience: [], audienceRoundIndex: null, audienceQuestionIndex: 0, audienceAnswers: {}, audienceStartedAt: null, audienceEndsAt: null, audienceTimer: null, audienceReturnPhase: null, audienceRevealCount: 0, audienceWinners: [],
       paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null
     };
     rooms.set(roomCode, room);
@@ -571,13 +584,19 @@ io.on('connection', socket => {
       room.phase = 'duel_choose';
       room.duelPlayers = room.turnPlayerId ? [room.turnPlayerId] : [];
     } else if (q.type === 'numericClosest' && special === 'normal') {
-      room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||15)};
+      room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||30)};
       room.numericAnswers={}; room.numericSubmittedAt={}; room.numericResults=null; room.numericRevealCount=0;
-      room.numericEndsAt=Date.now()+room.numericChallenge.seconds*1000; room.phase='numeric_question';
-      clearTimeout(room.numericTimer); room.numericTimer=setTimeout(()=>{ if(room.phase==='numeric_question'){ room.numericEndsAt=null; emitState(room); } },room.numericChallenge.seconds*1000);
+      room.numericEndsAt=null; room.phase='numeric_ready'; clearTimeout(room.numericTimer); room.numericTimer=null;
     } else {
       room.phase = 'question';
     }
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('startNumericTimer', ({code:c},cb=()=>{})=>{
+    const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_ready'||!room.numericChallenge)return cb({ok:false,error:'Числове питання не готове.'});
+    room.numericAnswers={}; room.numericSubmittedAt={}; room.numericEndsAt=Date.now()+30000; room.phase='numeric_question';
+    clearTimeout(room.numericTimer); room.numericTimer=setTimeout(()=>{if(room.phase==='numeric_question'){room.numericEndsAt=null;emitState(room)}},30000);
     cb({ok:true}); emitState(room);
   });
 
@@ -743,6 +762,48 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'result'; cb({ok:true}); emitState(room);
   });
 
+  socket.on('joinAudience', ({code:c,name,audienceId}={},cb=()=>{})=>{
+    const room=getRoom(c); if(!room)return cb({ok:false,error:'Кімнату не знайдено.'});
+    let a=room.audience.find(x=>x.id===audienceId);
+    if(!a){
+      if(room.phase!=='audience_lobby')return cb({ok:false,error:'Зараз реєстрація глядачів закрита.'});
+      const clean=String(name||'').trim().slice(0,24); if(!clean)return cb({ok:false,error:'Введіть нік.'});
+      a={id:crypto.randomUUID(),name:clean,socketId:socket.id,connected:true,roundStats:{}}; room.audience.push(a);
+    } else {a.socketId=socket.id;a.connected=true;if(name)a.name=String(name).trim().slice(0,24)||a.name;}
+    socket.data.audienceId=a.id;socket.data.roomCode=room.code;socket.join(room.code);cb({ok:true,audienceId:a.id,name:a.name,code:room.code});emitState(room);
+  });
+
+  socket.on('openAudienceRound', ({code:c,roundIndex}={},cb=()=>{})=>{
+    const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false});const rounds=getRoomGame(room).audienceRounds||[];const ri=Number(roundIndex);
+    if(!rounds[ri])return cb({ok:false,error:'Глядацький раунд не налаштований.'});
+    room.audienceRoundIndex=ri;room.audienceQuestionIndex=0;room.audienceAnswers={};room.audienceRanking=[];room.audienceRevealCount=0;room.audienceReturnPhase='board';room.audienceEndsAt=null;
+    room.audience.forEach(a=>{a.roundStats[ri]={correct:0,timeMs:0,answered:0};});room.phase='audience_lobby';cb({ok:true});emitState(room);
+  });
+  socket.on('startAudienceQuestion', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c);if(!isHost(socket,room)||!['audience_lobby','audience_result'].includes(room.phase))return cb({ok:false,error:'Питання зараз не готове.'});
+    const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(!ar)return cb({ok:false});
+    if(room.phase==='audience_result' && room.audienceQuestionIndex<ar.questions.length-1)room.audienceQuestionIndex++;
+    room.audienceAnswers={};room.audienceStartedAt=Date.now();room.audienceEndsAt=room.audienceStartedAt+15000;room.phase='audience_question';
+    clearTimeout(room.audienceTimer);room.audienceTimer=setTimeout(()=>{if(room.phase==='audience_question'){room.audienceEndsAt=null;room.phase='audience_result';emitState(room)}},15000);
+    cb({ok:true});emitState(room);
+  });
+  socket.on('submitAudienceAnswer', ({code:c,option}={},cb=()=>{})=>{
+    const room=getRoom(c);const a=room?.audience.find(x=>x.id===socket.data.audienceId);if(!room||!a||room.phase!=='audience_question')return cb({ok:false,error:'Питання неактивне.'});
+    if(!room.audienceEndsAt||Date.now()>room.audienceEndsAt)return cb({ok:false,error:'Час вийшов.'});if(room.audienceAnswers[a.id])return cb({ok:false,error:'Відповідь уже зафіксована.'});
+    const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex],q=ar?.questions?.[room.audienceQuestionIndex];const o=Number(option);if(!q||!Number.isInteger(o)||o<0||o>=q.options.length)return cb({ok:false});
+    const ms=Math.max(0,Date.now()-room.audienceStartedAt);room.audienceAnswers[a.id]={option:o,ms};const st=a.roundStats[room.audienceRoundIndex]||(a.roundStats[room.audienceRoundIndex]={correct:0,timeMs:0,answered:0});st.answered++;if(o===q.correct){st.correct++;st.timeMs+=ms;}
+    cb({ok:true});emitState(room);
+  });
+  socket.on('finishAudienceQuestion', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_question')return cb({ok:false});clearTimeout(room.audienceTimer);room.audienceTimer=null;room.audienceEndsAt=null;room.phase='audience_result';cb({ok:true});emitState(room)});
+  socket.on('finishAudienceRound', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_result')return cb({ok:false});const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(room.audienceQuestionIndex!==ar.questions.length-1)return cb({ok:false,error:'Ще є питання.'});
+    const prev=new Set(room.audienceWinners.map(x=>x.id));const ranked=room.audience.map(a=>{const st=a.roundStats[room.audienceRoundIndex]||{correct:0,timeMs:0};return{id:a.id,name:a.name,correct:st.correct,timeMs:st.timeMs,eligible:!prev.has(a.id)&&st.answered>0}}).sort((a,b)=>(b.eligible-a.eligible)||(b.correct-a.correct)||(a.timeMs-b.timeMs)||a.name.localeCompare(b.name,'uk'));
+    const win=ranked.find(x=>x.eligible);if(win){win.code=crypto.randomBytes(3).toString('hex').toUpperCase();room.audienceWinners.push({id:win.id,name:win.name,code:win.code,roundIndex:room.audienceRoundIndex});}
+    room.audienceRanking=ranked;room.audienceRevealCount=0;room.phase='audience_podium';if(win){const wa=room.audience.find(x=>x.id===win.id);if(wa?.socketId)io.to(wa.socketId).emit('audiencePrize',{code:win.code,roundIndex:room.audienceRoundIndex});}cb({ok:true});emitState(room);
+  });
+  socket.on('revealNextAudience', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_podium')return cb({ok:false});const n=Math.min(5,room.audienceRanking?.length||0);if(room.audienceRevealCount<n)room.audienceRevealCount++;cb({ok:true});emitState(room)});
+  socket.on('closeAudienceRound', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_podium')return cb({ok:false});room.phase='board';room.audienceRoundIndex=null;room.audienceQuestionIndex=0;room.audienceAnswers={};room.audienceEndsAt=null;cb({ok:true});emitState(room)});
+
   socket.on('nextRound', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c); if (!isHost(socket, room) || room.round !== 0) return;
     room.round = 1; room.phase = 'board'; room.current = null; resetQuestionState(room); cb({ok:true}); emitState(room);
@@ -871,11 +932,13 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const room = getRoom(socket.data.roomCode); if (!room) return;
     const p = room.players.find(x => x.id === socket.data.playerId);
-    if (p) { p.connected = false; p.socketId = null; emitState(room); }
+    if (p) { p.connected = false; p.socketId = null; }
+    const a = room.audience.find(x => x.id === socket.data.audienceId); if(a){a.connected=false;a.socketId=null;}
+    if(p||a) emitState(room);
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.7: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.8: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
