@@ -805,8 +805,8 @@ io.on('connection', socket => {
   socket.on('finishAudienceQuestion', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_question')return cb({ok:false});clearTimeout(room.audienceTimer);room.audienceTimer=null;room.audienceEndsAt=null;room.phase='audience_result';cb({ok:true});emitState(room)});
   socket.on('finishAudienceRound', ({code:c}={},cb=()=>{})=>{
     const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_result')return cb({ok:false});const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(room.audienceQuestionIndex!==ar.questions.length-1)return cb({ok:false,error:'Ще є питання.'});
-    const prev=new Set(room.audienceWinners.map(x=>x.id));const ranked=room.audience.map(a=>{const st=a.roundStats[room.audienceRoundIndex]||{correct:0,timeMs:0};return{id:a.id,name:a.name,correct:st.correct,timeMs:st.timeMs,eligible:!prev.has(a.id)&&st.answered>0}}).sort((a,b)=>(b.eligible-a.eligible)||(b.correct-a.correct)||(a.timeMs-b.timeMs)||a.name.localeCompare(b.name,'uk'));
-    const win=ranked.find(x=>x.eligible);if(win){win.code=crypto.randomBytes(3).toString('hex').toUpperCase();room.audienceWinners.push({id:win.id,name:win.name,code:win.code,roundIndex:room.audienceRoundIndex});}
+    const prev=new Set(room.audienceWinners.map(x=>x.id));const ranked=room.audience.map(a=>{const st=a.roundStats[room.audienceRoundIndex]||{correct:0,timeMs:0};return{id:a.id,name:a.name,correct:st.correct,timeMs:st.timeMs,eligible:!prev.has(a.id)&&st.answered>0}}).filter(x=>x.eligible).sort((a,b)=>(b.correct-a.correct)||(a.timeMs-b.timeMs)||a.name.localeCompare(b.name,'uk'));
+    const win=ranked[0]||null;if(win){win.code=crypto.randomBytes(3).toString('hex').toUpperCase();room.audienceWinners.push({id:win.id,name:win.name,code:win.code,roundIndex:room.audienceRoundIndex});}
     room.audienceRanking=ranked;room.audienceRevealCount=0;room.phase='audience_podium';if(win){const wa=room.audience.find(x=>x.id===win.id);if(wa?.socketId)io.to(wa.socketId).emit('audiencePrize',{code:win.code,roundIndex:room.audienceRoundIndex});}cb({ok:true});emitState(room);
   });
   socket.on('revealNextAudience', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_podium')return cb({ok:false});const n=Math.min(5,room.audienceRanking?.length||0);if(room.audienceRevealCount<n)room.audienceRevealCount++;cb({ok:true});emitState(room)});
@@ -946,7 +946,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.10: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.11: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
