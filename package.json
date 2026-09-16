@@ -1,8 +1,8 @@
 {
   "name": "smokerlol-online-quiz",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "private": true,
-  "description": "SMOKERLOL online quiz v1.6.8 \u2014 audience interactives and OBS layout",
+  "description": "SMOKERLOL online quiz v1.6.9 \u2014 audience interactives and OBS layout",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

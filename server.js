@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.6.8', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'1.6.9', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -762,6 +762,13 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'result'; cb({ok:true}); emitState(room);
   });
 
+  socket.on('getAudienceState', ({code:c}={},cb=()=>{})=>{
+    const room=getRoom(c); if(!room)return cb({ok:false,error:'Кімнату не знайдено.'});
+    socket.data.roomCode=room.code; socket.join(room.code);
+    socket.emit('state', publicState(room));
+    cb({ok:true,code:room.code});
+  });
+
   socket.on('joinAudience', ({code:c,name,audienceId}={},cb=()=>{})=>{
     const room=getRoom(c); if(!room)return cb({ok:false,error:'Кімнату не знайдено.'});
     let a=room.audience.find(x=>x.id===audienceId);
@@ -781,6 +788,7 @@ io.on('connection', socket => {
   });
   socket.on('startAudienceQuestion', ({code:c}={},cb=()=>{})=>{
     const room=getRoom(c);if(!isHost(socket,room)||!['audience_lobby','audience_result'].includes(room.phase))return cb({ok:false,error:'Питання зараз не готове.'});
+    if(room.phase==='audience_lobby' && room.audience.length<1)return cb({ok:false,error:'Спочатку має приєднатися хоча б один глядач.'});
     const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(!ar)return cb({ok:false});
     if(room.phase==='audience_result' && room.audienceQuestionIndex<ar.questions.length-1)room.audienceQuestionIndex++;
     room.audienceAnswers={};room.audienceStartedAt=Date.now();room.audienceEndsAt=room.audienceStartedAt+15000;room.phase='audience_question';
@@ -938,7 +946,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.8: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.9: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
