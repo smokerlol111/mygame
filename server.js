@@ -107,7 +107,7 @@ function publicState(room) {
       const submitted=Object.keys(room.audienceAnswers||{});
       const counts=aq?aq.options.map((_,i)=>Object.values(room.audienceAnswers||{}).filter(x=>x.option===i).length):[];
       const ranking=(room.audienceRanking||[]).map(x=>({id:x.id,name:x.name,correct:x.correct,timeMs:x.timeMs,eligible:x.eligible}));
-      return {roundIndex:room.audienceRoundIndex,title:ar?.title||'',questionIndex:room.audienceQuestionIndex,totalQuestions:ar?.questions?.length||0,question:aq?aq.q:'',options:aq?aq.options:[],correct:['audience_result','audience_podium'].includes(room.phase)?aq?.correct:null,fact:['audience_result','audience_podium'].includes(room.phase)?aq?.fact:'',endsAt:room.audienceEndsAt||null,joined:room.audience.length,submitted:submitted.length,submittedPlayerIds:submitted,counts,ranking:room.phase==='audience_podium'?ranking:[],revealCount:room.audienceRevealCount||0,winner:room.phase==='audience_podium'&&room.audienceRevealCount>=Math.min(5,ranking.length)?ranking[0]||null:null};
+      return {roundIndex:room.audienceRoundIndex,title:ar?.title||'',questionIndex:room.audienceQuestionIndex,totalQuestions:ar?.questions?.length||0,question:aq?aq.q:'',options:aq?aq.options:[],correct:['audience_result','audience_podium'].includes(room.phase)?aq?.correct:null,fact:['audience_result','audience_podium'].includes(room.phase)?aq?.fact:'',endsAt:room.audienceEndsAt||null,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0,joined:room.audience.length,submitted:submitted.length,submittedPlayerIds:submitted,counts,ranking:room.phase==='audience_podium'?ranking:[],revealCount:room.audienceRevealCount||0,winner:room.phase==='audience_podium'&&room.audienceRevealCount>=Math.min(5,ranking.length)?ranking[0]||null:null};
     })() : null,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
@@ -946,7 +946,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.11: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.12: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
