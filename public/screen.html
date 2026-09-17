@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1612"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1612"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OBS Screen — Своя гра</title><link rel="stylesheet" href="/style.css?v=1613"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1613"></script>
 <style>
 /* v1.5.10 — larger question text for the stream/OBS view */
 #app .question{
@@ -18,12 +18,20 @@
 .imageRevealValue{display:inline-block;margin:0 0 12px;padding:8px 18px;border-radius:999px;font-weight:900;font-size:clamp(24px,3vw,42px);background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 </style>
 <style>
-/* v1.6.9 — permanent OBS camera-safe area */
-body.screen .wrap{max-width:none;padding-left:340px;padding-right:24px;box-sizing:border-box}
-.cameraSafe{position:fixed;left:18px;top:18px;width:292px;aspect-ratio:16/9;border:2px dashed rgba(255,255,255,.22);border-radius:18px;background:rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:.12em;color:rgba(255,255,255,.28);z-index:0}
-.imageRevealWrap{max-width:1180px;margin:8px auto}.imageRevealImg{width:100%;height:auto;max-height:64vh;object-fit:contain}.imageRevealFrame{display:flex;align-items:center;justify-content:center}
+/* v1.6.13 — OBS layout: camera reserves only the top-left corner, not the whole left side */
+body.screen .wrap{max-width:none;padding:18px 24px;box-sizing:border-box}
+.cameraSafe{position:fixed;left:18px;top:18px;width:292px;aspect-ratio:16/9;border:2px dashed rgba(255,255,255,.22);border-radius:18px;background:rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:.12em;color:rgba(255,255,255,.28);z-index:0;pointer-events:none}
+.imageQuestionPanel{margin-top:6px;padding:12px 18px 10px}
+.imageQuestionPanel .question{font-size:clamp(25px,2.65vw,42px)!important;line-height:1.12!important;padding:10px 170px 10px 170px!important;min-height:150px;display:flex;align-items:center;justify-content:center}
+.imageQuestionPanel .imageRevealWrap{max-width:1180px;margin:4px auto 6px}
+.imageQuestionPanel .imageRevealValue{font-size:clamp(22px,2.2vw,34px);padding:5px 14px;margin-bottom:6px}
+.imageQuestionPanel .imageRevealFrame{height:min(43vh,360px);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.imageQuestionPanel .imageRevealImg{width:auto;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.imageQuestionPanel + .scorebar{margin-top:8px}
+.imageQuestionPanel + .scorebar .player{padding:8px 12px}
+.imageQuestionPanel + .scorebar .score{font-size:23px}
 .audQr{width:min(300px,24vw);background:white;padding:10px;border-radius:18px}.audGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:1000px;margin:18px auto}.audOpt{padding:16px;border-radius:14px;background:rgba(255,255,255,.08);font-size:24px;font-weight:800}
-@media(max-width:1200px){body.screen .wrap{padding-left:300px}.cameraSafe{width:250px}}
+@media(max-width:1200px){.cameraSafe{width:250px}.imageQuestionPanel .question{padding-left:145px!important;padding-right:145px!important}}
 </style>
 </head><body class="screen"><div class="cameraSafe">КАМЕРА 16:9</div><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');
@@ -125,7 +133,7 @@ function render(){if(!state||!data)return;let h=``;
  else if(state.phase==='audience_question'){const a=state.audience||{},left=Math.min(15,Math.max(0,Math.ceil(Number(a.remainingMs||0)/1000)));h+=`<div class="panel center"><div class="huge" id="audienceTimer">${left}.0</div><h2>ГЛЯДАЧІ • ПИТАННЯ ${a.questionIndex+1}/${a.totalQuestions}</h2><div class="question">${GameUI.esc(a.question||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt">${'ABCD'[i]} • ${GameUI.esc(o)}</div>`).join('')}</div><p style="font-size:22px">Відповіли: <b>${a.submitted||0}/${a.joined||0}</b></p></div>`}
  else if(state.phase==='audience_result'){const a=state.audience||{},total=Math.max(1,a.submitted||0);h+=`<div class="panel center"><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><div class="huge">${'ABCD'[a.correct]} • ${GameUI.esc(a.options?.[a.correct]||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt" style="${i===a.correct?'border:2px solid rgba(100,255,160,.8)':''}">${'ABCD'[i]} • ${GameUI.esc(o)} — <b>${Math.round((a.counts?.[i]||0)*100/total)}%</b></div>`).join('')}</div><p style="font-size:22px">${GameUI.esc(a.fact||'')}</p></div>`}
  else if(state.phase==='audience_podium'){const a=state.audience||{},rs=(a.ranking||[]).slice(0,5),rev=a.revealCount||0,n=Math.min(5,rs.length),shown=rs.slice(Math.max(0,n-rev),n).reverse(),latest=shown[shown.length-1];h+=`<div class="panel center"><h1>🏆 ${GameUI.esc(a.title||'')}</h1>${latest?`<div style="font-size:34px;font-weight:900">${rs.indexOf(latest)+1===1?'🥇 ПЕРЕМОЖЕЦЬ':(rs.indexOf(latest)+1)+' МІСЦЕ'}</div><div class="winner" style="font-size:72px">${GameUI.esc(latest.name)}</div><div style="font-size:28px">${latest.correct}/3 правильних • ${(latest.timeMs/1000).toFixed(2)} с</div>`:'<div class="huge">ТОП-5</div>'}${shown.length>1?`<div class="finalList">${shown.slice(0,-1).map(r=>`<div class="finalItem"><span>${GameUI.esc(r.name)}</span><b>${r.correct}/3 • ${(r.timeMs/1000).toFixed(2)} с</b></div>`).join('')}</div>`:''}</div>`}
- else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
+ else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'',isImg=state.current?.questionType==='imageReveal';h+=`<div class="panel ${isImg?'imageQuestionPanel':''}"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
  else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
