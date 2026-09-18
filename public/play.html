@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=301"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=301"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=302"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=302"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -97,6 +97,7 @@ socket.on('connect',()=>{
        localStorage.setItem('sgPlayerId',playerId);
        localStorage.setItem('sgCode',code);
        localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
      }
    });
  }
@@ -126,6 +127,7 @@ function login(prefill=urlCode||''){
       if(!r.ok)return showError(r.error||'Не вдалося приєднатися.');
       playerId=r.playerId; code=r.code; name=r.name; joined=true;
       localStorage.setItem('sgPlayerId',playerId); localStorage.setItem('sgCode',code); localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
       history.replaceState(null,'',`/play?room=${encodeURIComponent(code)}`);
     });
   };
@@ -139,6 +141,7 @@ if(playerId&&savedCode&&name&&(!urlCode||urlCode===savedCode)){
     if(!r.ok){clearSession(true);login(urlCode||'');return;}
     playerId=r.playerId;code=r.code;name=r.name;joined=true;
     localStorage.setItem('sgPlayerId',playerId);localStorage.setItem('sgCode',code);localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
   });
 }
 
