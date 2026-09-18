@@ -361,8 +361,11 @@ io.on('connection', socket => {
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzOpensAt=Date.now()+1200;
-    cb({ok:true}); emitState(room);
+    const leadMs=1200;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzOpensAt=Date.now()+leadMs;
+    io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
+    setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
+    cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
   socket.on('emergencyRevealQuestion', ({code:c}={},cb=()=>{})=>{
