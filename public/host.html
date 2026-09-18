@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=1612"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=1612"></script><style>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ведучий — Своя гра</title><link rel="stylesheet" href="/style.css?v=301"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=301"></script><style>
 .menuHero{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .gameMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
@@ -137,6 +137,7 @@ function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if(s.gameId&&s.gameId!==selectedGameId){selectedGameId=s.gameId;await loadGameData(selectedGameId)}renderRoom();if(data)render()});
 socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
+socket.on('networkStats',x=>{if(!state||x.code!==code)return;const p=state.players?.find(p=>p.id===x.playerId);if(p){p.networkRttMs=x.rttMs;p.networkJitterMs=x.jitterMs;}render()});
 socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;data=null;selectedGameId='';hostSpecialCells={};renderStart()});
 function emit(ev,p={},cb=()=>{}){socket.emit(ev,{code,...p},cb)}
 function hostBoardHTML(){
@@ -183,7 +184,7 @@ function hostControlsHTML(){
  if(!state)return '';
  const rows=(state.players||[]).map(p=>`
    <div style="display:grid;grid-template-columns:minmax(130px,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">
-     <div><b>${GameUI.esc(p.name)}</b><div class="muted">Рахунок: ${p.score}</div></div>
+     <div><b>${GameUI.esc(p.name)}</b><div class="muted">Рахунок: ${p.score}</div><div class="muted">${p.networkRttMs==null?'⚪ ping —':p.networkRttMs<80?'🟢 '+p.networkRttMs+' ms':p.networkRttMs<160?'🟡 '+p.networkRttMs+' ms':'🔴 '+p.networkRttMs+' ms'}${p.networkJitterMs!=null?' • jitter '+p.networkJitterMs+' ms':''}</div></div>
      <div class="row" style="gap:6px;flex-wrap:nowrap">
        <button class="btn secondary scoreQuick" data-id="${p.id}" data-v="-500" style="padding:8px 10px">−500</button>
        <button class="btn secondary scoreQuick" data-id="${p.id}" data-v="-100" style="padding:8px 10px">−100</button>
