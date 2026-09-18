@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.2-dev', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.3-dev', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -149,6 +149,9 @@ function resetQuestionState(room) {
   room.vaBankBet = null;
   room.duelPlayers = [];
   room.buzzOpensAt = null;
+  room.buzzCandidates = [];
+  if (room.buzzResolveTimer) clearTimeout(room.buzzResolveTimer);
+  room.buzzResolveTimer = null;
 }
 function advanceTurn(room) {
   if (!room.players.length) { room.turnPlayerId = null; return; }
@@ -267,7 +270,8 @@ io.on('connection', socket => {
       firstTurnRevealCount: 0,
       numericChallenge: null, numericAnswers: {}, numericSubmittedAt: {}, numericResults: null, numericEndsAt: null, numericTimer: null, numericRevealCount: 0,
       audience: [], audienceRoundIndex: null, audienceQuestionIndex: 0, audienceAnswers: {}, audienceStartedAt: null, audienceEndsAt: null, audienceTimer: null, audienceReturnPhase: null, audienceRevealCount: 0, audienceWinners: [],
-      paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null
+      paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null,
+      buzzCandidates: [], buzzResolveTimer: null
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
@@ -362,7 +366,7 @@ io.on('connection', socket => {
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
     const leadMs=1200;
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzOpensAt=Date.now()+leadMs;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
@@ -665,29 +669,71 @@ io.on('connection', socket => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
     const leadMs=1200;
-    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;}
     room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{ if(rooms.get(room.code)===room && room.phase==='buzz' && !room.buzzer && room.buzzOpensAt && Date.now()>=room.buzzOpensAt-20) io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt}); },leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
-  socket.on('buzz', ({ code: c }, cb=()=>{}) => {
+  // v3.0.3 Fair Press Engine: compare validated synchronized press timestamps,
+  // not just packet arrival order. A short collection window lets near-simultaneous
+  // presses arrive before the server chooses a winner.
+  socket.on('buzz', ({ code: c, pressedAtServerTime }, cb=()=>{}) => {
+    const receivedAt=Date.now();
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
     if (!room || !p || !room.current) return cb({ok:false,error:'Питання зараз неактивне.'});
     const duel = room.current?.type === 'duel';
     if (duel && !room.duelPlayers.includes(p.id)) return cb({ok:false,error:'Ви не берете участі в цій дуелі.'});
-    // Visible dark BUZZ before the synchronized opening: an early press is a false start.
-    const beforeScheduledOpen = room.phase==='buzz' && Number(room.buzzOpensAt||0) > Date.now();
-    if (room.phase === 'question' || room.phase === 'duel_question' || beforeScheduledOpen) {
-      if (Number(p.falseStartUntil||0) <= Date.now()) p.falseStartUntil = Date.now()+3000;
+
+    const claimed=Number(pressedAtServerTime);
+    const beforeScheduledOpen = room.phase==='buzz' && Number(room.buzzOpensAt||0) > receivedAt;
+    const claimedBeforeOpen = Number.isFinite(claimed) && Number(room.buzzOpensAt||0)>0 && claimed < Number(room.buzzOpensAt)-35;
+    if (room.phase === 'question' || room.phase === 'duel_question' || beforeScheduledOpen || claimedBeforeOpen) {
+      if (Number(p.falseStartUntil||0) <= receivedAt) p.falseStartUntil = receivedAt+3000;
       emitState(room);
       return cb({ok:false,falseStart:true,until:p.falseStartUntil});
     }
     if (room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return cb({ok:false});
-    if (Number(p.falseStartUntil||0) > Date.now()) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
-    room.buzzer = p.id; room.buzzOpensAt=null; room.phase = 'answering'; cb({ok:true}); emitState(room);
+    if (Number(p.falseStartUntil||0) > receivedAt) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
+
+    // Anti-spoof sanity check: a real press cannot be in the future, and it should
+    // not predate packet receipt by much more than the player's observed RTT.
+    const observedRtt=Number.isFinite(p.networkRttMs)?Math.max(0,p.networkRttMs):300;
+    const maxAge=Math.min(1200,Math.max(180,observedRtt*1.5+80));
+    let pressTime=claimed;
+    if (!Number.isFinite(pressTime) || pressTime>receivedAt+40 || pressTime<receivedAt-maxAge) {
+      // Safe fallback for an old/stale client: estimate one-way transit as RTT/2.
+      pressTime=receivedAt-Math.min(300,observedRtt/2);
+    }
+    pressTime=Math.max(Number(room.buzzOpensAt||0),pressTime);
+
+    room.buzzCandidates = room.buzzCandidates || [];
+    if(!room.buzzCandidates.some(x=>x.playerId===p.id)){
+      room.buzzCandidates.push({playerId:p.id,pressTime,receivedAt});
+    }
+    cb({ok:true,pending:true});
+
+    if(!room.buzzResolveTimer){
+      const FAIR_WINDOW_MS=90;
+      room.buzzResolveTimer=setTimeout(()=>{
+        room.buzzResolveTimer=null;
+        if(rooms.get(room.code)!==room || room.phase!=='buzz' || room.buzzer)return;
+        const candidates=(room.buzzCandidates||[]).filter(x=>{
+          const player=room.players.find(p=>p.id===x.playerId);
+          return player && !room.answeringLocked.has(player.id) && Number(player.falseStartUntil||0)<=Date.now();
+        });
+        room.buzzCandidates=[];
+        if(!candidates.length)return;
+        candidates.sort((a,b)=>a.pressTime-b.pressTime || a.receivedAt-b.receivedAt);
+        const winner=candidates[0];
+        room.buzzer=winner.playerId;
+        room.buzzOpensAt=null;
+        room.phase='answering';
+        emitState(room);
+      },FAIR_WINDOW_MS);
+    }
   });
 
   socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
@@ -715,7 +761,7 @@ io.on('connection', socket => {
         room.resultReason = 'all_wrong';
         room.phase = 'result';
       } else {
-        room.phase = 'buzz'; room.buzzOpensAt=Date.now()+800;
+        room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
         io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
       }
     }
@@ -756,7 +802,7 @@ io.on('connection', socket => {
     const room=getRoom(c);
     if(!isHost(socket,room) || room.phase!=='duel_question') return;
     const leadMs=1200;
-    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzOpensAt=Date.now()+leadMs;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
@@ -976,7 +1022,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.2-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.3-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
