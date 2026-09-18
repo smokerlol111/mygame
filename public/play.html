@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=302"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=302"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=303"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=303"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -280,7 +280,7 @@ function render(){
   document.getElementById('leaveRoom').onclick=leaveRoom;
   if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>{
     if(state?.phase==='buzz' && Number(state?.buzzOpensAt||0)>serverNow())return;
-    socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+    socket.emit('buzz',{code,pressedAtServerTime:serverNow()},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
   };
   if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
