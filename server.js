@@ -442,7 +442,7 @@ io.on('connection', socket => {
     if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може змінювати прив’язки.'});
     if(!room.players.some(p=>p.id===playerId))return cb({ok:false,error:'Гравця не знайдено.'});
     const id=String(discordId||'').trim();
-    if(id && !/^\\d{17,20}$/.test(id))return cb({ok:false,error:'Введіть Discord User ID (17–20 цифр) або залиште поле порожнім.'});
+    if(id && !/^\d{17,20}$/.test(id))return cb({ok:false,error:'Введіть Discord User ID (17–20 цифр) або залиште поле порожнім.'});
     if(id && Object.entries(room.voiceMappings||{}).some(([p,v])=>p!==playerId&&v===id))return cb({ok:false,error:'Цей Discord ID вже прив’язано.'});
     room.voiceMappings=room.voiceMappings||{};
     if(id)room.voiceMappings[playerId]=id;else delete room.voiceMappings[playerId];
@@ -1085,7 +1085,7 @@ function handleDiscordVoiceMessage(message){
   if(!message || message.type!=='voiceActivity')return;
   if(message.guildId!==process.env.DISCORD_GUILD_ID || message.channelId!==process.env.DISCORD_VOICE_CHANNEL_ID)return;
   if(!Array.isArray(message.userIds) || message.userIds.length>100)return;
-  const active=new Set(message.userIds.filter(id=>typeof id==='string' && /^\\d{17,20}$/.test(id)));
+  const active=new Set(message.userIds.filter(id=>typeof id==='string' && /^\d{17,20}$/.test(id)));
   voiceLastEvent=Date.now();
   for(const room of rooms.values()){
     const next=room.players.filter(p=>active.has(room.voiceMappings?.[p.id])).map(p=>p.id);
