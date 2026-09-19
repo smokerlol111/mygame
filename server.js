@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.4-dev', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.5-dev', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -88,7 +88,7 @@ function publicState(room) {
     vaBankPlayer: room.vaBankPlayer,
     vaBankBet: room.vaBankBet,
     duelPlayers: room.duelPlayers || [],
-    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), networkRttMs: Number.isFinite(p.networkRttMs) ? Math.round(p.networkRttMs) : null, networkJitterMs: Number.isFinite(p.networkJitterMs) ? Math.round(p.networkJitterMs) : null, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), networkRttMs: Number.isFinite(p.networkRttMs) ? Math.round(p.networkRttMs) : null, networkJitterMs: Number.isFinite(p.networkJitterMs) ? Math.round(p.networkJitterMs) : null, syncReady: !!p.connected && Number(p.syncSamples||0)>=3 && Date.now()-Number(p.lastSyncAt||0)<12000, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     buzzOpensAt: room.buzzOpensAt || null,
     answeringLocked: Array.from(room.answeringLocked || []),
     finalSeconds: room.finalSeconds,
@@ -299,10 +299,10 @@ io.on('connection', socket => {
     if (!p) {
       if (room.players.length >= 4) return cb({ ok: false, error: 'У кімнаті вже 4 гравці.' });
       const clean = String(name || '').trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
-      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '', falseStartUntil: 0, networkRttMs: null, networkJitterMs: null };
+      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '', falseStartUntil: 0, networkRttMs: null, networkJitterMs: null, syncSamples:0, lastSyncAt:0 };
       room.players.push(p);
     } else {
-      p.socketId = socket.id; p.connected = true;
+      p.socketId = socket.id; p.connected = true; p.syncSamples=0; p.lastSyncAt=0;
       if (name) p.name = String(name).trim().slice(0,20) || p.name;
     }
     socket.data.playerId = p.id;
@@ -340,15 +340,16 @@ io.on('connection', socket => {
     cb({ok:true, clientSentAt:Number(clientSentAt)||0, serverReceivedAt, serverSentAt:Date.now()});
   });
 
-  socket.on('reportNetworkStats', ({code:c,rttMs,jitterMs} = {}, cb = () => {}) => {
+  socket.on('reportNetworkStats', ({code:c,rttMs,jitterMs,samples} = {}, cb = () => {}) => {
     const room=getRoom(c || socket.data.roomCode);
     const p=room?.players.find(x=>x.id===socket.data.playerId);
     if(!room||!p)return cb({ok:false});
     const rtt=Number(rttMs), jitter=Number(jitterMs);
     if(Number.isFinite(rtt)&&rtt>=0&&rtt<10000)p.networkRttMs=rtt;
     if(Number.isFinite(jitter)&&jitter>=0&&jitter<10000)p.networkJitterMs=jitter;
+    p.syncSamples=Math.min(8,Math.max(0,Number(samples)||0)); p.lastSyncAt=Date.now();
     cb({ok:true});
-    if(room.hostSocket) io.to(room.hostSocket).emit('networkStats',{code:room.code,playerId:p.id,rttMs:p.networkRttMs,jitterMs:p.networkJitterMs});
+    if(room.hostSocket) io.to(room.hostSocket).emit('networkStats',{code:room.code,playerId:p.id,rttMs:p.networkRttMs,jitterMs:p.networkJitterMs,syncReady:p.syncSamples>=3});
   });
 
   socket.on('togglePause', ({code:c}={}, cb=()=>{})=>{
@@ -668,6 +669,8 @@ io.on('connection', socket => {
   socket.on('openBuzz', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
+    const unready=room.players.filter(p=>p.connected && (Number(p.syncSamples||0)<3 || Date.now()-Number(p.lastSyncAt||0)>=12000));
+    if(unready.length)return cb({ok:false,error:'Очікуємо SYNC: '+unready.map(p=>p.name).join(', ')});
     const leadMs=1200;
     room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;}
     room.buzzOpensAt=Date.now()+leadMs;
@@ -1022,7 +1025,7 @@ io.on('connection', socket => {
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.4-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.5-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
