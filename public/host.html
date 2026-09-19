@@ -4,7 +4,7 @@
 .gameCard{appearance:none;text-align:left;border:1px solid #493b70;background:#171128;color:white;border-radius:18px;padding:20px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
 .gameCard:hover{outline:2px solid var(--accent2)}
 .gameIcon{font-size:40px}.gameCard h2{margin:0 0 6px}.gameCard p{margin:0}.gamePlay{font-weight:900;color:#d7c8ff}
-</style>
+.scorebar .player.voice-speaking{border-color:#a879ff!important;box-shadow:0 0 0 2px #9b69ff,0 0 18px #9560ff!important;background:#38215f!important}\n</style>
 <style>
 .imageRevealWrap{max-width:980px;margin:16px auto;text-align:center}
 .imageRevealFrame{overflow:hidden;border-radius:18px;border:2px solid rgba(255,255,255,.18);background:#090514;box-shadow:0 16px 50px rgba(0,0,0,.42)}
@@ -138,6 +138,7 @@ function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if(s.gameId&&s.gameId!==selectedGameId){selectedGameId=s.gameId;await loadGameData(selectedGameId)}renderRoom();if(data)render()});
 socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};voiceMappings=s.voiceMappings||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
 socket.on('voiceMappings',x=>{if(x.code!==code)return;voiceMappings=x.mappings||{};render()});
+socket.on('voiceSpeaking',x=>{if(!state||x.code!==code)return;state.voice={...(state.voice||{}),speakingPlayerIds:x.playerIds||[]};document.querySelectorAll('.scorebar .player[data-player-id]').forEach(el=>el.classList.toggle('voice-speaking',x.playerIds?.includes(el.dataset.playerId)));});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 function updatePlayerNetwork(playerId){
  const p=state?.players?.find(p=>p.id===playerId);if(!p)return;
@@ -198,7 +199,7 @@ function hostPlayersHTML(players,buzzer){
    const jitter=Number.isFinite(Number(p.networkJitterMs))?Math.round(Number(p.networkJitterMs)):null;
    const ready=!p.connected?'🔴 LOST':p.syncReady?'🟢 READY':'🟡 SYNC…';
    const net=rtt==null?'⚪ ping —':(rtt<80?'🟢':rtt<160?'🟡':'🔴')+' '+rtt+' ms'+(jitter==null?'':' • jitter '+jitter+' ms');
-   return `<div class="player ${p.id===buzzer?'active':''}" data-player-id="${GameUI.esc(p.id)}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected?'🟢':'⚫'}</div><div class="muted player-network" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
+   return `<div class="player ${p.id===buzzer?'active':''} ${state?.voice?.speakingPlayerIds?.includes(p.id)?'voice-speaking':''}" data-player-id="${GameUI.esc(p.id)}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected?'🟢':'⚫'}</div><div class="muted player-network" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
  }).join('')}</div>`;
 }
 
