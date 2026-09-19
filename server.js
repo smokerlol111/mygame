@@ -1073,9 +1073,25 @@ const playerLivenessTimer=setInterval(()=>{
 },2000);
 playerLivenessTimer.unref?.();
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+// DEV-only: optional bot process shares this free Render Web Service.
+let voiceBotProcess=null;
+function startOptionalVoiceBot(){
+  const names=['DISCORD_BOT_TOKEN','DISCORD_GUILD_ID','DISCORD_VOICE_CHANNEL_ID'];
+  const present=names.filter(name=>Boolean(process.env[name]));
+  if(!present.length){console.log('Discord voice bot disabled (no environment variables).');return;}
+  if(present.length!==names.length){console.warn('Discord voice bot disabled: incomplete environment variables.');return;}
+  const {fork}=require('child_process');
+  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit'});
+  voiceBotProcess.on('error',err=>console.error('Discord voice bot process:',err.message));
+  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;});
+}
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>{
+  console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`);
+  startOptionalVoiceBot();
+})).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
+  if(voiceBotProcess){voiceBotProcess.kill('SIGTERM');voiceBotProcess=null;}
   console.log(`${signal}: завершуємо роботу сервера...`);
   for (const room of rooms.values()) {
     if (room.finalTimer) clearInterval(room.finalTimer);
