@@ -31,7 +31,8 @@ function playCueSound(type){
  }catch(e){}
 }
 socket.on('cue',e=>playCueSound(e?.type));
- let state=null,data=null,gamesList=[],seasonAdminToken='',selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
+ let voiceMappings={},voiceTestIds=[];
+let state=null,data=null,gamesList=[],seasonAdminToken='',selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
 function setNetBadge(ok){
  const el=document.getElementById('netBadge');if(!el)return;
  el.textContent=ok?'🟢 Сервер підключено':'🔴 З’єднання втрачено';
@@ -40,7 +41,7 @@ function restoreHostConnection(){
  if(!code||!hostToken)return;
  socket.emit('rejoinHost',{code,hostToken},async r=>{
    if(!r?.ok)return;
-   state=r.state;selectedGameId=r.gameId||state.gameId;hostSpecialCells=r.specialCells||{};
+   state=r.state;selectedGameId=r.gameId||state.gameId;hostSpecialCells=r.specialCells||{};voiceMappings=r.voiceMappings||{};
    try{if(!data||selectedGameId!==state.gameId)await loadGameData(selectedGameId)}catch(e){console.error(e)}
    renderRoom();if(data)render();
  });
@@ -135,7 +136,8 @@ async function createRoom(gameId){
 }
 function renderRoom(){roomBox.innerHTML=`<div class="badge">Кімната <b>${code}</b></div>`}
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if(s.gameId&&s.gameId!==selectedGameId){selectedGameId=s.gameId;await loadGameData(selectedGameId)}renderRoom();if(data)render()});
-socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
+socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};voiceMappings=s.voiceMappings||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
+socket.on('voiceMappings',x=>{if(x.code!==code)return;voiceMappings=x.mappings||{};render()});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 socket.on('networkStats',x=>{if(!state||x.code!==code)return;const p=state.players?.find(p=>p.id===x.playerId);if(p){p.networkRttMs=x.rttMs;p.networkJitterMs=x.jitterMs;p.syncReady=x.syncReady;}render()});
 socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;data=null;selectedGameId='';hostSpecialCells={};renderStart()});
@@ -190,6 +192,14 @@ function hostPlayersHTML(players,buzzer){
  }).join('')}</div>`;
 }
 
+function voiceControlsHTML(){
+ if(!state)return '';
+ const active=state.voice?.speakingPlayerIds||[];
+ return `<details class="panel" style="margin-top:14px"><summary style="cursor:pointer;font-weight:900">🎙️ Discord Active Speaker — прив’язка і тест</summary>
+ <p class="muted">Поки що це ручний тест підсвічування. Автоматичний голосовий міст Discord ще не підключений. Discord ID не показується глядачам.</p>
+ ${(state.players||[]).map(p=>`<div class="row" style="margin:10px 0;align-items:center"><b style="min-width:120px">${GameUI.esc(p.name)}</b><input class="voiceId" data-id="${p.id}" placeholder="Discord User ID" value="${GameUI.esc(voiceMappings[p.id]||'')}" style="min-width:190px;flex:1"><button class="btn voiceSave" data-id="${p.id}">Зберегти ID</button><label><input type="checkbox" class="voiceTest" data-id="${p.id}" ${active.includes(p.id)?'checked':''}> 🎙️ Тест</label></div>`).join('')}
+ <div class="row"><button class="btn" id="voiceApply">▶ Показати активних</button><button class="btn secondary" id="voiceClear">■ Вимкнути підсвічування</button></div></details>`;
+}
 function hostControlsHTML(){
  if(!state)return '';
  const rows=(state.players||[]).map(p=>`
@@ -298,7 +308,7 @@ function render(){if(!state||!data)return;let h='';
    const total=state.finalResults?.length||0, shown=state.finalRevealCount||0;
    const nextIndex=total-1-shown, nextPlace=nextIndex>=0?nextIndex+1:null;
    h=`<h2>🏆 Фінальна церемонія</h2><p class="muted center">На OBS результати відкриваються від останнього місця до переможця.</p><div class="row" style="justify-content:center;margin:18px 0">${shown<total?`<button class="btn gold" id="revealNextFinal">🎬 ВІДКРИТИ ${nextPlace} МІСЦЕ</button>`:'<div class="winner" style="font-size:26px">🏆 Усі результати відкрито</div>'}</div>${state.finalResults.map((p,i)=>`<div class="finalItem"><span>${i+1}. ${GameUI.esc(p.name)}</span><span>Відповідь: <b>${GameUI.esc(p.finalAnswer||'—')}</b> • ${p.correct?'✅':'❌'} • ставка ${p.bet} • <b>${p.score}</b></span></div>`).join('')}<div class="row" style="justify-content:center;margin-top:22px"><button class="btn" id="restartSame">🔄 Нова гра з цими гравцями</button><button class="btn secondary" id="backMenu">🏠 Головне меню</button></div>`}
- h+=seasonSaveHTML(); h+=seasonManagerHTML(); h+=hostControlsHTML(); app.innerHTML=h; bind(); armFirstTurnClock(); armNumericClock(); loadSeasonSaveArea(); loadSeasonManagerArea(); }
+ h+=seasonSaveHTML(); h+=seasonManagerHTML(); h+=hostControlsHTML(); app.innerHTML=h+voiceControlsHTML(); bind(); armFirstTurnClock(); armNumericClock(); loadSeasonSaveArea(); loadSeasonManagerArea(); }
 function bind(){const $=id=>document.getElementById(id); if($('start'))$('start').onclick=()=>emit('startGame'); if($('startNumericTimer'))$('startNumericTimer').onclick=()=>emit('startNumericTimer',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('audience1'))$('audience1').onclick=()=>emit('openAudienceRound',{roundIndex:0},r=>{if(r&&r.ok===false)alert(r.error)}); if($('audience2'))$('audience2').onclick=()=>emit('openAudienceRound',{roundIndex:1},r=>{if(r&&r.ok===false)alert(r.error)}); if($('startAudienceQuestion'))$('startAudienceQuestion').onclick=()=>emit('startAudienceQuestion',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('finishAudienceQuestion'))$('finishAudienceQuestion').onclick=()=>emit('finishAudienceQuestion'); if($('finishAudienceRound'))$('finishAudienceRound').onclick=()=>emit('finishAudienceRound',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealNextAudience'))$('revealNextAudience').onclick=()=>emit('revealNextAudience'); if($('closeAudienceRound'))$('closeAudienceRound').onclick=()=>emit('closeAudienceRound'); if($('startFirstTimer'))$('startFirstTimer').onclick=()=>emit('startFirstTurnTimer',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('skipFirst'))$('skipFirst').onclick=()=>emit('skipFirstTurnQuiz',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealFirst'))$('revealFirst').onclick=()=>emit('revealFirstTurnResults',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealNextFirst'))$('revealNextFirst').onclick=()=>emit('revealNextFirstTurnResult',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('beginRoundOne'))$('beginRoundOne').onclick=()=>emit('beginRoundOne',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('finishNumeric'))$('finishNumeric').onclick=()=>emit('finishNumericQuestion',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('revealNextNumeric'))$('revealNextNumeric').onclick=()=>emit('revealNextNumeric'); if($('finishNumericResult'))$('finishNumericResult').onclick=()=>emit('finishNumericResult',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('restartSame'))$('restartSame').onclick=()=>emit('restartSameGame'); if($('backMenu'))$('backMenu').onclick=()=>{if(confirm('Закрити кімнату й повернутися до головного меню?'))emit('returnToGameMenu')}; if($('newRoom'))$('newRoom').onclick=()=>{if(!confirm('Закрити поточну кімнату й повернутися до вибору гри?'))return;emit('returnToGameMenu',{},()=>{})}; if($('nextRound'))$('nextRound').onclick=()=>emit('nextRound'); if($('finalBets'))$('finalBets').onclick=()=>emit('startFinalBets'); if($('gong'))$('gong').onclick=()=>emit('playCue',{type:'gong'}); if($('revealImageStep'))$('revealImageStep').onclick=()=>emit('revealImageStep',{},r=>{if(r&&r.ok===false)alert(r.error)}); if($('openBuzz'))$('openBuzz').onclick=()=>emit('openBuzz'); if($('reveal'))$('reveal').onclick=()=>emit('revealAnswer'); if($('correct'))$('correct').onclick=()=>emit('judge',{correct:true}); if($('wrong'))$('wrong').onclick=()=>emit('judge',{correct:false}); if($('vbCorrect'))$('vbCorrect').onclick=()=>emit('judgeVaBank',{correct:true}); if($('vbWrong'))$('vbWrong').onclick=()=>emit('judgeVaBank',{correct:false}); if($('openDuelBuzz'))$('openDuelBuzz').onclick=()=>emit('openDuelBuzz'); if($('catCorrect'))$('catCorrect').onclick=()=>emit('judgeCat',{correct:true}); if($('catWrong'))$('catWrong').onclick=()=>emit('judgeCat',{correct:false}); if($('nextResult'))$('nextResult').onclick=()=>emit('nextFromResult'); if($('startFinal'))$('startFinal').onclick=()=>emit('startFinalQuestion',{},r=>{if(!r.ok)alert(r.error)}); if($('startFinalTimer'))$('startFinalTimer').onclick=()=>emit('startFinalTimer',{},r=>{if(r&&r.ok===false)alert(r.error||'Не вдалося запустити таймер')}); if($('finishFinal'))$('finishFinal').onclick=()=>emit('finishFinalNow'); if($('scoreFinal'))$('scoreFinal').onclick=()=>emit('scoreFinal',{results:[...document.querySelectorAll('.finalCorrect')].map(x=>({playerId:x.dataset.id,correct:x.checked}))}); if($('revealNextFinal'))$('revealNextFinal').onclick=()=>emit('revealNextFinalResult',{},r=>{if(r&&r.ok===false)alert(r.error)}); document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>emit('chooseTile',{ci:+b.dataset.ci,qi:+b.dataset.qi})); document.querySelectorAll('.catpick').forEach(b=>b.onclick=()=>emit('selectCatReceiver',{playerId:b.dataset.id}));
  document.querySelectorAll('.scoreQuick').forEach(b=>b.onclick=()=>emit('adjustScore',{playerId:b.dataset.id,amount:+b.dataset.v},r=>{if(r&&r.ok===false)alert(r.error)}));
  document.querySelectorAll('.scoreCustom').forEach(b=>b.onclick=()=>{
@@ -307,7 +317,13 @@ function bind(){const $=id=>document.getElementById(id); if($('start'))$('start'
    if(!Number.isInteger(amount)||amount===0){alert('Введіть ціле число зі знаком, наприклад +250 або -250.');return}
    emit('adjustScore',{playerId:b.dataset.id,amount},r=>{if(r&&r.ok===false)alert(r.error)});
  });
- if($('pauseGame'))$('pauseGame').onclick=()=>emit('togglePause',{},r=>{if(r&&r.ok===false)alert(r.error)});
+ document.querySelectorAll('.voiceSave').forEach(b=>b.onclick=()=>{
+ const input=document.querySelector('.voiceId[data-id="'+b.dataset.id+'"]');
+ emit('voiceSetMapping',{playerId:b.dataset.id,discordId:input?.value||''},r=>{if(!r?.ok)alert(r?.error||'Помилка прив’язки')});
+});
+if($('voiceApply'))$('voiceApply').onclick=()=>emit('voiceTestSpeaking',{playerIds:[...document.querySelectorAll('.voiceTest:checked')].map(x=>x.dataset.id)},r=>{if(!r?.ok)alert(r?.error||'Помилка тесту')});
+if($('voiceClear'))$('voiceClear').onclick=()=>emit('voiceTestSpeaking',{playerIds:[]});
+if($('pauseGame'))$('pauseGame').onclick=()=>emit('togglePause',{},r=>{if(r&&r.ok===false)alert(r.error)});
  if($('emergencyBuzz'))$('emergencyBuzz').onclick=()=>emit('emergencyReopenBuzz',{},r=>{if(r&&r.ok===false)alert(r.error)});
  if($('emergencyReveal'))$('emergencyReveal').onclick=()=>emit('emergencyRevealQuestion',{},r=>{if(r&&r.ok===false)alert(r.error)});
  if($('emergencyBoard'))$('emergencyBoard').onclick=()=>{
