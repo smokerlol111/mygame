@@ -9,7 +9,7 @@ const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true, credentials: true } });
+const io = new Server(server, { cors: { origin: true, credentials: true }, pingInterval: 3000, pingTimeout: 6000 });
 const PORT = process.env.PORT || 3000;
 const gamesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, 'games', 'index.json'), 'utf8'));
 const games = new Map();
@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.5-dev', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.6-dev', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -343,13 +343,13 @@ io.on('connection', socket => {
   socket.on('reportNetworkStats', ({code:c,rttMs,jitterMs,samples} = {}, cb = () => {}) => {
     const room=getRoom(c || socket.data.roomCode);
     const p=room?.players.find(x=>x.id===socket.data.playerId);
-    if(!room||!p)return cb({ok:false});
+    if(!room||!p||p.socketId!==socket.id||!p.connected)return cb({ok:false});
     const rtt=Number(rttMs), jitter=Number(jitterMs);
     if(Number.isFinite(rtt)&&rtt>=0&&rtt<10000)p.networkRttMs=rtt;
     if(Number.isFinite(jitter)&&jitter>=0&&jitter<10000)p.networkJitterMs=jitter;
     p.syncSamples=Math.min(8,Math.max(0,Number(samples)||0)); p.lastSyncAt=Date.now();
     cb({ok:true});
-    if(room.hostSocket) io.to(room.hostSocket).emit('networkStats',{code:room.code,playerId:p.id,rttMs:p.networkRttMs,jitterMs:p.networkJitterMs,syncReady:p.syncSamples>=3});
+    if(room.hostSocket) io.to(room.hostSocket).emit('networkStats',{code:room.code,playerId:p.id,rttMs:p.networkRttMs,jitterMs:p.networkJitterMs,syncReady:p.syncSamples>=3,connected:p.connected});
   });
 
   socket.on('togglePause', ({code:c}={}, cb=()=>{})=>{
@@ -1019,13 +1019,36 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const room = getRoom(socket.data.roomCode); if (!room) return;
     const p = room.players.find(x => x.id === socket.data.playerId);
-    if (p) { p.connected = false; p.socketId = null; }
+    if (p && p.socketId === socket.id) { p.connected = false; p.socketId = null; p.syncSamples=0; p.lastSyncAt=0; }
     const a = room.audience.find(x => x.id === socket.data.audienceId); if(a){a.connected=false;a.socketId=null;}
-    if(p||a) emitState(room);
+    if((p && !p.connected)||a) emitState(room);
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.5-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+// A backgrounded mobile browser can stop answering while Socket.IO still reports
+// connected. Expire stale player sync and notify HOST without removing their score.
+const playerLivenessTimer=setInterval(()=>{
+ const now=Date.now();
+ for(const room of rooms.values()){
+   let changed=false;
+   for(const player of room.players){
+     if(!player.connected)continue;
+     if(!player.socketId || now-Number(player.lastSyncAt||0)>11000){
+       const oldSocketId=player.socketId;
+       player.connected=false;player.socketId=null;player.syncSamples=0;player.lastSyncAt=0;
+       changed=true;
+       if(oldSocketId){
+         const staleSocket=io.sockets.sockets.get(oldSocketId);
+         if(staleSocket && staleSocket.data.playerId===player.id && staleSocket.data.roomCode===room.code) staleSocket.disconnect(true);
+       }
+     }
+   }
+   if(changed)emitState(room);
+ }
+},2000);
+playerLivenessTimer.unref?.();
+
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.6-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
