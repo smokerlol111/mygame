@@ -1078,7 +1078,7 @@ playerLivenessTimer.unref?.();
 let voiceLastEvent=0;
 function clearDiscordSpeaking(){
   for(const room of rooms.values()){
-    if(room.voiceSpeaking?.length){room.voiceSpeaking=[];room.voiceUpdatedAt=Date.now();emitState(room);}
+    if(room.voiceSpeaking?.length){room.voiceSpeaking=[];room.voiceUpdatedAt=Date.now();io.to(room.code).emit('voiceSpeaking',{code:room.code,playerIds:[]});}
   }
 }
 function handleDiscordVoiceMessage(message){
@@ -1091,7 +1091,7 @@ function handleDiscordVoiceMessage(message){
     const next=room.players.filter(p=>active.has(room.voiceMappings?.[p.id])).map(p=>p.id);
     const previous=room.voiceSpeaking||[];
     if(next.length!==previous.length || next.some(id=>!previous.includes(id))){
-      room.voiceSpeaking=next;room.voiceUpdatedAt=Date.now();emitState(room);
+      room.voiceSpeaking=next;room.voiceUpdatedAt=Date.now();io.to(room.code).emit('voiceSpeaking',{code:room.code,playerIds:next});
     }
   }
 }
