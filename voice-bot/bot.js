@@ -41,7 +41,7 @@ client.once(Events.ClientReady, async () => {
     const lastStart = new Map();
     const send = () => { if (process.send) process.send({type:'voiceActivity', guildId, channelId, userIds:[...active]}); };
     connection.receiver.speaking.on('start', userId => {
-      if (!/^\\d{17,20}$/.test(userId)) return;
+      if (!/^\d{17,20}$/.test(userId)) return;
       lastStart.set(userId, Date.now());
       active.add(userId);
       send();
