@@ -31,7 +31,7 @@ function playCueSound(type){
  }catch(e){}
 }
 socket.on('cue',e=>playCueSound(e?.type));
- let voiceMappings={},voiceTestIds=[];
+ let voiceMappings={},voiceTestIds=[],voicePanelOpen=false,voiceDraftIds={};
 let state=null,data=null,gamesList=[],seasonAdminToken='',selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
 function setNetBadge(ok){
  const el=document.getElementById('netBadge');if(!el)return;
@@ -195,9 +195,9 @@ function hostPlayersHTML(players,buzzer){
 function voiceControlsHTML(){
  if(!state)return '';
  const active=state.voice?.speakingPlayerIds||[];
- return `<details class="panel" style="margin-top:14px"><summary style="cursor:pointer;font-weight:900">🎙️ Discord Active Speaker — прив’язка і тест</summary>
+ return `<details id="voicePanel" class="panel" style="margin-top:14px" ${voicePanelOpen?'open':''}><summary style="cursor:pointer;font-weight:900">🎙️ Discord Active Speaker — прив’язка і тест</summary>
  <p class="muted">Поки що це ручний тест підсвічування. Автоматичний голосовий міст Discord ще не підключений. Discord ID не показується глядачам.</p>
- ${(state.players||[]).map(p=>`<div class="row" style="margin:10px 0;align-items:center"><b style="min-width:120px">${GameUI.esc(p.name)}</b><input class="voiceId" data-id="${p.id}" placeholder="Discord User ID" value="${GameUI.esc(voiceMappings[p.id]||'')}" style="min-width:190px;flex:1"><button class="btn voiceSave" data-id="${p.id}">Зберегти ID</button><label><input type="checkbox" class="voiceTest" data-id="${p.id}" ${active.includes(p.id)?'checked':''}> 🎙️ Тест</label></div>`).join('')}
+ ${(state.players||[]).map(p=>`<div class="row" style="margin:10px 0;align-items:center"><b style="min-width:120px">${GameUI.esc(p.name)}</b><input class="voiceId" data-id="${p.id}" placeholder="Discord User ID" value="${GameUI.esc(Object.prototype.hasOwnProperty.call(voiceDraftIds,p.id)?voiceDraftIds[p.id]:(voiceMappings[p.id]||''))}" style="min-width:190px;flex:1"><button class="btn voiceSave" data-id="${p.id}">Зберегти ID</button><label><input type="checkbox" class="voiceTest" data-id="${p.id}" ${voiceTestIds.includes(p.id)?'checked':''}> 🎙️ Тест</label></div>`).join('')}
  <div class="row"><button class="btn" id="voiceApply">▶ Показати активних</button><button class="btn secondary" id="voiceClear">■ Вимкнути підсвічування</button></div></details>`;
 }
 function hostControlsHTML(){
@@ -317,12 +317,19 @@ function bind(){const $=id=>document.getElementById(id); if($('start'))$('start'
    if(!Number.isInteger(amount)||amount===0){alert('Введіть ціле число зі знаком, наприклад +250 або -250.');return}
    emit('adjustScore',{playerId:b.dataset.id,amount},r=>{if(r&&r.ok===false)alert(r.error)});
  });
+ const voicePanel=$('voicePanel');
+ if(voicePanel)voicePanel.addEventListener('toggle',()=>{voicePanelOpen=voicePanel.open});
+ document.querySelectorAll('.voiceId').forEach(input=>input.addEventListener('input',()=>{voiceDraftIds[input.dataset.id]=input.value}));
+ document.querySelectorAll('.voiceTest').forEach(input=>input.addEventListener('change',()=>{
+   const id=input.dataset.id;
+   voiceTestIds=input.checked?[...new Set([...voiceTestIds,id])]:voiceTestIds.filter(x=>x!==id);
+ }));
  document.querySelectorAll('.voiceSave').forEach(b=>b.onclick=()=>{
  const input=document.querySelector('.voiceId[data-id="'+b.dataset.id+'"]');
- emit('voiceSetMapping',{playerId:b.dataset.id,discordId:input?.value||''},r=>{if(!r?.ok)alert(r?.error||'Помилка прив’язки')});
+ emit('voiceSetMapping',{playerId:b.dataset.id,discordId:input?.value||''},r=>{if(!r?.ok)alert(r?.error||'Помилка прив’язки');else delete voiceDraftIds[b.dataset.id]});
 });
-if($('voiceApply'))$('voiceApply').onclick=()=>emit('voiceTestSpeaking',{playerIds:[...document.querySelectorAll('.voiceTest:checked')].map(x=>x.dataset.id)},r=>{if(!r?.ok)alert(r?.error||'Помилка тесту')});
-if($('voiceClear'))$('voiceClear').onclick=()=>emit('voiceTestSpeaking',{playerIds:[]});
+if($('voiceApply'))$('voiceApply').onclick=()=>emit('voiceTestSpeaking',{playerIds:voiceTestIds.filter(id=>state.players.some(p=>p.id===id))},r=>{if(!r?.ok)alert(r?.error||'Помилка тесту')});
+if($('voiceClear'))$('voiceClear').onclick=()=>{voiceTestIds=[];emit('voiceTestSpeaking',{playerIds:[]});};
 if($('pauseGame'))$('pauseGame').onclick=()=>emit('togglePause',{},r=>{if(r&&r.ok===false)alert(r.error)});
  if($('emergencyBuzz'))$('emergencyBuzz').onclick=()=>emit('emergencyReopenBuzz',{},r=>{if(r&&r.ok===false)alert(r.error)});
  if($('emergencyReveal'))$('emergencyReveal').onclick=()=>emit('emergencyRevealQuestion',{},r=>{if(r&&r.ok===false)alert(r.error)});
