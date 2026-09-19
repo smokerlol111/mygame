@@ -21,14 +21,27 @@ client.once(Events.ClientReady, async () => {
       channelId: channel.id, guildId: guild.id, adapterCreator: guild.voiceAdapterCreator,
       selfDeaf: false, selfMute: true
     });
-    connection.on('error', error => console.error('Voice connection:', error.message));
+    console.log('Voice channel resolved:', channel.name, 'type:', channel.type);
+    connection.on('stateChange', (oldState, newState) => {
+      console.log('Voice state:', oldState.status, '->', newState.status);
+      const network = newState.networking;
+      if (network && network !== oldState.networking) {
+        network.on('stateChange', (oldNetwork, newNetwork) => {
+          console.log('Voice network:', oldNetwork.code, '->', newNetwork.code);
+        });
+      }
+    });
+    connection.on('error', error => console.error('Voice connection:', error.stack || error.message));
+    console.log('Waiting for Discord voice Ready (30 seconds)...');
     await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
     console.log('Connected to voice channel: ' + channel.name);
     console.log('Voice activity forwarding is NOT implemented yet. No audio is recorded.');
   } catch (error) {
-    console.error('Bot startup failed:', error.message);
-    process.exitCode = 1;
+    console.error('Bot startup failed:', error.stack || error.message);
+    console.error('Voice status at failure:', connection?.state?.status || 'not created');
+    connection?.destroy();
     client.destroy();
+    process.exitCode = 1;
   }
 });
 client.on('error', error => console.error('Discord client:', error.message));
