@@ -139,7 +139,17 @@ socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if
 socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};voiceMappings=s.voiceMappings||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
 socket.on('voiceMappings',x=>{if(x.code!==code)return;voiceMappings=x.mappings||{};render()});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
-socket.on('networkStats',x=>{if(!state||x.code!==code)return;const p=state.players?.find(p=>p.id===x.playerId);if(p){p.networkRttMs=x.rttMs;p.networkJitterMs=x.jitterMs;p.syncReady=x.syncReady;}render()});
+function updatePlayerNetwork(playerId){
+ const p=state?.players?.find(p=>p.id===playerId);if(!p)return;
+ const rtt=Number.isFinite(Number(p.networkRttMs))?Math.round(Number(p.networkRttMs)):null;
+ const jitter=Number.isFinite(Number(p.networkJitterMs))?Math.round(Number(p.networkJitterMs)):null;
+ const ready=!p.connected?'🔴 LOST':p.syncReady?'🟢 READY':'🟡 SYNC…';
+ const net=rtt==null?'⚪ ping —':(rtt<80?'🟢':rtt<160?'🟡':'🔴')+' '+rtt+' ms'+(jitter==null?'':' • jitter '+jitter+' ms');
+ document.querySelectorAll('.player[data-player-id]').forEach(el=>{
+   if(el.dataset.playerId===String(playerId)){const label=el.querySelector('.player-network');if(label)label.textContent=ready+' • '+net;}
+ });
+}
+socket.on('networkStats',x=>{if(!state||x.code!==code)return;const p=state.players?.find(p=>p.id===x.playerId);if(p){p.networkRttMs=x.rttMs;p.networkJitterMs=x.jitterMs;p.syncReady=x.syncReady;updatePlayerNetwork(x.playerId);}});
 socket.on('roomClosed',x=>{if(x.code!==code)return;localStorage.removeItem('sgHostToken');localStorage.removeItem('sgRoomCode');code='';hostToken='';state=null;data=null;selectedGameId='';hostSpecialCells={};renderStart()});
 function emit(ev,p={},cb=()=>{}){socket.emit(ev,{code,...p},cb)}
 function hostBoardHTML(){
@@ -188,7 +198,7 @@ function hostPlayersHTML(players,buzzer){
    const jitter=Number.isFinite(Number(p.networkJitterMs))?Math.round(Number(p.networkJitterMs)):null;
    const ready=!p.connected?'🔴 LOST':p.syncReady?'🟢 READY':'🟡 SYNC…';
    const net=rtt==null?'⚪ ping —':(rtt<80?'🟢':rtt<160?'🟡':'🔴')+' '+rtt+' ms'+(jitter==null?'':' • jitter '+jitter+' ms');
-   return `<div class="player ${p.id===buzzer?'active':''}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected?'🟢':'⚫'}</div><div class="muted" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
+   return `<div class="player ${p.id===buzzer?'active':''}" data-player-id="${GameUI.esc(p.id)}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected?'🟢':'⚫'}</div><div class="muted player-network" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
  }).join('')}</div>`;
 }
 
