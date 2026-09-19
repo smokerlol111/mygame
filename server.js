@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'3.0.6-dev', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'3.1.0-dev', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -88,6 +88,7 @@ function publicState(room) {
     vaBankPlayer: room.vaBankPlayer,
     vaBankBet: room.vaBankBet,
     duelPlayers: room.duelPlayers || [],
+    voice: { speakingPlayerIds: (room.voiceSpeaking||[]).filter(id=>room.players.some(p=>p.id===id)), updatedAt:room.voiceUpdatedAt||0 },
     players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), networkRttMs: Number.isFinite(p.networkRttMs) ? Math.round(p.networkRttMs) : null, networkJitterMs: Number.isFinite(p.networkJitterMs) ? Math.round(p.networkJitterMs) : null, syncReady: !!p.connected && Number(p.syncSamples||0)>=3 && Date.now()-Number(p.lastSyncAt||0)<12000, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
     buzzOpensAt: room.buzzOpensAt || null,
     answeringLocked: Array.from(room.answeringLocked || []),
@@ -129,7 +130,7 @@ function emitState(room) {
   io.to(room.code).emit('state', publicState(room));
   // Hidden service information is sent only to the authenticated HOST socket.
   // Players and the OBS screen never receive the special-cell map.
-  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
+  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, voiceMappings:room.voiceMappings||{}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
 }
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
@@ -259,6 +260,7 @@ io.on('connection', socket => {
     const room = {
       code: roomCode, hostToken: token, hostSocket: socket.id,
       gameId: selectedGame.id || gameId || DEFAULT_GAME_ID, gameData: selectedGame,
+      voiceMappings:{}, voiceSpeaking:[], voiceUpdatedAt:0,
       players: [], phase: 'lobby', round: 0, used: {}, current: null,
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
@@ -277,7 +279,7 @@ io.on('connection', socket => {
     socket.data.hostToken = token;
     socket.data.roomCode = roomCode;
     socket.join(roomCode);
-    cb({ ok: true, code: roomCode, hostToken: token, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {} });
+    cb({ ok: true, code: roomCode, hostToken: token, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {}, voiceMappings:room.voiceMappings||{} });
     emitState(room);
   });
 
@@ -432,6 +434,29 @@ io.on('connection', socket => {
     socket.join(room.code);
     cb({ ok: true, code: room.code });
     emitState(room);
+  });
+
+  // v3.1: HOST-only voice mapping and manual test events. The Discord bridge is NOT connected yet.
+  socket.on('voiceSetMapping',({code:c,playerId,discordId},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може змінювати прив’язки.'});
+    if(!room.players.some(p=>p.id===playerId))return cb({ok:false,error:'Гравця не знайдено.'});
+    const id=String(discordId||'').trim();
+    if(id && !/^\\d{17,20}$/.test(id))return cb({ok:false,error:'Введіть Discord User ID (17–20 цифр) або залиште поле порожнім.'});
+    if(id && Object.entries(room.voiceMappings||{}).some(([p,v])=>p!==playerId&&v===id))return cb({ok:false,error:'Цей Discord ID вже прив’язано.'});
+    room.voiceMappings=room.voiceMappings||{};
+    if(id)room.voiceMappings[playerId]=id;else delete room.voiceMappings[playerId];
+    io.to(room.hostSocket).emit('voiceMappings',{code:room.code,mappings:room.voiceMappings});
+    cb({ok:true});
+  });
+  socket.on('voiceTestSpeaking',({code:c,playerIds},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може запускати тест.'});
+    const valid=new Set(room.players.map(p=>p.id));
+    room.voiceSpeaking=[...new Set(Array.isArray(playerIds)?playerIds:[])].filter(id=>valid.has(id)).slice(0,4);
+    room.voiceUpdatedAt=Date.now();
+    emitState(room);
+    cb({ok:true});
   });
 
   socket.on('startGame', ({ code: c }, cb = () => {}) => {
@@ -1048,7 +1073,7 @@ const playerLivenessTimer=setInterval(()=>{
 },2000);
 playerLivenessTimer.unref?.();
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.0.6-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
   console.log(`${signal}: завершуємо роботу сервера...`);
