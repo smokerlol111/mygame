@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=304"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=304"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=305"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=305"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -81,7 +81,7 @@ function syncClockSample(){
    serverClockOffsetMs=best.reduce((n,x)=>n+x.offset,0)/Math.max(1,best.length);
    const rtts=best.map(x=>x.rtt), avg=rtts.reduce((a,b)=>a+b,0)/Math.max(1,rtts.length);
    const jitter=rtts.reduce((a,x)=>a+Math.abs(x-avg),0)/Math.max(1,rtts.length);
-   if(joined&&code)socket.emit('reportNetworkStats',{code,rttMs:avg,jitterMs:jitter});
+   if(joined&&code)socket.emit('reportNetworkStats',{code,rttMs:avg,jitterMs:jitter,samples:syncSamples.length});
  });
 }
 function startClockSync(){if(syncTimer)clearInterval(syncTimer);syncSamples=[];for(let i=0;i<5;i++)setTimeout(syncClockSample,i*180);syncTimer=setInterval(syncClockSample,5000)}
