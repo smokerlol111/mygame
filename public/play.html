@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=164"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=164"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=306"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=306"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -67,10 +67,29 @@ const urlCode=(params.get('room')||'').trim().toUpperCase();
 const savedCode=(localStorage.getItem('sgCode')||'').trim().toUpperCase();
 let state=null, code=urlCode||savedCode, playerId=localStorage.getItem('sgPlayerId')||'', name=localStorage.getItem('sgPlayerName')||'';
 let joined=false, reconnectTried=false;
+let serverClockOffsetMs=0, syncSamples=[], syncTimer=null, buzzClock=null;
+function serverNow(){return Date.now()+serverClockOffsetMs}
+function syncClockSample(){
+ if(!socket.connected)return;
+ const sent=Date.now();
+ socket.emit('timeSync',{clientSentAt:sent},r=>{
+   const recv=Date.now(); if(!r?.ok)return;
+   const rtt=recv-sent, serverMid=(Number(r.serverReceivedAt)+Number(r.serverSentAt))/2;
+   const offset=serverMid-((sent+recv)/2);
+   syncSamples.push({rtt,offset}); if(syncSamples.length>8)syncSamples.shift();
+   const best=[...syncSamples].sort((a,b)=>a.rtt-b.rtt).slice(0,Math.min(5,syncSamples.length));
+   serverClockOffsetMs=best.reduce((n,x)=>n+x.offset,0)/Math.max(1,best.length);
+   const rtts=best.map(x=>x.rtt), avg=rtts.reduce((a,b)=>a+b,0)/Math.max(1,rtts.length);
+   const jitter=rtts.reduce((a,x)=>a+Math.abs(x-avg),0)/Math.max(1,rtts.length);
+   if(joined&&code)socket.emit('reportNetworkStats',{code,rttMs:avg,jitterMs:jitter,samples:syncSamples.length});
+ });
+}
+function startClockSync(){if(syncTimer)clearInterval(syncTimer);syncSamples=[];for(let i=0;i<5;i++)setTimeout(syncClockSample,i*180);syncTimer=setInterval(syncClockSample,5000)}
+
 
 function setNetBadge(ok){const el=document.getElementById('netBadge');if(el)el.textContent=ok?'🟢 Онлайн':'🔴 Немає зв’язку'}
 socket.on('connect',()=>{
- setNetBadge(true);
+ setNetBadge(true); startClockSync();
  if(joined&&playerId&&code&&name){
    socket.emit('joinPlayer',{code,name,playerId},r=>{
      if(r?.ok){
@@ -78,6 +97,7 @@ socket.on('connect',()=>{
        localStorage.setItem('sgPlayerId',playerId);
        localStorage.setItem('sgCode',code);
        localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
      }
    });
  }
@@ -107,6 +127,7 @@ function login(prefill=urlCode||''){
       if(!r.ok)return showError(r.error||'Не вдалося приєднатися.');
       playerId=r.playerId; code=r.code; name=r.name; joined=true;
       localStorage.setItem('sgPlayerId',playerId); localStorage.setItem('sgCode',code); localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
       history.replaceState(null,'',`/play?room=${encodeURIComponent(code)}`);
     });
   };
@@ -120,6 +141,7 @@ if(playerId&&savedCode&&name&&(!urlCode||urlCode===savedCode)){
     if(!r.ok){clearSession(true);login(urlCode||'');return;}
     playerId=r.playerId;code=r.code;name=r.name;joined=true;
     localStorage.setItem('sgPlayerId',playerId);localStorage.setItem('sgCode',code);localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
   });
 }
 
@@ -161,7 +183,15 @@ function penaltyLeftMs(){
 function buzzButtonHTML(open){
  const left=penaltyLeftMs();
  if(left>0)return `<div class="center"><button id="buzz" class="btn buzz penalty">🔒 ФАЛЬСТАРТ<br><span id="penaltyTime">${(left/1000).toFixed(1)}</span> с</button><p class="muted">Після завершення штрафу кнопка активується автоматично.</p></div>`;
- return `<div class="center"><button id="buzz" class="btn buzz ${open?'ready':'waiting'}">${open?'⚡ ВІДПОВІДАТИ!':'🌑 ЧЕКАЙ'}</button><p class="muted">${open?'Кнопка відкрита — можна тиснути.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
+ const scheduled=open&&Number(state?.buzzOpensAt||0)>serverNow();
+ const ready=open&&!scheduled;
+ return `<div class="center"><button id="buzz" class="btn buzz ${ready?'ready':'waiting'}">${ready?'⚡ ВІДПОВІДАТИ!':scheduled?'⚡ ГОТУЙСЯ…':'🌑 ЧЕКАЙ'}</button><p class="muted">${ready?'Кнопка відкрита — можна тиснути.':scheduled?'BUZZ відкриється одночасно на всіх телефонах.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
+}
+function armBuzzClock(){
+ if(buzzClock){clearTimeout(buzzClock);buzzClock=null}
+ if(state?.phase!=='buzz')return;
+ const delay=Number(state.buzzOpensAt||0)-serverNow();
+ if(delay>0)buzzClock=setTimeout(()=>{buzzClock=null;render()},Math.max(0,delay+5));
 }
 function armPenaltyClock(){
  if(penaltyClock){clearInterval(penaltyClock);penaltyClock=null}
@@ -246,8 +276,11 @@ function render(){
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
+  armBuzzClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
-  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>{
+    socket.emit('buzz',{code,pressedAtServerTime:serverNow()},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  };
   if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;

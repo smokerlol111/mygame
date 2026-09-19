@@ -24,6 +24,10 @@ body.screen .wrap{max-width:none;padding-left:340px;padding-right:24px;box-sizin
 .imageRevealWrap{max-width:1180px;margin:8px auto}.imageRevealImg{width:100%;height:auto;max-height:64vh;object-fit:contain}.imageRevealFrame{display:flex;align-items:center;justify-content:center}
 .audQr{width:min(300px,24vw);background:white;padding:10px;border-radius:18px}.audGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:1000px;margin:18px auto}.audOpt{padding:16px;border-radius:14px;background:rgba(255,255,255,.08);font-size:24px;font-weight:800}
 @media(max-width:1200px){body.screen .wrap{padding-left:300px}.cameraSafe{width:250px}}
+</style><style>
+/* v3.1 Active Speaker: highlight the EXISTING score cards, no separate overlay. */
+#app .scorebar .player.voice-speaking{border:3px solid #a78bfa!important;background:rgba(124,58,237,.35)!important;box-shadow:0 0 0 3px rgba(167,139,250,.22),0 0 28px rgba(167,139,250,.65)!important;transition:background .12s,border .12s,box-shadow .12s}
+#app .scorebar .player.voice-speaking::after{content:'🎙️ ГОВОРИТЬ';display:block;color:#d8b4fe;font-size:12px;font-weight:900}
 </style>
 </head><body class="screen"><div class="cameraSafe">КАМЕРА 16:9</div><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');
@@ -93,6 +97,7 @@ let audienceClockHandle=null;
 function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');const ms=Math.min(15000,Math.max(0,Number(state?.audience?.remainingMs||0)));if(!el)return;const end=Date.now()+ms;const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
 let numericClockHandle=null;
 function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),end=Number(state?.numericChallenge?.endsAt||0);if(!el||!end)return;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
+function applyVoiceHighlight(){const speaking=new Set(state?.voice?.speakingPlayerIds||[]);const cards=app.querySelectorAll('.scorebar .player');const players=state?.players||[];cards.forEach((card,i)=>card.classList.toggle('voice-speaking',speaking.has(players[i]?.id)));}
 function render(){if(!state||!data)return;let h=``;
  if(state.phase==='paused'){
    app.innerHTML=`<div class="panel center" style="margin-top:8vh;padding:56px"><div class="huge">⏸</div><h1 style="font-size:54px">ТЕХНІЧНА ПАУЗА</h1><p class="muted" style="font-size:24px">Скоро продовжимо</p></div>`;
@@ -141,5 +146,5 @@ function render(){if(!state||!data)return;let h=``;
    const latest=revealed[revealed.length-1];
    h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
  }
- app.innerHTML=h;armFirstTurnClock();armNumericClock();armAudienceClock()}
+ app.innerHTML=h;applyVoiceHighlight();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>

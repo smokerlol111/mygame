@@ -9,7 +9,7 @@ const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true, credentials: true } });
+const io = new Server(server, { cors: { origin: true, credentials: true }, pingInterval: 3000, pingTimeout: 6000 });
 const PORT = process.env.PORT || 3000;
 const gamesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, 'games', 'index.json'), 'utf8'));
 const games = new Map();
@@ -56,7 +56,7 @@ app.get('/games/:id.json', (req, res) => {
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
-app.get('/health', (_, res) => res.json({ ok:true, version:'1.6.10', rooms:rooms.size }));
+app.get('/health', (_, res) => res.json({ ok:true, version:'3.1.0-dev', rooms:rooms.size }));
 app.get('/seasons', (_,res)=>res.sendFile(path.join(__dirname,'public','seasons.html')));
 app.get('/api/seasons', async (_,res)=>{try{res.json(await storage.publicData())}catch(e){console.error(e);res.status(500).json({error:'Не вдалося завантажити сезони.'})}});
 
@@ -88,7 +88,9 @@ function publicState(room) {
     vaBankPlayer: room.vaBankPlayer,
     vaBankBet: room.vaBankBet,
     duelPlayers: room.duelPlayers || [],
-    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    voice: { speakingPlayerIds: (room.voiceSpeaking||[]).filter(id=>room.players.some(p=>p.id===id)), updatedAt:room.voiceUpdatedAt||0 },
+    players: room.players.map(p => ({ id: p.id, name: p.name, score: p.score, connected: p.connected, falseStartUntil: Number(p.falseStartUntil||0), falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil||0) - Date.now()), networkRttMs: Number.isFinite(p.networkRttMs) ? Math.round(p.networkRttMs) : null, networkJitterMs: Number.isFinite(p.networkJitterMs) ? Math.round(p.networkJitterMs) : null, syncReady: !!p.connected && Number(p.syncSamples||0)>=3 && Date.now()-Number(p.lastSyncAt||0)<12000, hasBet: p.bet !== null, hasFinalAnswer: !!p.finalAnswer, finalAnswer: ['final_review','final_result'].includes(room.phase) ? p.finalAnswer : '' })),
+    buzzOpensAt: room.buzzOpensAt || null,
     answeringLocked: Array.from(room.answeringLocked || []),
     finalSeconds: room.finalSeconds,
     revealAnswer: room.revealAnswer,
@@ -128,7 +130,7 @@ function emitState(room) {
   io.to(room.code).emit('state', publicState(room));
   // Hidden service information is sent only to the authenticated HOST socket.
   // Players and the OBS screen never receive the special-cell map.
-  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
+  if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, voiceMappings:room.voiceMappings||{}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
 }
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
@@ -147,6 +149,10 @@ function resetQuestionState(room) {
   room.vaBankPlayer = null;
   room.vaBankBet = null;
   room.duelPlayers = [];
+  room.buzzOpensAt = null;
+  room.buzzCandidates = [];
+  if (room.buzzResolveTimer) clearTimeout(room.buzzResolveTimer);
+  room.buzzResolveTimer = null;
 }
 function advanceTurn(room) {
   if (!room.players.length) { room.turnPlayerId = null; return; }
@@ -254,6 +260,7 @@ io.on('connection', socket => {
     const room = {
       code: roomCode, hostToken: token, hostSocket: socket.id,
       gameId: selectedGame.id || gameId || DEFAULT_GAME_ID, gameData: selectedGame,
+      voiceMappings:{}, voiceSpeaking:[], voiceUpdatedAt:0,
       players: [], phase: 'lobby', round: 0, used: {}, current: null,
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
@@ -265,13 +272,14 @@ io.on('connection', socket => {
       firstTurnRevealCount: 0,
       numericChallenge: null, numericAnswers: {}, numericSubmittedAt: {}, numericResults: null, numericEndsAt: null, numericTimer: null, numericRevealCount: 0,
       audience: [], audienceRoundIndex: null, audienceQuestionIndex: 0, audienceAnswers: {}, audienceStartedAt: null, audienceEndsAt: null, audienceTimer: null, audienceReturnPhase: null, audienceRevealCount: 0, audienceWinners: [],
-      paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null
+      paused: false, pausedPhase: null, pauseFirstTurnRemaining: null, pauseFinalRemaining: null,
+      buzzCandidates: [], buzzResolveTimer: null
     };
     rooms.set(roomCode, room);
     socket.data.hostToken = token;
     socket.data.roomCode = roomCode;
     socket.join(roomCode);
-    cb({ ok: true, code: roomCode, hostToken: token, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {} });
+    cb({ ok: true, code: roomCode, hostToken: token, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {}, voiceMappings:room.voiceMappings||{} });
     emitState(room);
   });
 
@@ -293,10 +301,10 @@ io.on('connection', socket => {
     if (!p) {
       if (room.players.length >= 4) return cb({ ok: false, error: 'У кімнаті вже 4 гравці.' });
       const clean = String(name || '').trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
-      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '', falseStartUntil: 0 };
+      p = { id: crypto.randomUUID(), name: clean, score: 0, socketId: socket.id, connected: true, bet: null, finalAnswer: '', falseStartUntil: 0, networkRttMs: null, networkJitterMs: null, syncSamples:0, lastSyncAt:0 };
       room.players.push(p);
     } else {
-      p.socketId = socket.id; p.connected = true;
+      p.socketId = socket.id; p.connected = true; p.syncSamples=0; p.lastSyncAt=0;
       if (name) p.name = String(name).trim().slice(0,20) || p.name;
     }
     socket.data.playerId = p.id;
@@ -327,6 +335,25 @@ io.on('connection', socket => {
     emitState(room);
   });
 
+  // v3.0.1 — lightweight NTP-style clock sync. The client measures RTT and
+  // estimates server clock offset from the midpoint of the request.
+  socket.on('timeSync', ({clientSentAt} = {}, cb = () => {}) => {
+    const serverReceivedAt = Date.now();
+    cb({ok:true, clientSentAt:Number(clientSentAt)||0, serverReceivedAt, serverSentAt:Date.now()});
+  });
+
+  socket.on('reportNetworkStats', ({code:c,rttMs,jitterMs,samples} = {}, cb = () => {}) => {
+    const room=getRoom(c || socket.data.roomCode);
+    const p=room?.players.find(x=>x.id===socket.data.playerId);
+    if(!room||!p||p.socketId!==socket.id||!p.connected)return cb({ok:false});
+    const rtt=Number(rttMs), jitter=Number(jitterMs);
+    if(Number.isFinite(rtt)&&rtt>=0&&rtt<10000)p.networkRttMs=rtt;
+    if(Number.isFinite(jitter)&&jitter>=0&&jitter<10000)p.networkJitterMs=jitter;
+    p.syncSamples=Math.min(8,Math.max(0,Number(samples)||0)); p.lastSyncAt=Date.now();
+    cb({ok:true});
+    if(room.hostSocket) io.to(room.hostSocket).emit('networkStats',{code:room.code,playerId:p.id,rttMs:p.networkRttMs,jitterMs:p.networkJitterMs,syncReady:p.syncSamples>=3,connected:p.connected});
+  });
+
   socket.on('togglePause', ({code:c}={}, cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});
@@ -341,8 +368,11 @@ io.on('connection', socket => {
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null;
-    cb({ok:true}); emitState(room);
+    const leadMs=1200;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
+    io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
+    setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
+    cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
   socket.on('emergencyRevealQuestion', ({code:c}={},cb=()=>{})=>{
@@ -404,6 +434,29 @@ io.on('connection', socket => {
     socket.join(room.code);
     cb({ ok: true, code: room.code });
     emitState(room);
+  });
+
+  // v3.1: HOST-only voice mapping and manual test events. The Discord bridge is NOT connected yet.
+  socket.on('voiceSetMapping',({code:c,playerId,discordId},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може змінювати прив’язки.'});
+    if(!room.players.some(p=>p.id===playerId))return cb({ok:false,error:'Гравця не знайдено.'});
+    const id=String(discordId||'').trim();
+    if(id && !/^\d{17,20}$/.test(id))return cb({ok:false,error:'Введіть Discord User ID (17–20 цифр) або залиште поле порожнім.'});
+    if(id && Object.entries(room.voiceMappings||{}).some(([p,v])=>p!==playerId&&v===id))return cb({ok:false,error:'Цей Discord ID вже прив’язано.'});
+    room.voiceMappings=room.voiceMappings||{};
+    if(id)room.voiceMappings[playerId]=id;else delete room.voiceMappings[playerId];
+    io.to(room.hostSocket).emit('voiceMappings',{code:room.code,mappings:room.voiceMappings});
+    cb({ok:true});
+  });
+  socket.on('voiceTestSpeaking',({code:c,playerIds},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може запускати тест.'});
+    const valid=new Set(room.players.map(p=>p.id));
+    room.voiceSpeaking=[...new Set(Array.isArray(playerIds)?playerIds:[])].filter(id=>valid.has(id)).slice(0,4);
+    room.voiceUpdatedAt=Date.now();
+    emitState(room);
+    cb({ok:true});
   });
 
   socket.on('startGame', ({ code: c }, cb = () => {}) => {
@@ -641,26 +694,74 @@ io.on('connection', socket => {
   socket.on('openBuzz', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current) return;
-    room.phase = 'buzz'; room.buzzer = null; room.answeringLocked = new Set(); room.resultReason = null;
-    io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
-    cb({ok:true}); emitState(room);
+    const unready=room.players.filter(p=>p.connected && (Number(p.syncSamples||0)<3 || Date.now()-Number(p.lastSyncAt||0)>=12000));
+    if(unready.length)return cb({ok:false,error:'Очікуємо SYNC: '+unready.map(p=>p.name).join(', ')});
+    const leadMs=1200;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;}
+    room.buzzOpensAt=Date.now()+leadMs;
+    io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
+    setTimeout(()=>{ if(rooms.get(room.code)===room && room.phase==='buzz' && !room.buzzer && room.buzzOpensAt && Date.now()>=room.buzzOpensAt-20) io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt}); },leadMs);
+    cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
-  socket.on('buzz', ({ code: c }, cb=()=>{}) => {
+  // v3.0.3 Fair Press Engine: compare validated synchronized press timestamps,
+  // not just packet arrival order. A short collection window lets near-simultaneous
+  // presses arrive before the server chooses a winner.
+  socket.on('buzz', ({ code: c, pressedAtServerTime }, cb=()=>{}) => {
+    const receivedAt=Date.now();
     const room = getRoom(c);
     const p = room?.players.find(x => x.id === socket.data.playerId);
     if (!room || !p || !room.current) return cb({ok:false,error:'Питання зараз неактивне.'});
     const duel = room.current?.type === 'duel';
     if (duel && !room.duelPlayers.includes(p.id)) return cb({ok:false,error:'Ви не берете участі в цій дуелі.'});
-    // Visible dark BUZZ before the host opens answering: an early press is a false start.
-    if (room.phase === 'question' || room.phase === 'duel_question') {
-      if (Number(p.falseStartUntil||0) <= Date.now()) p.falseStartUntil = Date.now()+3000;
+
+    const claimed=Number(pressedAtServerTime);
+    const beforeScheduledOpen = room.phase==='buzz' && Number(room.buzzOpensAt||0) > receivedAt;
+    const claimedBeforeOpen = Number.isFinite(claimed) && Number(room.buzzOpensAt||0)>0 && claimed < Number(room.buzzOpensAt)-35;
+    if (room.phase === 'question' || room.phase === 'duel_question' || beforeScheduledOpen || claimedBeforeOpen) {
+      if (Number(p.falseStartUntil||0) <= receivedAt) p.falseStartUntil = receivedAt+3000;
       emitState(room);
       return cb({ok:false,falseStart:true,until:p.falseStartUntil});
     }
     if (room.phase !== 'buzz' || room.buzzer || room.answeringLocked.has(p.id)) return cb({ok:false});
-    if (Number(p.falseStartUntil||0) > Date.now()) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
-    room.buzzer = p.id; room.phase = 'answering'; cb({ok:true}); emitState(room);
+    if (Number(p.falseStartUntil||0) > receivedAt) return cb({ok:false,falseStart:true,until:p.falseStartUntil});
+
+    // Anti-spoof sanity check: a real press cannot be in the future, and it should
+    // not predate packet receipt by much more than the player's observed RTT.
+    const observedRtt=Number.isFinite(p.networkRttMs)?Math.max(0,p.networkRttMs):300;
+    const maxAge=Math.min(1200,Math.max(180,observedRtt*1.5+80));
+    let pressTime=claimed;
+    if (!Number.isFinite(pressTime) || pressTime>receivedAt+40 || pressTime<receivedAt-maxAge) {
+      // Safe fallback for an old/stale client: estimate one-way transit as RTT/2.
+      pressTime=receivedAt-Math.min(300,observedRtt/2);
+    }
+    pressTime=Math.max(Number(room.buzzOpensAt||0),pressTime);
+
+    room.buzzCandidates = room.buzzCandidates || [];
+    if(!room.buzzCandidates.some(x=>x.playerId===p.id)){
+      room.buzzCandidates.push({playerId:p.id,pressTime,receivedAt});
+    }
+    cb({ok:true,pending:true});
+
+    if(!room.buzzResolveTimer){
+      const FAIR_WINDOW_MS=90;
+      room.buzzResolveTimer=setTimeout(()=>{
+        room.buzzResolveTimer=null;
+        if(rooms.get(room.code)!==room || room.phase!=='buzz' || room.buzzer)return;
+        const candidates=(room.buzzCandidates||[]).filter(x=>{
+          const player=room.players.find(p=>p.id===x.playerId);
+          return player && !room.answeringLocked.has(player.id) && Number(player.falseStartUntil||0)<=Date.now();
+        });
+        room.buzzCandidates=[];
+        if(!candidates.length)return;
+        candidates.sort((a,b)=>a.pressTime-b.pressTime || a.receivedAt-b.receivedAt);
+        const winner=candidates[0];
+        room.buzzer=winner.playerId;
+        room.buzzOpensAt=null;
+        room.phase='answering';
+        emitState(room);
+      },FAIR_WINDOW_MS);
+    }
   });
 
   socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
@@ -688,7 +789,8 @@ io.on('connection', socket => {
         room.resultReason = 'all_wrong';
         room.phase = 'result';
       } else {
-        room.phase = 'buzz';
+        room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
+        io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
       }
     }
     cb({ok:true}); emitState(room);
@@ -727,9 +829,11 @@ io.on('connection', socket => {
   socket.on('openDuelBuzz', ({ code:c }, cb=()=>{}) => {
     const room=getRoom(c);
     if(!isHost(socket,room) || room.phase!=='duel_question') return;
-    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null;
-    io.to(room.code).emit('cue',{type:'buzz_open',at:Date.now()});
-    cb({ok:true}); emitState(room);
+    const leadMs=1200;
+    room.phase='buzz'; room.buzzer=null; room.answeringLocked=new Set(); room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
+    io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
+    setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
+    cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
   socket.on('revealAnswer', ({ code: c }) => {
@@ -940,15 +1044,82 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const room = getRoom(socket.data.roomCode); if (!room) return;
     const p = room.players.find(x => x.id === socket.data.playerId);
-    if (p) { p.connected = false; p.socketId = null; }
+    if (p && p.socketId === socket.id) { p.connected = false; p.socketId = null; p.syncSamples=0; p.lastSyncAt=0; }
     const a = room.audience.find(x => x.id === socket.data.audienceId); if(a){a.connected=false;a.socketId=null;}
-    if(p||a) emitState(room);
+    if((p && !p.connected)||a) emitState(room);
   });
 });
 
-storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>console.log(`SMOKERLOL v1.6.12: http://0.0.0.0:${PORT}`))).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
+// A backgrounded mobile browser can stop answering while Socket.IO still reports
+// connected. Expire stale player sync and notify HOST without removing their score.
+const playerLivenessTimer=setInterval(()=>{
+ const now=Date.now();
+ for(const room of rooms.values()){
+   let changed=false;
+   for(const player of room.players){
+     if(!player.connected)continue;
+     if(!player.socketId || now-Number(player.lastSyncAt||0)>11000){
+       const oldSocketId=player.socketId;
+       player.connected=false;player.socketId=null;player.syncSamples=0;player.lastSyncAt=0;
+       changed=true;
+       if(oldSocketId){
+         const staleSocket=io.sockets.sockets.get(oldSocketId);
+         if(staleSocket && staleSocket.data.playerId===player.id && staleSocket.data.roomCode===room.code) staleSocket.disconnect(true);
+       }
+     }
+   }
+   if(changed)emitState(room);
+ }
+},2000);
+playerLivenessTimer.unref?.();
+
+// Voice events arrive only over IPC from the locally forked Discord bot.
+// Public socket clients cannot publish Discord speaking IDs.
+let voiceLastEvent=0;
+function clearDiscordSpeaking(){
+  for(const room of rooms.values()){
+    if(room.voiceSpeaking?.length){room.voiceSpeaking=[];room.voiceUpdatedAt=Date.now();emitState(room);}
+  }
+}
+function handleDiscordVoiceMessage(message){
+  if(!message || message.type!=='voiceActivity')return;
+  if(message.guildId!==process.env.DISCORD_GUILD_ID || message.channelId!==process.env.DISCORD_VOICE_CHANNEL_ID)return;
+  if(!Array.isArray(message.userIds) || message.userIds.length>100)return;
+  const active=new Set(message.userIds.filter(id=>typeof id==='string' && /^\d{17,20}$/.test(id)));
+  voiceLastEvent=Date.now();
+  for(const room of rooms.values()){
+    const next=room.players.filter(p=>active.has(room.voiceMappings?.[p.id])).map(p=>p.id);
+    const previous=room.voiceSpeaking||[];
+    if(next.length!==previous.length || next.some(id=>!previous.includes(id))){
+      room.voiceSpeaking=next;room.voiceUpdatedAt=Date.now();emitState(room);
+    }
+  }
+}
+const voiceStaleTimer=setInterval(()=>{
+  if(voiceLastEvent && Date.now()-voiceLastEvent>20000){voiceLastEvent=0;clearDiscordSpeaking();}
+},2000);
+voiceStaleTimer.unref?.();
+
+// DEV-only: optional bot process shares this free Render Web Service.
+let voiceBotProcess=null;
+function startOptionalVoiceBot(){
+  const names=['DISCORD_BOT_TOKEN','DISCORD_GUILD_ID','DISCORD_VOICE_CHANNEL_ID'];
+  const present=names.filter(name=>Boolean(process.env[name]));
+  if(!present.length){console.log('Discord voice bot disabled (no environment variables).');return;}
+  if(present.length!==names.length){console.warn('Discord voice bot disabled: incomplete environment variables.');return;}
+  const {fork}=require('child_process');
+  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit'});
+  voiceBotProcess.on('message',handleDiscordVoiceMessage);
+  voiceBotProcess.on('error',err=>console.error('Discord voice bot process:',err.message));
+  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceLastEvent=0;clearDiscordSpeaking();});
+}
+storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>{
+  console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`);
+  startOptionalVoiceBot();
+})).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
 function shutdown(signal) {
+  if(voiceBotProcess){voiceBotProcess.kill('SIGTERM');voiceBotProcess=null;}
   console.log(`${signal}: завершуємо роботу сервера...`);
   for (const room of rooms.values()) {
     if (room.finalTimer) clearInterval(room.finalTimer);
