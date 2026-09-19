@@ -1073,6 +1073,33 @@ const playerLivenessTimer=setInterval(()=>{
 },2000);
 playerLivenessTimer.unref?.();
 
+// Voice events arrive only over IPC from the locally forked Discord bot.
+// Public socket clients cannot publish Discord speaking IDs.
+let voiceLastEvent=0;
+function clearDiscordSpeaking(){
+  for(const room of rooms.values()){
+    if(room.voiceSpeaking?.length){room.voiceSpeaking=[];room.voiceUpdatedAt=Date.now();emitState(room);}
+  }
+}
+function handleDiscordVoiceMessage(message){
+  if(!message || message.type!=='voiceActivity')return;
+  if(message.guildId!==process.env.DISCORD_GUILD_ID || message.channelId!==process.env.DISCORD_VOICE_CHANNEL_ID)return;
+  if(!Array.isArray(message.userIds) || message.userIds.length>100)return;
+  const active=new Set(message.userIds.filter(id=>typeof id==='string' && /^\\d{17,20}$/.test(id)));
+  voiceLastEvent=Date.now();
+  for(const room of rooms.values()){
+    const next=room.players.filter(p=>active.has(room.voiceMappings?.[p.id])).map(p=>p.id);
+    const previous=room.voiceSpeaking||[];
+    if(next.length!==previous.length || next.some(id=>!previous.includes(id))){
+      room.voiceSpeaking=next;room.voiceUpdatedAt=Date.now();emitState(room);
+    }
+  }
+}
+const voiceStaleTimer=setInterval(()=>{
+  if(voiceLastEvent && Date.now()-voiceLastEvent>20000){voiceLastEvent=0;clearDiscordSpeaking();}
+},2000);
+voiceStaleTimer.unref?.();
+
 // DEV-only: optional bot process shares this free Render Web Service.
 let voiceBotProcess=null;
 function startOptionalVoiceBot(){
@@ -1082,8 +1109,9 @@ function startOptionalVoiceBot(){
   if(present.length!==names.length){console.warn('Discord voice bot disabled: incomplete environment variables.');return;}
   const {fork}=require('child_process');
   voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit'});
+  voiceBotProcess.on('message',handleDiscordVoiceMessage);
   voiceBotProcess.on('error',err=>console.error('Discord voice bot process:',err.message));
-  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;});
+  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceLastEvent=0;clearDiscordSpeaking();});
 }
 storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>{
   console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`);
