@@ -619,6 +619,20 @@ io.on('connection', socket => {
     room.players.forEach(p=>p.falseStartUntil=0);
     const special = q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal');
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
+    // Media questions: direct HTTPS links or same-origin files under /media/.
+    if (special === 'normal' && ['audio','audioReveal','video'].includes(q.type)) {
+      const source=String(q.media||q.audio||q.video||'');
+      const valid=source.startsWith('/media/') || /^https:\/\/[^\\s]+$/i.test(source);
+      if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
+      room.current.questionType=q.type;
+      room.current.media=source;
+      if(q.type==='audioReveal'){
+        const values=Array.isArray(q.revealValues)&&q.revealValues.length?q.revealValues:[q.value,Math.round(q.value*.8),Math.round(q.value*.6),Math.round(q.value*.4),Math.round(q.value*.2)];
+        room.current.revealValues=values.map(v=>Number(v));
+        room.current.revealSeconds=Array.isArray(q.revealSeconds)&&q.revealSeconds.length===values.length?q.revealSeconds.map(v=>Math.max(1,Number(v)||1)):[2,4,7,11,16].slice(0,values.length);
+        room.current.revealStage=0;room.current.value=room.current.revealValues[0];
+      }
+    }
     if (q.type === 'imageReveal' && special === 'normal') {
       room.current.questionType = 'imageReveal';
       room.current.image = q.image;
@@ -675,6 +689,14 @@ io.on('connection', socket => {
 
   socket.on('revealNextNumeric', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); const total=room.numericResults?.length||0; if(room.numericRevealCount<total)room.numericRevealCount++; cb({ok:true});emitState(room); });
   socket.on('finishNumericResult', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); if((room.numericRevealCount||0)<(room.numericResults?.length||0))return cb({ok:false,error:'Спочатку відкрийте всі місця.'}); const key=`${room.round}:${room.current.ci}:${room.current.qi}`; room.used[key]=true; room.turnPlayerId=room.numericResults?.[0]?.id||room.turnPlayerId; room.phase='board'; room.current=null; room.numericChallenge=null; room.numericAnswers={}; room.numericResults=null; cb({ok:true});emitState(room); });
+
+  socket.on('revealAudioStep',({code:c},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||room?.phase!=='question'||room.current?.questionType!=='audioReveal')return cb({ok:false,error:'Аудіо можна відкривати лише до BUZZ.'});
+    if(room.current.revealStage>=room.current.revealValues.length-1)return cb({ok:false,error:'Усі фрагменти відкриті.'});
+    room.current.revealStage++;room.current.value=room.current.revealValues[room.current.revealStage];
+    cb({ok:true});emitState(room);
+  });
 
   socket.on('revealImageStep', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
