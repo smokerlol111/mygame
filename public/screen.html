@@ -82,6 +82,23 @@ socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;tr
 socket.on('voiceSpeaking',x=>{if(!state||x.code!==code)return;state.voice={...(state.voice||{}),speakingPlayerIds:x.playerIds||[]};applyVoiceHighlight();});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 
+function mediaQuestionHTML(cur,host=false){
+ if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
+ const url=String(cur.media||'');
+ if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
+ const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
+ const seconds=progress?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
+ const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">Фрагмент до ${seconds} с · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
+}
+function limitMediaPreview(){
+ const cur=state?.current;if(cur?.questionType!=='audioReveal')return;
+ const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
+ document.querySelectorAll('.quizMedia').forEach(el=>{
+  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
+  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
+ });
+}
 function imageRevealHTML(cur,host=false){
  if(!cur||cur.questionType!=='imageReveal')return '';
  const stage=Number(cur.revealStage||0), last=(cur.revealValues?.length||5)-1;
@@ -131,7 +148,7 @@ function render(){if(!state||!data)return;let h=``;
  else if(state.phase==='audience_question'){const a=state.audience||{},left=Math.min(15,Math.max(0,Math.ceil(Number(a.remainingMs||0)/1000)));h+=`<div class="panel center"><div class="huge" id="audienceTimer">${left}.0</div><h2>ГЛЯДАЧІ • ПИТАННЯ ${a.questionIndex+1}/${a.totalQuestions}</h2><div class="question">${GameUI.esc(a.question||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt">${'ABCD'[i]} • ${GameUI.esc(o)}</div>`).join('')}</div><p style="font-size:22px">Відповіли: <b>${a.submitted||0}/${a.joined||0}</b></p></div>`}
  else if(state.phase==='audience_result'){const a=state.audience||{},total=Math.max(1,a.submitted||0);h+=`<div class="panel center"><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><div class="huge">${'ABCD'[a.correct]} • ${GameUI.esc(a.options?.[a.correct]||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt" style="${i===a.correct?'border:2px solid rgba(100,255,160,.8)':''}">${'ABCD'[i]} • ${GameUI.esc(o)} — <b>${Math.round((a.counts?.[i]||0)*100/total)}%</b></div>`).join('')}</div><p style="font-size:22px">${GameUI.esc(a.fact||'')}</p></div>`}
  else if(state.phase==='audience_podium'){const a=state.audience||{},rs=(a.ranking||[]).slice(0,5),rev=a.revealCount||0,n=Math.min(5,rs.length),shown=rs.slice(Math.max(0,n-rev),n).reverse(),latest=shown[shown.length-1];h+=`<div class="panel center"><h1>🏆 ${GameUI.esc(a.title||'')}</h1>${latest?`<div style="font-size:34px;font-weight:900">${rs.indexOf(latest)+1===1?'🥇 ПЕРЕМОЖЕЦЬ':(rs.indexOf(latest)+1)+' МІСЦЕ'}</div><div class="winner" style="font-size:72px">${GameUI.esc(latest.name)}</div><div style="font-size:28px">${latest.correct}/3 правильних • ${(latest.timeMs/1000).toFixed(2)} с</div>`:'<div class="huge">ТОП-5</div>'}${shown.length>1?`<div class="finalList">${shown.slice(0,-1).map(r=>`<div class="finalItem"><span>${GameUI.esc(r.name)}</span><b>${r.correct}/3 • ${(r.timeMs/1000).toFixed(2)} с</b></div>`).join('')}</div>`:''}</div>`}
- else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
+ else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)+mediaQuestionHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
  else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
@@ -147,5 +164,5 @@ function render(){if(!state||!data)return;let h=``;
    const latest=revealed[revealed.length-1];
    h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
  }
- app.innerHTML=h;applyVoiceHighlight();armFirstTurnClock();armNumericClock();armAudienceClock()}
+ app.innerHTML=h;limitMediaPreview();applyVoiceHighlight();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>
