@@ -617,7 +617,13 @@ io.on('connection', socket => {
     if (room.used[key]) return cb({ok:false,error:'Цю клітинку вже зіграно.'});
     resetQuestionState(room);
     room.players.forEach(p=>p.falseStartUntil=0);
-    const special = q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal');
+    const special = room.gameId==='media-test' ? 'normal' : (q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal'));
+    // Check that test assets actually exist before marking a cell as used.
+    if(room.gameId==='media-test' && String(q.media||'').startsWith('/media/')){
+      const mediaPath=path.resolve(__dirname,'public',String(q.media).replace(/^\//,''));
+      if(!mediaPath.startsWith(path.join(__dirname,'public','media')+path.sep)||!fs.existsSync(mediaPath))
+        return cb({ok:false,error:'Медіафайл не встановлено на сервері: '+q.media});
+    }
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
     // Media questions: direct HTTPS links or same-origin files under /media/.
     if (special === 'normal' && ['audio','audioReveal','video'].includes(q.type)) {
