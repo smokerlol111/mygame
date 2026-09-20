@@ -18,27 +18,62 @@
 .playerImageRevealValue{display:inline-block;margin:0 0 10px;padding:7px 15px;border-radius:999px;font-weight:900;font-size:22px;background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 .playerImageRevealStage{margin-top:5px;font-size:13px;opacity:.72}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><button type="button" class="btn" id="enableCueAudio">🔊 Увімкнути / перевірити звуки</button><p id="cueAudioNotice" hidden>Браузер заблокував звук. Натисни «Увімкнути / перевірити звуки» на цьому пристрої.</p></div></details><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
-let cueAudioCtx=null;
+// Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
  question:new Audio('/sounds/question.mp3'),
  buzz_open:new Audio('/sounds/buzz.mp3')
 };
-Object.values(cueAudio).forEach(a=>{a.preload='auto';});
+let cueUnlocked=false;
+for(const [key,a] of Object.entries(cueAudio)){
+ a.preload='auto';
+ const saved=Number(localStorage.getItem('sgPlayerCueVolume_'+key));
+ a.volume=Number.isFinite(saved)&&saved>=0&&saved<=1?saved:0.35;
+}
+function setCueVolume(key,value){
+ const a=cueAudio[key];if(!a)return;
+ a.volume=Math.max(0,Math.min(1,Number(value)/100));
+ localStorage.setItem('sgPlayerCueVolume_'+key,String(a.volume));
+ const label=document.getElementById('cueVolumeValue_'+key);
+ if(label)label.textContent=Math.round(a.volume*100)+'%';
+}
+function unlockCueAudio(){
+ // Invoked synchronously inside a user gesture, not from a socket callback.
+ for(const a of Object.values(cueAudio)){
+  a.muted=true;
+  const p=a.play();
+  if(p&&p.then)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;cueUnlocked=true;}).catch(err=>{a.muted=false;console.warn('PLAYER audio unlock:',err)});
+  else {a.pause();a.currentTime=0;a.muted=false;cueUnlocked=true;}
+ }
+}
 function playCueSound(type){
  const key=type==='gong'?'question':type;
- const a=cueAudio[key];
- if(!a)return;
+ const a=cueAudio[key];if(!a)return;
  try{
-  a.pause();
-  a.currentTime=0;
+  a.pause();a.currentTime=0;
   const p=a.play();
-  if(p&&p.catch)p.catch(()=>{});
- }catch(e){}
+  if(p&&p.catch)p.catch(err=>{
+   console.warn('PLAYER cue playback blocked:',key,err);
+   const notice=document.getElementById('cueAudioNotice');
+   if(notice)notice.hidden=false;
+  });
+ }catch(err){console.warn('PLAYER cue playback error:',key,err)}
 }
 socket.on('cue',e=>playCueSound(e?.type));
-
+for(const key of Object.keys(cueAudio)){
+ const slider=document.getElementById('cueVolume_'+key);
+ slider.value=Math.round(cueAudio[key].volume*100);
+ slider.addEventListener('input',()=>setCueVolume(key,slider.value));
+ setCueVolume(key,slider.value);
+}
+document.getElementById('enableCueAudio').addEventListener('click',()=>{
+ unlockCueAudio();
+ // Audible confirmation from the same gesture.
+ const a=cueAudio.question;a.muted=false;a.currentTime=0;
+ a.play().catch(err=>console.warn('PLAYER sound test:',err));
+ document.getElementById('cueAudioNotice').hidden=true;
+});
 let gameData=null, loadedGameId='';
 
 let firstTurnClockHandle=null;
@@ -116,6 +151,7 @@ function login(prefill=urlCode||''){
   const shownCode=prefill||code||'';
   app.innerHTML=`<h1>Приєднатися до гри</h1><input id="code" maxlength="4" autocomplete="off" placeholder="Код кімнати" value="${GameUI.esc(shownCode)}"><br><br><input id="name" maxlength="20" autocomplete="name" placeholder="Ваше ім'я" value="${GameUI.esc(name)}"><br><br><button class="btn" id="join">Увійти</button><div id="err" class="notice hidden"></div>`;
   document.getElementById('join').onclick=()=>{
+    unlockCueAudio();
     const newCode=document.getElementById('code').value.trim().toUpperCase();
     const newName=document.getElementById('name').value.trim();
     if(!newCode)return showError('Введіть код кімнати.');
