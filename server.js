@@ -701,6 +701,12 @@ io.on('connection', socket => {
   socket.on('revealNextNumeric', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); const total=room.numericResults?.length||0; if(room.numericRevealCount<total)room.numericRevealCount++; cb({ok:true});emitState(room); });
   socket.on('finishNumericResult', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); if((room.numericRevealCount||0)<(room.numericResults?.length||0))return cb({ok:false,error:'Спочатку відкрийте всі місця.'}); const key=`${room.round}:${room.current.ci}:${room.current.qi}`; room.used[key]=true; room.turnPlayerId=room.numericResults?.[0]?.id||room.turnPlayerId; room.phase='board'; room.current=null; room.numericChallenge=null; room.numericAnswers={}; room.numericResults=null; cb({ok:true});emitState(room); });
 
+  socket.on('finishVideoResult',({code:c},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||room?.phase!=='video_result')return cb({ok:false,error:'Немає продовження відео'});
+    room.phase='result';cb({ok:true});emitState(room);
+  });
+
   socket.on('continueVideo',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)||room?.current?.questionType!=='video'||!room.current.pauseAt)return cb({ok:false,error:'Відео недоступне'});
@@ -814,7 +820,8 @@ io.on('connection', socket => {
     if (correct) {
       room.revealAnswer = true;
       room.resultReason = 'correct';
-      room.phase = 'result';
+      if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.phase='video_result';}
+      else room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
       room.buzzer = null;
