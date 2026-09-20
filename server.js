@@ -626,6 +626,7 @@ io.on('connection', socket => {
       if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
       room.current.questionType=q.type;
       room.current.media=source;
+      if(q.type==='video' && Number(q.pauseAt)>0){room.current.pauseAt=Number(q.pauseAt);room.current.videoContinued=false;}
       if(q.type==='audioReveal'){
         const values=Array.isArray(q.revealValues)&&q.revealValues.length?q.revealValues:[q.value,Math.round(q.value*.8),Math.round(q.value*.6),Math.round(q.value*.4),Math.round(q.value*.2)];
         room.current.revealValues=values.map(v=>Number(v));
@@ -689,6 +690,13 @@ io.on('connection', socket => {
 
   socket.on('revealNextNumeric', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); const total=room.numericResults?.length||0; if(room.numericRevealCount<total)room.numericRevealCount++; cb({ok:true});emitState(room); });
   socket.on('finishNumericResult', ({code:c},cb=()=>{})=>{ const room=getRoom(c); if(!isHost(socket,room)||room.phase!=='numeric_result')return cb({ok:false}); if((room.numericRevealCount||0)<(room.numericResults?.length||0))return cb({ok:false,error:'Спочатку відкрийте всі місця.'}); const key=`${room.round}:${room.current.ci}:${room.current.qi}`; room.used[key]=true; room.turnPlayerId=room.numericResults?.[0]?.id||room.turnPlayerId; room.phase='board'; room.current=null; room.numericChallenge=null; room.numericAnswers={}; room.numericResults=null; cb({ok:true});emitState(room); });
+
+  socket.on('continueVideo',({code:c},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room)||room?.current?.questionType!=='video'||!room.current.pauseAt)return cb({ok:false,error:'Відео недоступне'});
+    room.current.videoContinued=true;
+    cb({ok:true});emitState(room);
+  });
 
   socket.on('revealAudioStep',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
