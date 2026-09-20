@@ -92,7 +92,15 @@ function mediaQuestionHTML(cur,host=false){
  return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">Фрагмент до ${seconds} с · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
 }
 function limitMediaPreview(){
- const cur=state?.current;if(cur?.questionType!=='audioReveal')return;
+ const cur=state?.current;
+ if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
+  document.querySelectorAll('.quizMedia').forEach(el=>{
+   const stop=()=>{if(el.currentTime>=cur.pauseAt){el.pause();el.currentTime=cur.pauseAt;}};
+   el.addEventListener('timeupdate',stop);
+   el.addEventListener('seeking',stop);
+  });
+ }
+ if(cur?.questionType!=='audioReveal')return;
  const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
  document.querySelectorAll('.quizMedia').forEach(el=>{
   el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
