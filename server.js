@@ -661,6 +661,10 @@ io.on('connection', socket => {
       room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||30)};
       room.numericAnswers={}; room.numericSubmittedAt={}; room.numericResults=null; room.numericRevealCount=0;
       room.numericEndsAt=null; room.phase='numeric_ready'; clearTimeout(room.numericTimer); room.numericTimer=null;
+    } else if (room.current.questionType && ['audio','audioReveal','video'].includes(room.current.questionType)) {
+      // Media questions open the buzzer immediately; normal questions keep the host-controlled start.
+      room.phase='buzz'; room.buzzer=null; room.buzzOpensAt=Date.now();
+      room.answeringLocked=new Set(); room.buzzCandidates=[];
     } else {
       room.phase = 'question';
     }
@@ -706,7 +710,7 @@ io.on('connection', socket => {
 
   socket.on('revealAudioStep',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
-    if(!isHost(socket,room)||room?.phase!=='question'||room.current?.questionType!=='audioReveal')return cb({ok:false,error:'Аудіо можна відкривати лише до BUZZ.'});
+    if(!isHost(socket,room)||!['question','buzz'].includes(room?.phase)||room.current?.questionType!=='audioReveal')return cb({ok:false,error:'Аудіо можна відкривати лише до BUZZ.'});
     if(room.current.revealStage>=room.current.revealValues.length-1)return cb({ok:false,error:'Усі фрагменти відкриті.'});
     room.current.revealStage++;room.current.value=room.current.revealValues[room.current.revealStage];
     cb({ok:true});emitState(room);
