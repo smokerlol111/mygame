@@ -18,7 +18,7 @@
 .playerImageRevealValue{display:inline-block;margin:0 0 10px;padding:7px 15px;border-radius:999px;font-weight:900;font-size:22px;background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 .playerImageRevealStage{margin-top:5px;font-size:13px;opacity:.72}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><button type="button" class="btn" id="enableCueAudio">🔊 Увімкнути / перевірити звуки</button><p id="cueAudioNotice" hidden>Браузер заблокував звук. Натисни «Увімкнути / перевірити звуки» на цьому пристрої.</p></div></details><div id="app" class="panel"></div></div><script>
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
 // Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
@@ -67,13 +67,13 @@ for(const key of Object.keys(cueAudio)){
  slider.addEventListener('input',()=>setCueVolume(key,slider.value));
  setCueVolume(key,slider.value);
 }
-document.getElementById('enableCueAudio').addEventListener('click',()=>{
- unlockCueAudio();
- // Audible confirmation from the same gesture.
- const a=cueAudio.question;a.muted=false;a.currentTime=0;
- a.play().catch(err=>console.warn('PLAYER sound test:',err));
- document.getElementById('cueAudioNotice').hidden=true;
-});
+// Attempt audio unlock on the first ordinary player interaction; no separate enable button.
+document.addEventListener('pointerdown',()=>{
+ if(!cueUnlocked)unlockCueAudio();
+ const notice=document.getElementById('cueAudioNotice');
+ if(notice)notice.hidden=true;
+},{capture:true});
+
 let gameData=null, loadedGameId='';
 
 let firstTurnClockHandle=null;
