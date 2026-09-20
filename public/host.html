@@ -257,9 +257,13 @@ function mediaQuestionHTML(cur,host=false){
  const url=String(cur.media||'');
  if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
  const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
- const seconds=progress?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
+ const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
+ const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
  const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
- return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">Фрагмент до ${seconds} с · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}${host&&video&&cur.pauseAt&&!cur.videoContinued?'<button class="btn gold" id="continueVideo">▶ Показати продовження</button>':''}</div>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}${host&&video&&cur.pauseAt&&!cur.videoContinued?'<button class="btn gold" id="continueVideo">▶ Показати продовження</button>':''}</div>`;
+}
+function stopDetachedMedia(){
+ document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
 }
 function resumeVideoResult(){
  if(state?.phase!=='video_result'||state.current?.questionType!=='video')return;
@@ -278,6 +282,7 @@ function limitMediaPreview(){
   });
  }
  if(cur?.questionType!=='audioReveal')return;
+ if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
  const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
  document.querySelectorAll('.quizMedia').forEach(el=>{
   el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
