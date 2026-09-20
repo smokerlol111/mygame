@@ -805,6 +805,7 @@ io.on('connection', socket => {
         room.buzzer=winner.playerId;
         room.buzzOpensAt=null;
         room.phase='answering';
+        if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         emitState(room);
       },FAIR_WINDOW_MS);
     }
@@ -820,10 +821,12 @@ io.on('connection', socket => {
     if (correct) {
       room.revealAnswer = true;
       room.resultReason = 'correct';
-      if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.phase='video_result';}
+      if(room.current?.questionType)room.current.mediaPaused=true;
+      if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
       else room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
+      if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
       room.buzzer = null;
       // Important: do not auto-finish just because another player is temporarily disconnected.
       // Auto-reveal only when EVERY player in the room has already answered incorrectly.
