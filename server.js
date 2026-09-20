@@ -622,7 +622,7 @@ io.on('connection', socket => {
     // Media questions: direct HTTPS links or same-origin files under /media/.
     if (special === 'normal' && ['audio','audioReveal','video'].includes(q.type)) {
       const source=String(q.media||q.audio||q.video||'');
-      const valid=source.startsWith('/media/') || /^https:\/\/[^\\s]+$/i.test(source);
+      const valid=source.startsWith('/media/') || /^https:\/\/[^\s]+$/i.test(source);
       if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
       room.current.questionType=q.type;
       room.current.media=source;
