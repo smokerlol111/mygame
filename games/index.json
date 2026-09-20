@@ -14,5 +14,13 @@
     "description": "Шкільні знання, логіка, факти та пастки",
     "file": "general_knowledge.json",
     "enabled": true
+  },
+  {
+    "id": "media-test",
+    "title": "MEDIA TEST — 3 питання",
+    "icon": "🎵",
+    "description": "Тест аудіо, поступового аудіо та відео",
+    "file": "media_test.json",
+    "enabled": true
   }
 ]
