@@ -198,6 +198,23 @@ function armPenaltyClock(){
  const leftNow=penaltyLeftMs();if(leftNow<=0)return;
  penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=penaltyLeftMs();if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
 }
+function mediaQuestionHTML(cur,host=false){
+ if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
+ const url=String(cur.media||'');
+ if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
+ const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
+ const seconds=progress?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
+ const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">Фрагмент до ${seconds} с · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
+}
+function limitMediaPreview(){
+ const cur=state?.current;if(cur?.questionType!=='audioReveal')return;
+ const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
+ document.querySelectorAll('.quizMedia').forEach(el=>{
+  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
+  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
+ });
+}
 function playerImageRevealHTML(cur){
  if(!cur||cur.questionType!=='imageReveal')return '';
  const stage=Number(cur.revealStage||0), total=(cur.revealValues?.length||5);
@@ -218,7 +235,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    app.innerHTML=h; const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    app.innerHTML=h;limitMediaPreview(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -244,13 +261,13 @@ function render(){
       h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div class="mobileBoard">${cats.map((c,ci)=>`<section class="mobileCategory"><div class="mobileCategoryName">${GameUI.esc(c.name)}</div><div class="mobileValues">${c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''}>${used?'—':q.value}</button>`}).join('')}</div></section>`).join('')}</div>`;
     } else h+=`<div class="center"><h2>Питання обирає ${GameUI.esc(chooser?.name||'інший гравець')}</h2><p class="muted">Чекаємо вашої черги.</p></div>`;
   }
-  else if(state.phase==='question')h+=playerImageRevealHTML(state.current)+buzzButtonHTML(false);
+  else if(state.phase==='question')h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current)+buzzButtonHTML(false);
   else if(state.phase==='buzz'){
-    h+=playerImageRevealHTML(state.current);
+    h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);
     if(state.current?.type==='duel' && !state.duelPlayers.includes(playerId)) h+=`<div class="center"><h2>⚔️ Дуель</h2><p class="muted">Відповідають учасники дуелі.</p></div>`;
     else h+=buzzButtonHTML(true);
   }
-  else if(state.phase==='answering'){h+=playerImageRevealHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
+  else if(state.phase==='answering'){h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
   else if(state.phase==='va_bank_bet'){
     if(state.vaBankPlayer===playerId){let max=Math.max(0,p.score);h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2></div><p>Ваша ставка: від 0 до ${max}</p><input id="vbBet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendVbBet" class="btn gold">Підтвердити ставку</button>`}
     else h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2><p class="muted">Гравець робить ставку.</p></div>`;
@@ -272,7 +289,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  app.innerHTML=h;
+  app.innerHTML=h;limitMediaPreview();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
