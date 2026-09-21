@@ -1,0 +1,299 @@
+{
+  "id": "back-to-2000s",
+  "title": "НАЗАД У 2000-НІ",
+  "status": "draft-not-playable",
+  "notes": "Не реєструвати у games/index.json до затвердження всіх формулювань і завантаження медіа. Поле q=null означає відсутнє затверджене формулювання; topic і answerReference не є готовим ігровим запитанням.",
+  "rounds": [
+    {
+      "name": "Раунд 1",
+      "categories": [
+        {
+          "name": "А пам'ятаєш?",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Nokia 3310",
+              "q": null,
+              "answerReference": "Nokia 3310",
+              "a": "Nokia 3310",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 200,
+              "topic": "Зубна паста для подряпаних CD/DVD",
+              "q": null,
+              "answerReference": "Зубна паста",
+              "a": "Зубна паста",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 300,
+              "topic": "Gmail — запуск 1 квітня 2004 року",
+              "q": null,
+              "answerReference": "Gmail",
+              "a": "Gmail",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 400,
+              "topic": "Ґолум — Енді Серкіс і звуки кота",
+              "q": null,
+              "answerReference": "Енді Серкіс; звуки кота",
+              "a": "Енді Серкіс; звуки кота",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 500,
+              "topic": "Математична реклама Google",
+              "q": null,
+              "answerReference": "Математична реклама Google",
+              "a": "Математична реклама Google",
+              "approval": "exact-question-required"
+            }
+          ]
+        },
+        {
+          "name": "Не перемикай!",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Упізнавання серіалу за музичною заставкою",
+              "q": null,
+              "answerReference": "Друзі",
+              "a": "Друзі",
+              "approval": "exact-question-required",
+              "mediaPlan": {
+                "type": "audio",
+                "required": [
+                  "friends-theme.mp3"
+                ]
+              }
+            },
+            {
+              "value": 200,
+              "topic": "«Сімпсони» — вигук D'oh! та Оксфордський словник",
+              "q": null,
+              "answerReference": "D'oh! («Сімпсони»)",
+              "a": "D'oh! («Сімпсони»)",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 300,
+              "topic": "Брітні Спірс і «Титанік»",
+              "q": null,
+              "answerReference": "Брітні Спірс і «Титанік»",
+              "a": "Брітні Спірс і «Титанік»",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 400,
+              "topic": "«Клан Сопрано»",
+              "q": null,
+              "answerReference": "Клан Сопрано",
+              "a": "Клан Сопрано",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 500,
+              "topic": "Упізнавання серіалу за музичною заставкою",
+              "q": null,
+              "answerReference": "Доктор Хаус",
+              "a": "Доктор Хаус",
+              "approval": "exact-question-required",
+              "mediaPlan": {
+                "type": "audioReveal",
+                "required": [
+                  "house-theme.mp3"
+                ],
+                "revealSeconds": [
+                  2,
+                  5,
+                  10,
+                  15,
+                  25
+                ],
+                "revealValues": [
+                  500,
+                  400,
+                  300,
+                  200,
+                  100
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Не зберігся!",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "«Змійка»",
+              "q": null,
+              "answerReference": "Змійка",
+              "a": "Змійка",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 200,
+              "topic": "Portal — мем про торт",
+              "q": null,
+              "answerReference": "Portal",
+              "a": "Portal",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 300,
+              "topic": "God of War — механіка QTE",
+              "q": null,
+              "answerReference": "QTE",
+              "a": "QTE",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 400,
+              "topic": "Упізнавання гри за голосовим попередженням",
+              "q": null,
+              "answerReference": "StarCraft",
+              "a": "StarCraft",
+              "approval": "exact-question-required",
+              "mediaPlan": {
+                "type": "audio",
+                "required": [
+                  "starcraft-nuclear-warning.mp3"
+                ]
+              }
+            },
+            {
+              "value": 500,
+              "topic": "Metal Gear Solid: The Twin Snakes",
+              "q": null,
+              "answerReference": "Metal Gear Solid: The Twin Snakes",
+              "a": "Metal Gear Solid: The Twin Snakes",
+              "approval": "exact-question-required"
+            }
+          ]
+        },
+        {
+          "name": "Епоха, яку не повернути",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Тамагочі",
+              "q": null,
+              "answerReference": "Тамагочі",
+              "a": "Тамагочі",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 200,
+              "topic": "Двосекундні безкоштовні дзвінки в Україні",
+              "q": null,
+              "answerReference": "2 секунди",
+              "a": "2 секунди",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 300,
+              "topic": "Кінескоп",
+              "q": null,
+              "answerReference": "Кінескоп",
+              "a": "Кінескоп",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 400,
+              "topic": "USB Pet Rock",
+              "q": null,
+              "answerReference": "USB Pet Rock",
+              "a": "USB Pet Rock",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 500,
+              "topic": "Комп'ютерний феєрверк Олімпіади 2008 року",
+              "q": null,
+              "answerReference": "Комп'ютерна графіка",
+              "a": "Комп'ютерна графіка",
+              "approval": "exact-question-required"
+            }
+          ]
+        },
+        {
+          "name": "Сюрприз",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Трельяж",
+              "q": "Як називається цей предмет?",
+              "answerReference": "Трельяж",
+              "a": "Трельяж",
+              "approval": "question-approved",
+              "mediaPlan": {
+                "type": "image",
+                "required": [
+                  "trelyazh.jpg"
+                ]
+              }
+            },
+            {
+              "value": 200,
+              "topic": "Анкета друзів",
+              "q": null,
+              "answerReference": "Анкета друзів",
+              "a": "Анкета друзів",
+              "approval": "exact-question-required"
+            },
+            {
+              "value": 300,
+              "topic": "Фішки з чипсів",
+              "q": "Що це за предмети та де їх можна було знайти?",
+              "answerReference": "Колекційні фішки (кепси) з пачок чипсів",
+              "a": "Колекційні фішки (кепси) з пачок чипсів",
+              "approval": "question-approved",
+              "mediaPlan": {
+                "type": "image",
+                "required": [
+                  "chips-caps.jpg"
+                ]
+              }
+            },
+            {
+              "value": 400,
+              "topic": "Реклама шоколаду AMOUR Dolci",
+              "q": "Уважно перегляньте фрагмент реклами. Який шоколад у ній рекламували?",
+              "answerReference": "AMOUR Dolci",
+              "a": "AMOUR Dolci",
+              "approval": "question-approved",
+              "mediaPlan": {
+                "type": "video",
+                "required": [
+                  "amour-dolci-2010.mp4"
+                ],
+                "pauseAt": 5
+              }
+            },
+            {
+              "value": 500,
+              "topic": "Телефонні картки «Укртелекому»",
+              "q": "Для чого використовували ці картки?",
+              "answerReference": "Для оплати телефонних розмов із таксофонів (телефонів-автоматів)",
+              "a": "Для оплати телефонних розмов із таксофонів (телефонів-автоматів)",
+              "approval": "question-approved",
+              "mediaPlan": {
+                "type": "image",
+                "required": [
+                  "phone-cards-question.jpg",
+                  "phone-cards-answer.jpg"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "round2Status": "not-approved",
+  "finalStatus": "not-approved",
+  "firstTurnQuizStatus": "not-approved"
+}
