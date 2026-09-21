@@ -22,6 +22,7 @@ const cueAudio={
 Object.values(cueAudio).forEach(a=>{a.preload='auto';});
 function setupCueMixer(){
  const settings=[['gongVolume','question'],['buzzVolume','buzz_open']];
+ // Each signal has its own persisted volume; media-question volume is independent.
  for(const [id,key] of settings){
   const input=document.getElementById(id),out=document.getElementById(id+'Value');
   const stored=localStorage.getItem('sgCueVolume_'+key);
