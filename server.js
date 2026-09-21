@@ -369,7 +369,7 @@ io.on('connection', socket => {
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
     const leadMs=1200;
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
@@ -379,7 +379,7 @@ io.on('connection', socket => {
     const room=getRoom(c);
     if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного звичайного питання.'});
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
-    room.buzzer=null; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
+    room.buzzer=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
     cb({ok:true}); emitState(room);
   });
 
@@ -826,7 +826,6 @@ io.on('connection', socket => {
       else room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
-      if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
       room.buzzer = null;
       // Important: do not auto-finish just because another player is temporarily disconnected.
       // Auto-reveal only when EVERY player in the room has already answered incorrectly.
@@ -835,10 +834,12 @@ io.on('connection', socket => {
         : room.players;
       const everyoneWrong = eligiblePlayers.length > 0 && eligiblePlayers.every(x => room.answeringLocked.has(x.id));
       if (everyoneWrong) {
+        if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
         room.phase = 'result';
       } else {
+        if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
         room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
         io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
       }
@@ -889,6 +890,7 @@ io.on('connection', socket => {
   socket.on('revealAnswer', ({ code: c }) => {
     const room = getRoom(c); if (!isHost(socket, room) || !room.current) return;
     room.buzzer = null;
+    if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
     room.phase = 'result';
