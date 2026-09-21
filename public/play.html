@@ -254,18 +254,20 @@ function restoreMediaPlayback(snapshot){
  const el=document.querySelector('.quizMedia');
  if(!el||!state?.current)return;
  const same=snapshot&&snapshot.src===el.getAttribute('src')&&snapshot.stage===state.current.revealStage;
- if(same&&Number.isFinite(snapshot.time)){
-  const restore=()=>{
+ const restore=()=>{
+  if(!el.isConnected)return;
+  if(same&&Number.isFinite(snapshot.time)){
    try{el.currentTime=snapshot.time}catch(e){}
-   if(state.current.mediaPaused){el.pause();return;}
-   if(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')el.play().catch(()=>{});
-  };
-  if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
- }
- if(state.current.mediaPaused){
-  el.pause();
-  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
- }
+  }
+  if(state.current.mediaPaused){
+   el.pause();
+  }else if(same&&(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')){
+   el.play().catch(()=>{});
+  }
+ };
+ if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
+ // A player cannot override the server-controlled answer pause by pressing Play.
+ el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
 }
 function stopDetachedMedia(){
  document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
