@@ -486,6 +486,17 @@
               "a": "Кашалота.",
               "approval": "user-approved",
               "factNote": "26 January 2004, Tainan, Taiwan: a deceased sperm whale ruptured during transport due to accumulated gases."
+            },
+            {
+              "value": 800,
+              "q": "Перед вами фотографія культової іграшки нульових. Зображення спочатку повністю закрите блоками; ведучий поступово відкриває фрагменти. Упізнайте предмет на фотографії та назвіть його.",
+              "a": "Beyblade (Бейблейд).",
+              "type": "image_reveal",
+              "imageRequired": true,
+              "imageAsset": "Оригінальний пластиковий Beyblade початку 2000-х, окремий предмет без логотипів і підписів; фото для поступового відкриття з-під блоків.",
+              "revealMode": "blocks",
+              "approval": "user-approved",
+              "factNote": "Використати зображення оригінального Beyblade епохи нульових; медіафайл ще потрібно підготувати."
             }
           ]
         }
