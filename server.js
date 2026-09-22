@@ -975,8 +975,9 @@ io.on('connection', socket => {
     if(room.phase==='audience_lobby' && room.audience.length<1)return cb({ok:false,error:'Спочатку має приєднатися хоча б один глядач.'});
     const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(!ar)return cb({ok:false});
     if(room.phase==='audience_result' && room.audienceQuestionIndex<ar.questions.length-1)room.audienceQuestionIndex++;
-    room.audienceAnswers={};room.audienceStartedAt=Date.now();room.audienceEndsAt=room.audienceStartedAt+15000;room.phase='audience_question';
-    clearTimeout(room.audienceTimer);room.audienceTimer=setTimeout(()=>{if(room.phase==='audience_question'){room.audienceEndsAt=null;room.phase='audience_result';emitState(room)}},15000);
+    const audienceDurationMs=getRoomGame(room).audienceQuestionSeconds===30?30000:15000;
+    room.audienceAnswers={};room.audienceStartedAt=Date.now();room.audienceEndsAt=room.audienceStartedAt+audienceDurationMs;room.phase='audience_question';
+    clearTimeout(room.audienceTimer);room.audienceTimer=setTimeout(()=>{if(room.phase==='audience_question'){room.audienceEndsAt=null;room.phase='audience_result';emitState(room)}},audienceDurationMs);
     cb({ok:true});emitState(room);
   });
   socket.on('submitAudienceAnswer', ({code:c,option}={},cb=()=>{})=>{
