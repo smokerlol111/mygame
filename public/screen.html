@@ -122,6 +122,24 @@ function restoreMediaPlayback(snapshot){
  // A player cannot override the server-controlled answer pause by pressing Play.
  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
 }
+// Receive host media commands in the OBS browser source.
+socket.on('screenMediaControl',command=>{
+ const cur=state?.current;
+ if(!cur||command.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
+ const el=document.querySelector('.quizMedia');
+ if(!el||cur.mediaPaused)return;
+ const apply=()=>{
+  if(!el.isConnected)return;
+  if(command.action==='seek'||Math.abs(el.currentTime-command.time)>0.8){
+   try{el.currentTime=command.time}catch(e){}
+  }
+  if(command.action==='play'){
+   el.muted=false;el.volume=1;
+   el.play().catch(e=>console.warn('OBS media playback blocked:',e));
+  }else if(command.action==='pause')el.pause();
+ };
+ if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+});
 function stopDetachedMedia(){
  document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
 }
