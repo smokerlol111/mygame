@@ -497,6 +497,13 @@
               "revealMode": "blocks",
               "approval": "user-approved",
               "factNote": "Використати зображення оригінального Beyblade епохи нульових; медіафайл ще потрібно підготувати."
+            },
+            {
+              "value": 1000,
+              "q": "У 2004 році рекламодавці платили близько 2 мільйонів доларів лише за 30 секунд ефіру під час фіналу одного серіалу. Десять років історії завершувалися, а рекламний час коштував майже як під час Супербоулу. Фінал якого серіалу встановив такий рекламний рекорд?",
+              "a": "«Друзі» (Friends).",
+              "approval": "user-approved",
+              "factNote": "Фінал Friends на NBC вийшов у США 6 травня 2004 року. Guinness World Records вказує середню вартість 30-секундного рекламного слота $2 млн; рекорд стосується телевізійного серіалу, не всіх телетрансляцій. Sources: https://www.guinnessworldrecords.com/world-records/66969-highest-advertising-rate-tv-series ; https://www.cbsnews.com/news/friends-ads-bring-super-price/"
             }
           ]
         }
