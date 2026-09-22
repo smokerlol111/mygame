@@ -222,10 +222,10 @@
             {
               "value": 400,
               "topic": "USB Pet Rock",
-              "q": "Як називався жартівливий USB-пристрій у вигляді каменя, що не виконував корисних функцій?",
+              "q": "У 2005 році у продажу з'явився незвичайний пристрій, який підключався до комп'ютера, але не передавав даних і не мав жодної практичної функції. Що було всередині його корпусу?",
               "answerReference": "USB Pet Rock",
-              "a": "USB Pet Rock",
-              "approval": "exact-question-required",
+              "a": "Звичайний камінь (USB Pet Rock).",
+              "approval": "reworded-to-avoid-answer-in-question",
               "reviewRequired": true,
               "answerImage": "/media/usb-pet-rock.jpg"
             },
