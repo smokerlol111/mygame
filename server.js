@@ -625,6 +625,8 @@ io.on('connection', socket => {
         return cb({ok:false,error:'Медіафайл не встановлено на сервері: '+q.media});
     }
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
+    if(special==='normal' && typeof q.answerImage==='string' && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerImage))room.current.answerImage=q.answerImage;
+    if(special==='normal' && typeof q.answerVideo==='string' && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerVideo))room.current.answerVideo=q.answerVideo;
     // Media questions: direct HTTPS links or same-origin files under /media/.
     if (special === 'normal' && ['audio','audioReveal','video'].includes(q.type)) {
       const source=String(q.media||q.audio||q.video||'');
