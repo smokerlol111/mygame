@@ -312,7 +312,7 @@ function bindHostMediaControls(){
  if(!el||el.dataset.mediaControlBound)return;
  el.dataset.mediaControlBound='1';
  const send=action=>{
-  if(!state?.current||state.current.mediaPaused)return;
+  if(!state?.current||(action==='play'&&state.current.mediaPaused))return;
   socket.emit('hostMediaControl',{code:state.code,action,time:el.currentTime});
  };
  el.addEventListener('play',()=>send('play'));
