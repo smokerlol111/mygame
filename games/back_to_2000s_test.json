@@ -1,0 +1,322 @@
+{
+  "id": "back-to-2000s",
+  "title": "НАЗАД У 2000-НІ — ТЕСТ РАУНДУ 1",
+  "status": "test-only",
+  "notes": "Тестова збірка: 21 формулювання потребує погодження; другий раунд і фінал НЕ затверджені. Не використовувати для ефіру.",
+  "rounds": [
+    {
+      "name": "Раунд 1",
+      "categories": [
+        {
+          "name": "А пам'ятаєш?",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Nokia 3310",
+              "q": "Яку модель телефона Nokia називали однією з найвідоміших «невбиваних» кнопкових моделей?",
+              "answerReference": "Nokia 3310",
+              "a": "Nokia 3310",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/nokia-3310.jpg"
+            },
+            {
+              "value": 200,
+              "topic": "Зубна паста для подряпаних CD/DVD",
+              "q": "Чим у нульових намагалися прибрати дрібні подряпини з CD/DVD-дисків?",
+              "answerReference": "Зубна паста",
+              "a": "Зубна паста",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/scratched-cd.jpg"
+            },
+            {
+              "value": 300,
+              "topic": "Gmail — запуск 1 квітня 2004 року",
+              "q": "Який поштовий сервіс Google запустив 1 квітня 2004 року?",
+              "answerReference": "Gmail",
+              "a": "Gmail",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/gmail-2004.jpg"
+            },
+            {
+              "value": 400,
+              "topic": "Ґолум — Енді Серкіс і звуки кота",
+              "q": "Хто виконав роль Ґолума у фільмах «Володар перснів» і звуки якої тварини використовували для його голосу?",
+              "answerReference": "Енді Серкіс; звуки кота",
+              "a": "Енді Серкіс; звуки кота",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/gollum.jpg"
+            },
+            {
+              "value": 500,
+              "topic": "Математична реклама Google",
+              "q": "Яка компанія розмістила математичну задачу на рекламному білборді, щоб зацікавити майбутніх працівників?",
+              "answerReference": "Математична реклама Google",
+              "a": "Математична реклама Google",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            }
+          ]
+        },
+        {
+          "name": "Не перемикай!",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Упізнавання серіалу за музичною заставкою",
+              "q": "Прослухайте заставку. Назвіть серіал.",
+              "answerReference": "Друзі",
+              "a": "Друзі",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "type": "audio",
+              "media": "/media/friends-theme.mp3"
+            },
+            {
+              "value": 200,
+              "topic": "«Сімпсони» — аудіофрагмент вигуку D'oh! та Оксфордський словник",
+              "q": "Прослухайте вигук персонажа. Який вигук із «Сімпсонів» увійшов до Оксфордського словника?",
+              "answerReference": "D'oh! («Сімпсони»)",
+              "a": "D'oh! («Сімпсони»)",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "type": "audio",
+              "media": "/media/simpsons-doh.mp3"
+            },
+            {
+              "value": 300,
+              "topic": "Брітні Спірс і «Титанік»",
+              "q": "Який зв'язок між Брітні Спірс і фільмом «Титанік»? [УТОЧНИТИ ЗАТВЕРДЖЕНЕ ФОРМУЛЮВАННЯ]",
+              "answerReference": "Брітні Спірс і «Титанік»",
+              "a": "Брітні Спірс і «Титанік»",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            },
+            {
+              "value": 400,
+              "topic": "«Клан Сопрано»",
+              "q": "Який серіал мається на увазі? [УТОЧНИТИ ЗАТВЕРДЖЕНЕ ФОРМУЛЮВАННЯ]",
+              "answerReference": "Клан Сопрано",
+              "a": "Клан Сопрано",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/sopranos.jpg"
+            },
+            {
+              "value": 500,
+              "topic": "Упізнавання серіалу за музичною заставкою",
+              "q": "Прослухайте заставку. Назвіть серіал.",
+              "answerReference": "Доктор Хаус",
+              "a": "Доктор Хаус",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "type": "audioReveal",
+              "media": "/media/house-theme.mp3",
+              "revealSeconds": [
+                2,
+                5,
+                10,
+                15,
+                25
+              ],
+              "revealValues": [
+                500,
+                400,
+                300,
+                200,
+                100
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Не зберігся!",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "«Змійка»",
+              "q": "Як називалася класична гра на кнопкових телефонах, де потрібно було збирати їжу й не врізатися у власний хвіст?",
+              "answerReference": "Змійка",
+              "a": "Змійка",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/snake-game.jpg"
+            },
+            {
+              "value": 200,
+              "topic": "Portal — мем про торт",
+              "q": "У якій грі прозвучала фраза-мем про те, що торт — брехня?",
+              "answerReference": "Portal",
+              "a": "Portal",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/portal-cake.jpg"
+            },
+            {
+              "value": 300,
+              "topic": "God of War — механіка QTE",
+              "q": "Як називається механіка God of War, коли потрібно вчасно натискати показані на екрані кнопки?",
+              "answerReference": "QTE",
+              "a": "QTE",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/god-of-war-qte.jpg"
+            },
+            {
+              "value": 400,
+              "topic": "Упізнавання гри за голосовим попередженням",
+              "q": "Прослухайте попередження. Назвіть гру.",
+              "answerReference": "StarCraft",
+              "a": "StarCraft",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "type": "audio",
+              "media": "/media/starcraft-nuclear-warning.mp3"
+            },
+            {
+              "value": 500,
+              "topic": "Metal Gear Solid: The Twin Snakes",
+              "q": "Назвіть гру за підказкою: Metal Gear Solid: The Twin Snakes. [УТОЧНИТИ ЗАТВЕРДЖЕНЕ ФОРМУЛЮВАННЯ]",
+              "answerReference": "Metal Gear Solid: The Twin Snakes",
+              "a": "Metal Gear Solid: The Twin Snakes",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            }
+          ]
+        },
+        {
+          "name": "Епоха, яку не повернути",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Тамагочі",
+              "q": "Як називався електронний кишеньковий улюбленець, якого потрібно було годувати й доглядати?",
+              "answerReference": "Тамагочі",
+              "a": "Тамагочі",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            },
+            {
+              "value": 200,
+              "topic": "Двосекундні безкоштовні дзвінки в Україні",
+              "q": "Скільки секунд тривала безкоштовна розмова в популярному мобільному трюку нульових?",
+              "answerReference": "2 секунди",
+              "a": "2 секунди",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            },
+            {
+              "value": 300,
+              "topic": "Кінескоп",
+              "q": "Як називається електронно-променева трубка старого телевізора?",
+              "answerReference": "Кінескоп",
+              "a": "Кінескоп",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            },
+            {
+              "value": 400,
+              "topic": "USB Pet Rock",
+              "q": "Як називався жартівливий USB-пристрій у вигляді каменя, що не виконував корисних функцій?",
+              "answerReference": "USB Pet Rock",
+              "a": "USB Pet Rock",
+              "approval": "exact-question-required",
+              "reviewRequired": true,
+              "answerImage": "/media/usb-pet-rock.jpg"
+            },
+            {
+              "value": 500,
+              "topic": "Комп'ютерний феєрверк Олімпіади 2008 року",
+              "q": "Що використали для показу частини феєрверку під час телевізійної трансляції відкриття Олімпіади 2008 року?",
+              "answerReference": "Комп'ютерна графіка",
+              "a": "Комп'ютерна графіка",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            }
+          ]
+        },
+        {
+          "name": "Сюрприз",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Трельяж",
+              "q": "Як називається цей предмет?",
+              "answerReference": "Трельяж",
+              "a": "Трельяж",
+              "approval": "question-approved",
+              "reviewRequired": false,
+              "image": "/media/trelyazh.jpg",
+              "type": "imageReveal",
+              "revealValues": [
+                100
+              ]
+            },
+            {
+              "value": 200,
+              "topic": "Анкета друзів",
+              "q": "Як називалася паперова «соціальна мережа» школярів, у якій друзі залишали відповіді й побажання?",
+              "answerReference": "Анкета друзів",
+              "a": "Анкета друзів",
+              "approval": "exact-question-required",
+              "reviewRequired": true
+            },
+            {
+              "value": 300,
+              "topic": "Фішки з чипсів",
+              "q": "Що це за предмети та де їх можна було знайти?",
+              "answerReference": "Колекційні фішки (кепси) з пачок чипсів",
+              "a": "Колекційні фішки (кепси) з пачок чипсів",
+              "approval": "question-approved",
+              "reviewRequired": false,
+              "image": "/media/chips-caps.jpg",
+              "type": "imageReveal",
+              "revealValues": [
+                300
+              ]
+            },
+            {
+              "value": 400,
+              "topic": "Реклама шоколаду AMOUR Dolci",
+              "q": "Уважно перегляньте фрагмент реклами. Який шоколад у ній рекламували?",
+              "answerReference": "AMOUR Dolci",
+              "a": "AMOUR Dolci",
+              "approval": "question-approved",
+              "reviewRequired": false,
+              "type": "video",
+              "media": "/media/amour-dolci-2010.mp4",
+              "pauseAt": 5,
+              "answerVideo": "/media/amour-dolci-2010.mp4"
+            },
+            {
+              "value": 500,
+              "topic": "Телефонні картки «Укртелекому»",
+              "q": "Для чого використовували ці картки?",
+              "answerReference": "Для оплати телефонних розмов із таксофонів (телефонів-автоматів)",
+              "a": "Для оплати телефонних розмов із таксофонів (телефонів-автоматів)",
+              "approval": "question-approved",
+              "reviewRequired": false,
+              "image": "/media/phone-cards-question.jpg",
+              "type": "imageReveal",
+              "revealValues": [
+                500
+              ],
+              "answerImage": "/media/phone-cards-answer.jpg"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "final": {
+    "q": "ТЕСТОВЕ ЗАВЕРШЕННЯ — НЕ ДЛЯ ЕФІРУ",
+    "a": "Тест першого раунду завершено"
+  },
+  "firstTurnQuiz": {
+    "q": "ТЕСТ: Скільки секунд у хвилині?",
+    "a": 60
+  }
+}
