@@ -73,11 +73,11 @@
             },
             {
               "value": 200,
-              "topic": "«Сімпсони» — аудіофрагмент вигуку D'oh! та Оксфордський словник",
-              "q": null,
-              "answerReference": "D'oh! («Сімпсони»)",
-              "a": "D'oh! («Сімпсони»)",
-              "approval": "exact-question-required",
+              "topic": "Впізнати Гомера Сімпсона за вигуком D'oh!",
+              "q": "Прослухайте аудіофрагмент. Який персонаж мультсеріалу промовляє цей вигук?",
+              "answerReference": "Гомер Сімпсон (вигук D'oh! із «Сімпсонів»)",
+              "a": "Гомер Сімпсон",
+              "approval": "user-requested-audio-question-rewording",
               "mediaPlan": {
                 "type": "audio",
                 "required": [
@@ -85,7 +85,8 @@
                 ],
                 "source": "/media/simpsons-doh.mp3",
                 "availableInRepository": true
-              }
+              },
+              "reviewRequired": false
             },
             {
               "value": 300,
