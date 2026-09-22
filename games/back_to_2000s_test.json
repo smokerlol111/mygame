@@ -181,11 +181,11 @@
             {
               "value": 500,
               "topic": "Metal Gear Solid: The Twin Snakes",
-              "q": "Назвіть гру за підказкою: Metal Gear Solid: The Twin Snakes. [УТОЧНИТИ ЗАТВЕРДЖЕНЕ ФОРМУЛЮВАННЯ]",
+              "q": "У цій грі один із босів демонстрував свої надприродні здібності, читаючи карту пам'яті консолі та коментуючи інші ігри, у які грав власник. Щоб перемогти його, гравцеві потрібно було зробити дещо абсолютно несподіване — фізично переставити контролер в інший порт консолі. Назвіть ремейк цієї гри, що вийшов у 2004 році для Nintendo GameCube.",
               "answerReference": "Metal Gear Solid: The Twin Snakes",
               "a": "Metal Gear Solid: The Twin Snakes",
-              "approval": "exact-question-required",
-              "reviewRequired": true
+              "approval": "user-provided-question",
+              "reviewRequired": false
             }
           ]
         },
