@@ -234,6 +234,11 @@ function armPenaltyClock(){
  const leftNow=penaltyLeftMs();if(leftNow<=0)return;
  penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=penaltyLeftMs();if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
 }
+function answerMediaHTML(cur){
+ if(!cur||!['result','video_result'].includes(state?.phase))return '';
+ const image=cur.answerImage?`<img src="${GameUI.esc(cur.answerImage)}" alt="Ілюстрація правильної відповіді" style="display:block;max-width:100%;max-height:40vh;object-fit:contain;margin:12px auto;border-radius:12px">`:'';
+ return image;
+}
 function mediaQuestionHTML(cur,host=false){
  if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
  const url=String(cur.media||'');
