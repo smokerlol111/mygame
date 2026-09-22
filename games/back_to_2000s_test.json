@@ -489,15 +489,20 @@
             },
             {
               "value": 800,
-              "q": "Перед вами фотографія культової іграшки нульових. Зображення спочатку повністю закрите блоками; ведучий поступово відкриває фрагменти. Упізнайте предмет на фотографії та назвіть його.",
+              "q": "Перед вами фотографія культової іграшки 2000-х.",
               "a": "Beyblade (Бейблейд).",
-              "type": "image_reveal",
-              "imageRequired": true,
-              "imageAsset": "/media/beyblade.jpg",
-              "revealMode": "blocks",
+              "type": "imageReveal",
+              "revealMode": "blur",
               "approval": "user-approved",
-              "factNote": "Використати зображення оригінального Beyblade епохи нульових; медіафайл ще потрібно підготувати.",
-              "media": "/media/beyblade.jpg"
+              "factNote": "Зображення Beyblade: /media/beyblade.jpg. Механіка imageReveal: ведучий поступово зменшує розмиття; вартість відповіді 800→600→400→200→0.",
+              "image": "/media/beyblade.jpg",
+              "revealValues": [
+                800,
+                600,
+                400,
+                200,
+                0
+              ]
             },
             {
               "value": 1000,
