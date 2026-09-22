@@ -22,5 +22,13 @@
     "description": "Тест аудіо, поступового аудіо та відео",
     "file": "media_test.json",
     "enabled": true
+  },
+  {
+    "id": "back-to-2000s-test",
+    "title": "🧪 Назад у 2000-ні — ТЕСТ 1-го раунду",
+    "icon": "📼",
+    "description": "Лише тест: 21 формулювання потребує погодження, фінал тестовий",
+    "file": "back_to_2000s_test.json",
+    "enabled": true
   }
 ]
