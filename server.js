@@ -244,8 +244,12 @@ function randomSpecialCells(room) {
     const duel=shuffle((pools.duel||[]).filter(k=>!vb.includes(k))).slice(0,1);
     const out={}; vb.forEach(k=>out[k]='va_bank'); duel.forEach(k=>out[k]='duel'); return out;
   }
+  // A round-one-only development pack has no second round for special cells.
+  // Never let this optional setup abort the host's skip/start action.
+  const secondRound = game.rounds?.[1];
+  if (!secondRound?.categories?.length) return {};
   const candidates = [];
-  game.rounds[1].categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => { if (!q.cat) candidates.push(`1:${ci}:${qi}`); }));
+  secondRound.categories.forEach((cat, ci) => cat.questions.forEach((q, qi) => { if (!q.cat) candidates.push(`1:${ci}:${qi}`); }));
   for (let i=candidates.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [candidates[i],candidates[j]]=[candidates[j],candidates[i]]; }
   return { [candidates[0]]:'va_bank', [candidates[1]]:'va_bank', [candidates[2]]:'duel' };
 }
