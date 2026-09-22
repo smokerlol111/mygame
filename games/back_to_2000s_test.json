@@ -399,8 +399,7 @@
               "q": "Прослухайте аудіофрагмент. У 2008 році ця британська співачка здобула п'ять нагород «Греммі» за один вечір, а її незвичайний голос і ретростиль стали символами музики нульових. Назвіть співачку, яку ви щойно почули.",
               "a": "Емі Вайнгауз (Amy Winehouse).",
               "type": "audio",
-              "media": "",
-              "mediaPending": true,
+              "media": "/media/amy-winehouse.mp3",
               "mediaReference": "Amy Winehouse — Back to Black (2006), аудіофрагмент 10–15 секунд",
               "approval": "user-approved"
             },
@@ -415,8 +414,7 @@
               "q": "Перегляньте відеофрагмент. Назвіть гурт, який виконує цю композицію.",
               "a": "My Chemical Romance.",
               "type": "video",
-              "media": "",
-              "mediaPending": true,
+              "media": "/media/mcr-black-parade.mp4",
               "mediaReference": "My Chemical Romance — Welcome to the Black Parade (2006), фрагмент із маршем музикантів у чорній формі, 10–15 секунд",
               "approval": "user-approved"
             },
@@ -495,10 +493,11 @@
               "a": "Beyblade (Бейблейд).",
               "type": "image_reveal",
               "imageRequired": true,
-              "imageAsset": "Оригінальний пластиковий Beyblade початку 2000-х, окремий предмет без логотипів і підписів; фото для поступового відкриття з-під блоків.",
+              "imageAsset": "/media/beyblade.jpg",
               "revealMode": "blocks",
               "approval": "user-approved",
-              "factNote": "Використати зображення оригінального Beyblade епохи нульових; медіафайл ще потрібно підготувати."
+              "factNote": "Використати зображення оригінального Beyblade епохи нульових; медіафайл ще потрібно підготувати.",
+              "media": "/media/beyblade.jpg"
             },
             {
               "value": 1000,
