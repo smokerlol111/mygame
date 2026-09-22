@@ -7,9 +7,9 @@
 .scorebar .player.voice-speaking{border-color:#a879ff!important;box-shadow:0 0 0 2px #9b69ff,0 0 18px #9560ff!important;background:#38215f!important}\n.cueMixer{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin:8px auto 14px;padding:10px 14px;border:1px solid #493b70;border-radius:12px;background:#201733;max-width:680px}.cueMixer label{display:flex;align-items:center;gap:9px;font-weight:700}.cueMixer input{width:125px;accent-color:#9862fa}.cueMixer output{min-width:3ch;text-align:right;font-variant-numeric:tabular-nums}
 </style>
 <style>
-.imageRevealWrap{max-width:980px;margin:16px auto;text-align:center}
+.imageRevealWrap{width:min(100%,620px);max-width:620px;margin:12px auto;text-align:center}
 .imageRevealFrame{overflow:hidden;border-radius:18px;border:2px solid rgba(255,255,255,.18);background:#090514;box-shadow:0 16px 50px rgba(0,0,0,.42)}
-.imageRevealImg{display:block;width:100%;max-height:58vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
+.imageRevealImg{display:block;width:100%;max-height:38vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
 .imageRevealValue{display:inline-block;margin:0 0 12px;padding:8px 18px;border-radius:999px;font-weight:900;font-size:clamp(24px,3vw,42px);background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 </style>
 </head><body><div id="netBadge" style="position:fixed;right:14px;bottom:14px;z-index:9999;padding:8px 12px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800">🟡 Підключення…</div><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div class="cueMixer" aria-label="Гучність звукових сигналів"><label for="gongVolume">🔔 Гонг <input id="gongVolume" type="range" min="0" max="100" step="1" value="35" aria-label="Гучність гонга"><output id="gongVolumeValue" for="gongVolume">35%</output></label><label for="buzzVolume">✨ Відкрити BUZZ <input id="buzzVolume" type="range" min="0" max="100" step="1" value="35" aria-label="Гучність відкриття BUZZ"><output id="buzzVolumeValue" for="buzzVolume">35%</output></label></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
