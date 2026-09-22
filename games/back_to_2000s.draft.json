@@ -2,7 +2,7 @@
   "id": "back-to-2000s",
   "title": "НАЗАД У 2000-НІ",
   "status": "draft-not-playable",
-  "notes": "Не реєструвати у games/index.json до затвердження всіх формулювань і завантаження медіа. Поле q=null означає відсутнє затверджене формулювання; topic і answerReference не є готовим ігровим запитанням.",
+  "notes": "Не реєструвати у games/index.json до затвердження всіх формулювань і завантаження медіа. Поле q=null означає відсутнє затверджене формулювання; topic і answerReference не є готовим ігровим запитанням. Усі обов'язкові медіафайли знайдено в public/media; формулювання q=null залишаються незатвердженими. Для «Сімпсонів» погоджено аудіоформат, але не нове точне формулювання.",
   "rounds": [
     {
       "name": "Раунд 1",
@@ -66,16 +66,26 @@
                 "type": "audio",
                 "required": [
                   "friends-theme.mp3"
-                ]
+                ],
+                "source": "/media/friends-theme.mp3",
+                "availableInRepository": true
               }
             },
             {
               "value": 200,
-              "topic": "«Сімпсони» — вигук D'oh! та Оксфордський словник",
+              "topic": "«Сімпсони» — аудіофрагмент вигуку D'oh! та Оксфордський словник",
               "q": null,
               "answerReference": "D'oh! («Сімпсони»)",
               "a": "D'oh! («Сімпсони»)",
-              "approval": "exact-question-required"
+              "approval": "exact-question-required",
+              "mediaPlan": {
+                "type": "audio",
+                "required": [
+                  "simpsons-doh.mp3"
+                ],
+                "source": "/media/simpsons-doh.mp3",
+                "availableInRepository": true
+              }
             },
             {
               "value": 300,
@@ -118,7 +128,9 @@
                   300,
                   200,
                   100
-                ]
+                ],
+                "source": "/media/house-theme.mp3",
+                "availableInRepository": true
               }
             }
           ]
@@ -161,7 +173,9 @@
                 "type": "audio",
                 "required": [
                   "starcraft-nuclear-warning.mp3"
-                ]
+                ],
+                "source": "/media/starcraft-nuclear-warning.mp3",
+                "availableInRepository": true
               }
             },
             {
@@ -233,7 +247,9 @@
                 "type": "image",
                 "required": [
                   "trelyazh.jpg"
-                ]
+                ],
+                "source": "/media/trelyazh.jpg",
+                "availableInRepository": true
               }
             },
             {
@@ -255,7 +271,9 @@
                 "type": "image",
                 "required": [
                   "chips-caps.jpg"
-                ]
+                ],
+                "source": "/media/chips-caps.jpg",
+                "availableInRepository": true
               }
             },
             {
@@ -270,7 +288,9 @@
                 "required": [
                   "amour-dolci-2010.mp4"
                 ],
-                "pauseAt": 5
+                "pauseAt": 5,
+                "source": "/media/amour-dolci-2010.mp4",
+                "availableInRepository": true
               }
             },
             {
@@ -285,7 +305,9 @@
                 "required": [
                   "phone-cards-question.jpg",
                   "phone-cards-answer.jpg"
-                ]
+                ],
+                "source": "/media/phone-cards-question.jpg",
+                "availableInRepository": true
               }
             }
           ]
