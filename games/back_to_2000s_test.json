@@ -88,12 +88,14 @@
             },
             {
               "value": 300,
-              "topic": "Брітні Спірс і «Титанік»",
-              "q": "Який зв'язок між Брітні Спірс і фільмом «Титанік»? [УТОЧНИТИ ЗАТВЕРДЖЕНЕ ФОРМУЛЮВАННЯ]",
-              "answerReference": "Брітні Спірс і «Титанік»",
-              "a": "Брітні Спірс і «Титанік»",
-              "approval": "exact-question-required",
-              "reviewRequired": true
+              "topic": "Відсилання до «Титаніка» у кліпі Брітні Спірс",
+              "q": "Уважно перегляньте фрагмент музичного кліпу. На який відомий фільм у ньому зроблено відсилання?",
+              "answerReference": "«Титанік» (1997)",
+              "a": "«Титанік» (1997)",
+              "approval": "user-approved-video-format",
+              "reviewRequired": false,
+              "type": "video",
+              "media": "/media/britney-titanic.mp4"
             },
             {
               "value": 400,
