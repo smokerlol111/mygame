@@ -1141,14 +1141,14 @@ const playerLivenessTimer=setInterval(()=>{
    let changed=false;
    for(const player of room.players){
      if(!player.connected)continue;
-     if(!player.socketId || now-Number(player.lastSyncAt||0)>11000){
-       const oldSocketId=player.socketId;
+     // Missing clock-sync reports do not mean the Socket.IO connection is lost.
+     // Keep the player in the room and let normal Socket.IO disconnect/reconnect handle transport loss.
+     if(!player.socketId || !io.sockets.sockets.has(player.socketId)){
        player.connected=false;player.socketId=null;player.syncSamples=0;player.lastSyncAt=0;
        changed=true;
-       if(oldSocketId){
-         const staleSocket=io.sockets.sockets.get(oldSocketId);
-         if(staleSocket && staleSocket.data.playerId===player.id && staleSocket.data.roomCode===room.code) staleSocket.disconnect(true);
-       }
+     } else if(now-Number(player.lastSyncAt||0)>11000 && player.syncSamples!==0){
+       player.syncSamples=0;
+       changed=true; // Show SYNC instead of LOST until clock synchronization resumes.
      }
    }
    if(changed)emitState(room);
