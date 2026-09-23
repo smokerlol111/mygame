@@ -447,7 +447,7 @@ io.on('connection', socket => {
     if (!['audio','audioReveal','video'].includes(room.current.questionType)) return cb({ok:false});
     const action = payload.action;
     if (!['play','pause','seek'].includes(action)) return cb({ok:false});
-    if (action === 'play' && room.current.mediaPaused) return cb({ok:false});
+    if (action === 'play' && room.current.mediaPaused) { room.current.mediaPaused=false; emitState(room); }
     const time = Number(payload.time);
     if (!Number.isFinite(time) || time < 0) return cb({ok:false});
     io.to(room.code).emit('screenMediaControl', {code:room.code, action, time, media:room.current.media, phase:room.phase, stage:room.current.revealStage});
