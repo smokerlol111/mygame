@@ -9,12 +9,24 @@
   margin-left:auto;
   margin-right:auto;
 }
+/* Compact OBS question layout: keep long text and answer illustrations above the scorebar. */
+body.screen #app .question{font-size:clamp(22px,2.5vw,38px);line-height:1.17;padding:clamp(6px,1.2vh,14px) 8px;max-width:1100px;overflow-wrap:break-word}
+body.screen #app .panel{padding:clamp(8px,1.3vh,16px);margin-top:8px}
+body.screen #app .answer{font-size:clamp(15px,1.45vw,23px);line-height:1.2;margin-top:6px}
+body.screen #app .panel img[alt="Ілюстрація правильної відповіді"]{max-height:38vh!important;margin:6px auto!important}
+body.screen #app .media-question{margin:6px auto!important;padding:8px!important}
+body.screen #app .quizMedia{max-height:40vh!important}
+body.screen #app .imageRevealWrap{margin:4px auto}
+body.screen #app .imageRevealImg{max-height:54vh}
+body.screen #app .imageRevealValue{font-size:clamp(18px,2vw,28px);padding:4px 12px;margin-bottom:6px}
+body.screen #app .scorebar{margin-top:8px}
+body.screen #app .scorebar .player{padding:7px}
 </style>
 
 <style>
-.imageRevealWrap{max-width:980px;margin:16px auto;text-align:center}
+.imageRevealWrap{width:min(100%,620px);max-width:620px;margin:12px auto;text-align:center}
 .imageRevealFrame{overflow:hidden;border-radius:18px;border:2px solid rgba(255,255,255,.18);background:#090514;box-shadow:0 16px 50px rgba(0,0,0,.42)}
-.imageRevealImg{display:block;width:100%;max-height:58vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
+.imageRevealImg{display:block;width:100%;max-height:38vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
 .imageRevealValue{display:inline-block;margin:0 0 12px;padding:8px 18px;border-radius:999px;font-weight:900;font-size:clamp(24px,3vw,42px);background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 </style>
 <style>
@@ -24,6 +36,10 @@ body.screen .wrap{max-width:none;padding-left:340px;padding-right:24px;box-sizin
 .imageRevealWrap{max-width:1180px;margin:8px auto}.imageRevealImg{width:100%;height:auto;max-height:64vh;object-fit:contain}.imageRevealFrame{display:flex;align-items:center;justify-content:center}
 .audQr{width:min(300px,24vw);background:white;padding:10px;border-radius:18px}.audGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:1000px;margin:18px auto}.audOpt{padding:16px;border-radius:14px;background:rgba(255,255,255,.08);font-size:24px;font-weight:800}
 @media(max-width:1200px){body.screen .wrap{padding-left:300px}.cameraSafe{width:250px}}
+</style><style>
+/* v3.1 Active Speaker: highlight the EXISTING score cards, no separate overlay. */
+#app .scorebar .player.voice-speaking{border:3px solid #a78bfa!important;background:rgba(124,58,237,.35)!important;box-shadow:0 0 0 3px rgba(167,139,250,.22),0 0 28px rgba(167,139,250,.65)!important;transition:background .12s,border .12s,box-shadow .12s}
+#app .scorebar .player.voice-speaking::after{content:'🎙️ ГОВОРИТЬ';display:block;color:#d8b4fe;font-size:12px;font-weight:900}
 </style>
 </head><body class="screen"><div class="cameraSafe">КАМЕРА 16:9</div><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');
@@ -75,8 +91,98 @@ socket.on('roomClosed',({code:closedCode})=>{
 });
 
 socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;try{await ensureGameData(s.gameId);render()}catch(e){console.error(e);app.innerHTML='<div class="panel center"><h2>Помилка завантаження гри</h2></div>'}});
+socket.on('voiceSpeaking',x=>{if(!state||x.code!==code)return;state.voice={...(state.voice||{}),speakingPlayerIds:x.playerIds||[]};applyVoiceHighlight();});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 
+function answerMediaHTML(cur){
+ if(!cur||!['result','video_result'].includes(state?.phase))return '';
+ const image=cur.answerImage?`<img src="${GameUI.esc(cur.answerImage)}" alt="Ілюстрація правильної відповіді" style="display:block;max-width:100%;max-height:40vh;object-fit:contain;margin:12px auto;border-radius:12px">`:'';
+ return image;
+}
+function mediaQuestionHTML(cur,host=false){
+ if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
+ const url=String(cur.media||'');
+ if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
+ const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
+ const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
+ const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
+ const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
+}
+let mediaPlaybackSnapshot=null;
+function captureMediaPlayback(){
+ const el=document.querySelector('.quizMedia');
+ if(!el||!state?.current)return null;
+ return {src:el.getAttribute('src'),time:el.currentTime,playing:!el.paused,phase:state.phase,stage:state.current.revealStage};
+}
+function restoreMediaPlayback(snapshot){
+ const el=document.querySelector('.quizMedia');
+ if(!el||!state?.current)return;
+ const same=snapshot&&snapshot.src===el.getAttribute('src')&&snapshot.stage===state.current.revealStage;
+ const restore=()=>{
+  if(!el.isConnected)return;
+  if(same&&Number.isFinite(snapshot.time)){
+   try{el.currentTime=snapshot.time}catch(e){}
+  }
+  if(state.current.mediaPaused||el.dataset.hostPaused==='1'){
+   el.pause();
+  }else if(same&&(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')){
+   el.play().catch(()=>{});
+  }
+ };
+ if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
+ // A player cannot override the server-controlled answer pause by pressing Play.
+ el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+}
+// Receive host media commands in the OBS browser source.
+socket.on('screenMediaControl',command=>{
+ const cur=state?.current;
+ if(!cur||command.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
+ const el=document.querySelector('.quizMedia');
+ if(!el)return;
+ const apply=()=>{
+  if(!el.isConnected)return;
+  if(command.action==='seek'||(command.action==='play'&&Math.abs(el.currentTime-command.time)>0.8)){
+   try{el.currentTime=command.time}catch(e){}
+  }
+  if(command.action==='play'){
+   el.dataset.hostPaused='0';el.muted=false;el.volume=1;
+   el.play().catch(e=>console.warn('OBS media playback blocked:',e));
+  }else if(command.action==='pause'){
+    el.pause();
+    // Do not let a pending asynchronous restore restart playback after host pause.
+    el.dataset.hostPaused='1';
+   }
+ };
+ if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+});
+function stopDetachedMedia(){
+ document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
+}
+function resumeVideoResult(){
+ if(state?.phase!=='video_result'||state.current?.questionType!=='video')return;
+ document.querySelectorAll('video.quizMedia').forEach(el=>{
+  const resume=()=>{el.currentTime=Number(state.current.pauseAt||0);el.play().catch(()=>{});};
+  if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
+ });
+}
+function limitMediaPreview(){
+ const cur=state?.current;
+ if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
+  document.querySelectorAll('.quizMedia').forEach(el=>{
+   const stop=()=>{if(el.currentTime>=cur.pauseAt){el.pause();el.currentTime=cur.pauseAt;}};
+   el.addEventListener('timeupdate',stop);
+   el.addEventListener('seeking',stop);
+  });
+ }
+ if(cur?.questionType!=='audioReveal')return;
+ if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
+ const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
+ document.querySelectorAll('.quizMedia').forEach(el=>{
+  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
+  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
+ });
+}
 function imageRevealHTML(cur,host=false){
  if(!cur||cur.questionType!=='imageReveal')return '';
  const stage=Number(cur.revealStage||0), last=(cur.revealValues?.length||5)-1;
@@ -90,9 +196,24 @@ function imageRevealHTML(cur,host=false){
  </div>`;
 }
 let audienceClockHandle=null;
-function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');const ms=Math.min(15000,Math.max(0,Number(state?.audience?.remainingMs||0)));if(!el)return;const end=Date.now()+ms;const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
+function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');if(!el)return;const end=Number(state?.audience?.endsAt)||Date.now()+Math.max(0,Number(state?.audience?.remainingMs||0));const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
 let numericClockHandle=null;
 function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),end=Number(state?.numericChallenge?.endsAt||0);if(!el||!end)return;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
+function fitQuestionToOBS(){
+ if(!['question','buzz','answering','cat_question','result','video_result','va_bank_question','duel_question'].includes(state?.phase))return;
+ const panel=app.querySelector('.panel'),question=panel?.querySelector('.question'),scores=app.querySelector('.scorebar');
+ if(!panel||!question)return;
+ const available=Math.max(280,window.innerHeight-(scores?.offsetHeight||70)-34);
+ let size=parseFloat(getComputedStyle(question).fontSize);
+ for(let i=0;i<14&&panel.getBoundingClientRect().height>available&&size>17;i++){
+  size=Math.max(17,size-1.5);question.style.fontSize=size+'px';
+ }
+ if(panel.getBoundingClientRect().height>available){
+  const image=panel.querySelector('img[alt="Ілюстрація правильної відповіді"],.imageRevealImg');
+  if(image)image.style.maxHeight=Math.max(90,available-panel.getBoundingClientRect().height+image.getBoundingClientRect().height-12)+'px';
+ }
+}
+function applyVoiceHighlight(){const speaking=new Set(state?.voice?.speakingPlayerIds||[]);const cards=app.querySelectorAll('.scorebar .player');const players=state?.players||[];cards.forEach((card,i)=>card.classList.toggle('voice-speaking',speaking.has(players[i]?.id)));}
 function render(){if(!state||!data)return;let h=``;
  if(state.phase==='paused'){
    app.innerHTML=`<div class="panel center" style="margin-top:8vh;padding:56px"><div class="huge">⏸</div><h1 style="font-size:54px">ТЕХНІЧНА ПАУЗА</h1><p class="muted" style="font-size:24px">Скоро продовжимо</p></div>`;
@@ -103,7 +224,7 @@ function render(){if(!state||!data)return;let h=``;
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
    const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">30</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
-   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
+   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question" style="font-size:clamp(20px,2.2vw,34px);line-height:1.22;max-width:1040px;margin:16px auto">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:14px auto 0;max-width:760px;text-align:left">
    ${state.players.map(p=>{const done=submitted.includes(p.id);const label=done?'✅ Відповів':status==='expired'?'❌ Немає відповіді':'⏳ Думає';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border:1px solid #3a2b60;border-radius:12px;background:rgba(255,255,255,.025);font-size:17px"><b>${GameUI.esc(p.name)}</b><span>${label}</span></div>`}).join('')}
    </div></div>`}
@@ -122,10 +243,10 @@ function render(){if(!state||!data)return;let h=``;
  else if(state.phase==='numeric_result'){const n=state.numericChallenge||{},rs=n.results||[],rev=n.revealCount||0,revealed=rs.slice(Math.max(0,rs.length-rev)).reverse();h+=`<div class="panel center"><div class="huge">${n.correctAnswer}</div><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><div class="finalList">${revealed.map(r=>{const place=rs.findIndex(x=>x.id===r.id)+1;return `<div class="finalItem"><span class="winner">${place===1?'🥇 ':''}${place}. ${GameUI.esc(r.name)}</span><span>${r.noAnswer?'— НЕМАЄ ВІДПОВІДІ':`Відповідь: <b>${r.answer}</b> • різниця: <b>${r.diff}</b>${place===1?' • +'+n.value:''}`}</span></div>`}).join('')}</div></div>`}
  else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h+=`<div class="center" style="margin:8px 0 22px;font-size:30px;line-height:1.2;font-weight:700">🎯 Питання обирає: <b style="font-size:36px">${GameUI.esc(chooser?.name||'—')}</b></div>${GameUI.boardHTML(data,state,false)}${GameUI.playersHTML(state.players)}`;}
  else if(state.phase==='audience_lobby'){const a=state.audience||{};h+=`<div class="panel center"><div style="font-size:26px;font-weight:900;letter-spacing:.15em">👥 ГРАЮТЬ ГЛЯДАЧІ</div><h1 style="font-size:52px">${GameUI.esc(a.title||'')}</h1><img class="audQr" src="/audience-qr/${state.code}"><h2>Скануй QR • введи нік • забирай приз</h2><p style="font-size:24px">У грі: <b>${a.joined||0}</b></p></div>`}
- else if(state.phase==='audience_question'){const a=state.audience||{},left=Math.min(15,Math.max(0,Math.ceil(Number(a.remainingMs||0)/1000)));h+=`<div class="panel center"><div class="huge" id="audienceTimer">${left}.0</div><h2>ГЛЯДАЧІ • ПИТАННЯ ${a.questionIndex+1}/${a.totalQuestions}</h2><div class="question">${GameUI.esc(a.question||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt">${'ABCD'[i]} • ${GameUI.esc(o)}</div>`).join('')}</div><p style="font-size:22px">Відповіли: <b>${a.submitted||0}/${a.joined||0}</b></p></div>`}
+ else if(state.phase==='audience_question'){const a=state.audience||{},left=Math.max(0,Number(a.remainingMs||0)/1000);h+=`<div class="panel center"><div class="huge" id="audienceTimer">${left}.0</div><h2>ГЛЯДАЧІ • ПИТАННЯ ${a.questionIndex+1}/${a.totalQuestions}</h2><div class="question">${GameUI.esc(a.question||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt">${'ABCD'[i]} • ${GameUI.esc(o)}</div>`).join('')}</div><p style="font-size:22px">Відповіли: <b>${a.submitted||0}/${a.joined||0}</b></p></div>`}
  else if(state.phase==='audience_result'){const a=state.audience||{},total=Math.max(1,a.submitted||0);h+=`<div class="panel center"><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><div class="huge">${'ABCD'[a.correct]} • ${GameUI.esc(a.options?.[a.correct]||'')}</div><div class="audGrid">${(a.options||[]).map((o,i)=>`<div class="audOpt" style="${i===a.correct?'border:2px solid rgba(100,255,160,.8)':''}">${'ABCD'[i]} • ${GameUI.esc(o)} — <b>${Math.round((a.counts?.[i]||0)*100/total)}%</b></div>`).join('')}</div><p style="font-size:22px">${GameUI.esc(a.fact||'')}</p></div>`}
  else if(state.phase==='audience_podium'){const a=state.audience||{},rs=(a.ranking||[]).slice(0,5),rev=a.revealCount||0,n=Math.min(5,rs.length),shown=rs.slice(Math.max(0,n-rev),n).reverse(),latest=shown[shown.length-1];h+=`<div class="panel center"><h1>🏆 ${GameUI.esc(a.title||'')}</h1>${latest?`<div style="font-size:34px;font-weight:900">${rs.indexOf(latest)+1===1?'🥇 ПЕРЕМОЖЕЦЬ':(rs.indexOf(latest)+1)+' МІСЦЕ'}</div><div class="winner" style="font-size:72px">${GameUI.esc(latest.name)}</div><div style="font-size:28px">${latest.correct}/3 правильних • ${(latest.timeMs/1000).toFixed(2)} с</div>`:'<div class="huge">ТОП-5</div>'}${shown.length>1?`<div class="finalList">${shown.slice(0,-1).map(r=>`<div class="finalItem"><span>${GameUI.esc(r.name)}</span><b>${r.correct}/3 • ${(r.timeMs/1000).toFixed(2)} с</b></div>`).join('')}</div>`:''}</div>`}
- else if(['question','buzz','answering','cat_question','result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${imageRevealHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
+ else if(['question','buzz','answering','cat_question','result','video_result'].includes(state.phase)){let label=state.current?.type==='cat'?'🐈 КІТ У МІШКУ':'';h+=`<div class="panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div>${state.phase==='result'&&state.revealAnswer&&state.current?.answerImage?'':imageRevealHTML(state.current,false)+mediaQuestionHTML(state.current,false)}${state.phase==='answering'?`<div class="center"><h2>Відповідає: ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</h2></div>`:''}${state.phase==='result'&&state.revealAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>${answerMediaHTML(state.current)}`:''}</div>${GameUI.playersHTML(state.players,state.buzzer)}`}
  else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
@@ -141,5 +262,5 @@ function render(){if(!state||!data)return;let h=``;
    const latest=revealed[revealed.length-1];
    h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
  }
- app.innerHTML=h;armFirstTurnClock();armNumericClock();armAudienceClock()}
+ const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia();app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>

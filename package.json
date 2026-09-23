@@ -1,8 +1,8 @@
 {
   "name": "smokerlol-online-quiz",
-  "version": "1.6.9",
+  "version": "3.0.0",
   "private": true,
-  "description": "SMOKERLOL online quiz v1.6.9 \u2014 audience interactives and OBS layout",
+  "description": "SMOKERLOL QUIZ v3.0.0 — Назад у 2000-ні",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -14,6 +14,8 @@
     "express": "^4.21.2",
     "socket.io": "^4.8.1",
     "pg": "^8.16.3",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "discord.js": "^14.19.3",
+    "@discordjs/voice": "^0.19.2"
   }
 }

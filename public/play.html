@@ -1,4 +1,4 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=164"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=164"></script>
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гравець — Своя гра</title><link rel="stylesheet" href="/style.css?v=306"><script src="/socket.io/socket.io.js"></script><script src="/common.js?v=306"></script>
 <style>
 .mobileBoard{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .mobileCategory{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035)}
@@ -18,26 +18,61 @@
 .playerImageRevealValue{display:inline-block;margin:0 0 10px;padding:7px 15px;border-radius:999px;font-weight:900;font-size:22px;background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 .playerImageRevealStage{margin-top:5px;font-size:13px;opacity:.72}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><div id="app" class="panel"></div></div><script>
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
-let cueAudioCtx=null;
+// Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
  question:new Audio('/sounds/question.mp3'),
  buzz_open:new Audio('/sounds/buzz.mp3')
 };
-Object.values(cueAudio).forEach(a=>{a.preload='auto';});
+let cueUnlocked=false;
+for(const [key,a] of Object.entries(cueAudio)){
+ a.preload='auto';
+ const saved=Number(localStorage.getItem('sgPlayerCueVolume_'+key));
+ a.volume=Number.isFinite(saved)&&saved>=0&&saved<=1?saved:0.35;
+}
+function setCueVolume(key,value){
+ const a=cueAudio[key];if(!a)return;
+ a.volume=Math.max(0,Math.min(1,Number(value)/100));
+ localStorage.setItem('sgPlayerCueVolume_'+key,String(a.volume));
+ const label=document.getElementById('cueVolumeValue_'+key);
+ if(label)label.textContent=Math.round(a.volume*100)+'%';
+}
+function unlockCueAudio(){
+ // Invoked synchronously inside a user gesture, not from a socket callback.
+ for(const a of Object.values(cueAudio)){
+  a.muted=true;
+  const p=a.play();
+  if(p&&p.then)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;cueUnlocked=true;}).catch(err=>{a.muted=false;console.warn('PLAYER audio unlock:',err)});
+  else {a.pause();a.currentTime=0;a.muted=false;cueUnlocked=true;}
+ }
+}
 function playCueSound(type){
  const key=type==='gong'?'question':type;
- const a=cueAudio[key];
- if(!a)return;
+ const a=cueAudio[key];if(!a)return;
  try{
-  a.pause();
-  a.currentTime=0;
+  a.pause();a.currentTime=0;
   const p=a.play();
-  if(p&&p.catch)p.catch(()=>{});
- }catch(e){}
+  if(p&&p.catch)p.catch(err=>{
+   console.warn('PLAYER cue playback blocked:',key,err);
+   const notice=document.getElementById('cueAudioNotice');
+   if(notice)notice.hidden=false;
+  });
+ }catch(err){console.warn('PLAYER cue playback error:',key,err)}
 }
 socket.on('cue',e=>playCueSound(e?.type));
+for(const key of Object.keys(cueAudio)){
+ const slider=document.getElementById('cueVolume_'+key);
+ slider.value=Math.round(cueAudio[key].volume*100);
+ slider.addEventListener('input',()=>setCueVolume(key,slider.value));
+ setCueVolume(key,slider.value);
+}
+// Attempt audio unlock on the first ordinary player interaction; no separate enable button.
+document.addEventListener('pointerdown',()=>{
+ if(!cueUnlocked)unlockCueAudio();
+ const notice=document.getElementById('cueAudioNotice');
+ if(notice)notice.hidden=true;
+},{capture:true});
 
 let gameData=null, loadedGameId='';
 
@@ -67,10 +102,29 @@ const urlCode=(params.get('room')||'').trim().toUpperCase();
 const savedCode=(localStorage.getItem('sgCode')||'').trim().toUpperCase();
 let state=null, code=urlCode||savedCode, playerId=localStorage.getItem('sgPlayerId')||'', name=localStorage.getItem('sgPlayerName')||'';
 let joined=false, reconnectTried=false;
+let serverClockOffsetMs=0, syncSamples=[], syncTimer=null, buzzClock=null;
+function serverNow(){return Date.now()+serverClockOffsetMs}
+function syncClockSample(){
+ if(!socket.connected)return;
+ const sent=Date.now();
+ socket.emit('timeSync',{clientSentAt:sent},r=>{
+   const recv=Date.now(); if(!r?.ok)return;
+   const rtt=recv-sent, serverMid=(Number(r.serverReceivedAt)+Number(r.serverSentAt))/2;
+   const offset=serverMid-((sent+recv)/2);
+   syncSamples.push({rtt,offset}); if(syncSamples.length>8)syncSamples.shift();
+   const best=[...syncSamples].sort((a,b)=>a.rtt-b.rtt).slice(0,Math.min(5,syncSamples.length));
+   serverClockOffsetMs=best.reduce((n,x)=>n+x.offset,0)/Math.max(1,best.length);
+   const rtts=best.map(x=>x.rtt), avg=rtts.reduce((a,b)=>a+b,0)/Math.max(1,rtts.length);
+   const jitter=rtts.reduce((a,x)=>a+Math.abs(x-avg),0)/Math.max(1,rtts.length);
+   if(joined&&code)socket.emit('reportNetworkStats',{code,rttMs:avg,jitterMs:jitter,samples:syncSamples.length});
+ });
+}
+function startClockSync(){if(syncTimer)clearInterval(syncTimer);syncSamples=[];for(let i=0;i<5;i++)setTimeout(syncClockSample,i*180);syncTimer=setInterval(syncClockSample,5000)}
+
 
 function setNetBadge(ok){const el=document.getElementById('netBadge');if(el)el.textContent=ok?'🟢 Онлайн':'🔴 Немає зв’язку'}
 socket.on('connect',()=>{
- setNetBadge(true);
+ setNetBadge(true); startClockSync();
  if(joined&&playerId&&code&&name){
    socket.emit('joinPlayer',{code,name,playerId},r=>{
      if(r?.ok){
@@ -78,6 +132,7 @@ socket.on('connect',()=>{
        localStorage.setItem('sgPlayerId',playerId);
        localStorage.setItem('sgCode',code);
        localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
      }
    });
  }
@@ -96,6 +151,7 @@ function login(prefill=urlCode||''){
   const shownCode=prefill||code||'';
   app.innerHTML=`<h1>Приєднатися до гри</h1><input id="code" maxlength="4" autocomplete="off" placeholder="Код кімнати" value="${GameUI.esc(shownCode)}"><br><br><input id="name" maxlength="20" autocomplete="name" placeholder="Ваше ім'я" value="${GameUI.esc(name)}"><br><br><button class="btn" id="join">Увійти</button><div id="err" class="notice hidden"></div>`;
   document.getElementById('join').onclick=()=>{
+    unlockCueAudio();
     const newCode=document.getElementById('code').value.trim().toUpperCase();
     const newName=document.getElementById('name').value.trim();
     if(!newCode)return showError('Введіть код кімнати.');
@@ -107,6 +163,7 @@ function login(prefill=urlCode||''){
       if(!r.ok)return showError(r.error||'Не вдалося приєднатися.');
       playerId=r.playerId; code=r.code; name=r.name; joined=true;
       localStorage.setItem('sgPlayerId',playerId); localStorage.setItem('sgCode',code); localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
       history.replaceState(null,'',`/play?room=${encodeURIComponent(code)}`);
     });
   };
@@ -120,6 +177,7 @@ if(playerId&&savedCode&&name&&(!urlCode||urlCode===savedCode)){
     if(!r.ok){clearSession(true);login(urlCode||'');return;}
     playerId=r.playerId;code=r.code;name=r.name;joined=true;
     localStorage.setItem('sgPlayerId',playerId);localStorage.setItem('sgCode',code);localStorage.setItem('sgPlayerName',name);
+       setTimeout(syncClockSample,60);
   });
 }
 
@@ -161,12 +219,87 @@ function penaltyLeftMs(){
 function buzzButtonHTML(open){
  const left=penaltyLeftMs();
  if(left>0)return `<div class="center"><button id="buzz" class="btn buzz penalty">🔒 ФАЛЬСТАРТ<br><span id="penaltyTime">${(left/1000).toFixed(1)}</span> с</button><p class="muted">Після завершення штрафу кнопка активується автоматично.</p></div>`;
- return `<div class="center"><button id="buzz" class="btn buzz ${open?'ready':'waiting'}">${open?'⚡ ВІДПОВІДАТИ!':'🌑 ЧЕКАЙ'}</button><p class="muted">${open?'Кнопка відкрита — можна тиснути.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
+ const scheduled=open&&Number(state?.buzzOpensAt||0)>serverNow();
+ const ready=open&&!scheduled;
+ return `<div class="center"><button id="buzz" class="btn buzz ${ready?'ready':'waiting'}">${ready?'⚡ ВІДПОВІДАТИ!':scheduled?'⚡ ГОТУЙСЯ…':'🌑 ЧЕКАЙ'}</button><p class="muted">${ready?'Кнопка відкрита — можна тиснути.':scheduled?'BUZZ відкриється одночасно на всіх телефонах.':'Темна кнопка: раннє натискання = штраф 3 секунди.'}</p></div>`;
+}
+function armBuzzClock(){
+ if(buzzClock){clearTimeout(buzzClock);buzzClock=null}
+ if(state?.phase!=='buzz')return;
+ const delay=Number(state.buzzOpensAt||0)-serverNow();
+ if(delay>0)buzzClock=setTimeout(()=>{buzzClock=null;render()},Math.max(0,delay+5));
 }
 function armPenaltyClock(){
  if(penaltyClock){clearInterval(penaltyClock);penaltyClock=null}
  const leftNow=penaltyLeftMs();if(leftNow<=0)return;
  penaltyClock=setInterval(()=>{const el=document.getElementById('penaltyTime'),left=penaltyLeftMs();if(el)el.textContent=(left/1000).toFixed(1);if(left<=0){clearInterval(penaltyClock);penaltyClock=null;render()}},100);
+}
+function answerMediaHTML(cur){
+ if(!cur||!['result','video_result'].includes(state?.phase))return '';
+ const image=cur.answerImage?`<img src="${GameUI.esc(cur.answerImage)}" alt="Ілюстрація правильної відповіді" style="display:block;max-width:100%;max-height:40vh;object-fit:contain;margin:12px auto;border-radius:12px">`:'';
+ return image;
+}
+function mediaQuestionHTML(cur,host=false){
+ if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
+ const url=String(cur.media||'');
+ if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
+ const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
+ const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
+ const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
+ const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
+}
+let mediaPlaybackSnapshot=null;
+function captureMediaPlayback(){
+ const el=document.querySelector('.quizMedia');
+ if(!el||!state?.current)return null;
+ return {src:el.getAttribute('src'),time:el.currentTime,playing:!el.paused,phase:state.phase,stage:state.current.revealStage};
+}
+function restoreMediaPlayback(snapshot){
+ const el=document.querySelector('.quizMedia');
+ if(!el||!state?.current)return;
+ const same=snapshot&&snapshot.src===el.getAttribute('src')&&snapshot.stage===state.current.revealStage;
+ const restore=()=>{
+  if(!el.isConnected)return;
+  if(same&&Number.isFinite(snapshot.time)){
+   try{el.currentTime=snapshot.time}catch(e){}
+  }
+  if(state.current.mediaPaused){
+   el.pause();
+  }else if(same&&(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')){
+   el.play().catch(()=>{});
+  }
+ };
+ if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
+ // A player cannot override the server-controlled answer pause by pressing Play.
+ el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+}
+function stopDetachedMedia(){
+ document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
+}
+function resumeVideoResult(){
+ if(state?.phase!=='video_result'||state.current?.questionType!=='video')return;
+ document.querySelectorAll('video.quizMedia').forEach(el=>{
+  const resume=()=>{el.currentTime=Number(state.current.pauseAt||0);el.play().catch(()=>{});};
+  if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
+ });
+}
+function limitMediaPreview(){
+ const cur=state?.current;
+ if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
+  document.querySelectorAll('.quizMedia').forEach(el=>{
+   const stop=()=>{if(el.currentTime>=cur.pauseAt){el.pause();el.currentTime=cur.pauseAt;}};
+   el.addEventListener('timeupdate',stop);
+   el.addEventListener('seeking',stop);
+  });
+ }
+ if(cur?.questionType!=='audioReveal')return;
+ if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
+ const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
+ document.querySelectorAll('.quizMedia').forEach(el=>{
+  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
+  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
+ });
 }
 function playerImageRevealHTML(cur){
  if(!cur||cur.questionType!=='imageReveal')return '';
@@ -188,7 +321,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    app.innerHTML=h; const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia();app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -214,13 +347,13 @@ function render(){
       h+=`<div class="center"><h2>🎯 Ваша черга обирати питання</h2><p class="muted">Раунд ${state.round+1}</p></div><div class="mobileBoard">${cats.map((c,ci)=>`<section class="mobileCategory"><div class="mobileCategoryName">${GameUI.esc(c.name)}</div><div class="mobileValues">${c.questions.map((q,qi)=>{const used=state.used[`${state.round}:${ci}:${qi}`];return `<button class="btn phoneTile" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''}>${used?'—':q.value}</button>`}).join('')}</div></section>`).join('')}</div>`;
     } else h+=`<div class="center"><h2>Питання обирає ${GameUI.esc(chooser?.name||'інший гравець')}</h2><p class="muted">Чекаємо вашої черги.</p></div>`;
   }
-  else if(state.phase==='question')h+=playerImageRevealHTML(state.current)+buzzButtonHTML(false);
+  else if(state.phase==='question')h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current)+buzzButtonHTML(false);
   else if(state.phase==='buzz'){
-    h+=playerImageRevealHTML(state.current);
+    h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);
     if(state.current?.type==='duel' && !state.duelPlayers.includes(playerId)) h+=`<div class="center"><h2>⚔️ Дуель</h2><p class="muted">Відповідають учасники дуелі.</p></div>`;
     else h+=buzzButtonHTML(true);
   }
-  else if(state.phase==='answering'){h+=playerImageRevealHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
+  else if(state.phase==='answering'){h+=playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
   else if(state.phase==='va_bank_bet'){
     if(state.vaBankPlayer===playerId){let max=Math.max(0,p.score);h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2></div><p>Ваша ставка: від 0 до ${max}</p><input id="vbBet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendVbBet" class="btn gold">Підтвердити ставку</button>`}
     else h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2><p class="muted">Гравець робить ставку.</p></div>`;
@@ -236,18 +369,22 @@ function render(){
     else h+=`<div class="center"><h2>🐈 Кіт у мішку</h2><p>Гравець обирає, кому передати питання.</p></div>`;
   }
   else if(state.phase==='cat_question')h+=state.catReceiver===playerId?`<div class="center"><div class="huge">🐈</div><h2>Кіт у мішку — відповідаєте ви!</h2></div>`:`<div class="center"><h2>Кіт у мішку дістався іншому гравцю.</h2></div>`;
-  else if(state.phase==='result')h+=`<div class="center"><h2>Результат зафіксовано</h2></div>`;
+  else if(state.phase==='video_result'){h+=`<div class="question">${GameUI.esc(state.current.q)}</div>${mediaQuestionHTML(state.current)}<p class="center">✅ Продовження відео</p><div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a??''))}</h2>${answerMediaHTML(state.current)}</div>`}
+  else if(state.phase==='result')h+=`<div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a??''))}</h2>${answerMediaHTML(state.current)}</div>`;
   else if(state.phase==='final_bets'){let max=Math.max(0,p.score);h+=p.hasBet?`<div class="center"><h2>Ставку прийнято ✅</h2></div>`:`<h2>Фінальна ставка</h2><p>Від 0 до ${max}</p><input id="bet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendBet" class="btn gold">Підтвердити ставку</button>`}
   else if(state.phase==='final_ready'){h+=`<div class="center"><h2>Фінальне питання</h2><p class="muted">Слухайте ведучого. Таймер ще не запущено.</p><div class="huge">30</div></div>`}
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  app.innerHTML=h;
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia();app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
+  armBuzzClock();
   document.getElementById('leaveRoom').onclick=leaveRoom;
-  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>socket.emit('buzz',{code},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>{
+    socket.emit('buzz',{code,pressedAtServerTime:serverNow()},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  };
   if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
     const answer=document.getElementById('firstTurnAnswer').value;

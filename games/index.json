@@ -14,5 +14,13 @@
     "description": "Шкільні знання, логіка, факти та пастки",
     "file": "general_knowledge.json",
     "enabled": true
+  },
+  {
+    "id": "back-to-2000s-test",
+    "title": "Назад у 2000-ні",
+    "icon": "📼",
+    "description": "SMOKERLOL QUIZ #3 — музика, кіно, ігри та культура нульових",
+    "file": "back_to_2000s_test.json",
+    "enabled": true
   }
 ]

@@ -1,0 +1,60 @@
+{
+  "title": "MEDIA TEST",
+  "rounds": [
+    {
+      "name": "Медіатест",
+      "categories": [
+        {
+          "name": "🎵 Медіапитання",
+          "questions": [
+            {
+              "type": "audioReveal",
+              "value": 500,
+              "q": "Впізнай серіал за музичною заставкою",
+              "a": "Офіс (The Office)",
+              "media": "/media/office-theme.mp3",
+              "revealSeconds": [
+                2,
+                4,
+                7,
+                11,
+                16
+              ],
+              "revealValues": [
+                500,
+                400,
+                300,
+                200,
+                100
+              ]
+            },
+            {
+              "type": "audio",
+              "value": 500,
+              "q": "Як називається пісня та в якій частині «Піратів Карибського моря» вона звучала?",
+              "a": "Hoist the Colours — На краю світу, третя частина",
+              "media": "/media/hoist-the-colours.mp3"
+            },
+            {
+              "type": "video",
+              "value": 500,
+              "q": "Що відбудеться далі?",
+              "a": "Ведучий оцінює відповідь за продовженням відео",
+              "media": "/media/office-first-aid.mp4",
+              "pauseAt": 15
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "final": {
+    "q": "Тест завершено",
+    "a": "Тест завершено"
+  },
+  "specialPools": {},
+  "firstTurnQuiz": {
+    "q": "Скільки секунд у хвилині?",
+    "a": 60
+  }
+}
