@@ -1,8 +1,8 @@
 {
   "name": "smokerlol-online-quiz",
-  "version": "1.6.9",
+  "version": "3.0.0",
   "private": true,
-  "description": "SMOKERLOL online quiz v1.6.9 — audience interactives and OBS layout",
+  "description": "SMOKERLOL QUIZ v3.0.0 — Назад у 2000-ні",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
