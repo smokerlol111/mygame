@@ -865,7 +865,8 @@ io.on('connection', socket => {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
-        room.phase = 'result';
+        if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
+        else room.phase = 'result';
       } else {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
         room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
@@ -921,7 +922,8 @@ io.on('connection', socket => {
     if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
-    room.phase = 'result';
+    if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
+    else room.phase = 'result';
     emitState(room);
   });
   socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
