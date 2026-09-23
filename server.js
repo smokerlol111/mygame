@@ -1197,7 +1197,7 @@ function startOptionalVoiceBot(){
   voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceLastEvent=0;clearDiscordSpeaking();});
 }
 storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>{
-  console.log(`SMOKERLOL v3.1.0-dev: http://0.0.0.0:${PORT}`);
+  console.log(`SMOKERLOL v3.0.0-rc: http://0.0.0.0:${PORT}`);
   startOptionalVoiceBot();
 })).catch(err=>{console.error('Storage init failed:',err);process.exit(1)});
 
