@@ -198,7 +198,7 @@ function render(){if(!state||!data)return;let h=``;
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
    const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">30</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
-   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
+   h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question" style="font-size:clamp(20px,2.2vw,34px);line-height:1.22;max-width:1040px;margin:16px auto">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:14px auto 0;max-width:760px;text-align:left">
    ${state.players.map(p=>{const done=submitted.includes(p.id);const label=done?'✅ Відповів':status==='expired'?'❌ Немає відповіді':'⏳ Думає';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border:1px solid #3a2b60;border-radius:12px;background:rgba(255,255,255,.025);font-size:17px"><b>${GameUI.esc(p.name)}</b><span>${label}</span></div>`}).join('')}
    </div></div>`}
