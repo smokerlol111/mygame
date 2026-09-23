@@ -305,14 +305,14 @@ function restoreMediaPlayback(snapshot){
  };
  if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
  // A player cannot override the server-controlled answer pause by pressing Play.
- el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+ // The host may explicitly resume media while a player is answering.
 }
 function bindHostMediaControls(){
  const el=document.querySelector('.quizMedia');
  if(!el||el.dataset.mediaControlBound)return;
  el.dataset.mediaControlBound='1';
  const send=action=>{
-  if(!state?.current||(action==='play'&&state.current.mediaPaused))return;
+  if(!state?.current)return;
   socket.emit('hostMediaControl',{code:state.code,action,time:el.currentTime});
  };
  el.addEventListener('play',()=>send('play'));
