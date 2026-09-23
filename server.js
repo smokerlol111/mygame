@@ -689,7 +689,7 @@ io.on('connection', socket => {
       room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||30)};
       room.numericAnswers={}; room.numericSubmittedAt={}; room.numericResults=null; room.numericRevealCount=0;
       room.numericEndsAt=null; room.phase='numeric_ready'; clearTimeout(room.numericTimer); room.numericTimer=null;
-    } else if (room.current.questionType && ['audio','audioReveal','video'].includes(room.current.questionType)) {
+    } else if (room.current.questionType && ['audio','audioReveal','video','imageReveal'].includes(room.current.questionType)) {
       // Media questions open the buzzer immediately; normal questions keep the host-controlled start.
       room.phase='buzz'; room.buzzer=null; room.buzzOpensAt=Date.now();
       room.answeringLocked=new Set(); room.buzzCandidates=[];
@@ -754,8 +754,8 @@ io.on('connection', socket => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current || room.current.questionType !== 'imageReveal')
       return cb({ok:false,error:'Це не питання із зображенням.'});
-    if (!['question'].includes(room.phase))
-      return cb({ok:false,error:'Зображення можна відкривати тільки до відкриття BUZZ.'});
+    if (!['question','buzz'].includes(room.phase) || room.buzzer)
+      return cb({ok:false,error:'Зображення можна відкривати лише до відповіді гравця.'});
     const values = room.current.revealValues || [room.current.value];
     if (room.current.revealStage >= values.length-1)
       return cb({ok:false,error:'Зображення вже повністю відкрите.'});
