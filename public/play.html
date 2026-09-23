@@ -369,8 +369,8 @@ function render(){
     else h+=`<div class="center"><h2>🐈 Кіт у мішку</h2><p>Гравець обирає, кому передати питання.</p></div>`;
   }
   else if(state.phase==='cat_question')h+=state.catReceiver===playerId?`<div class="center"><div class="huge">🐈</div><h2>Кіт у мішку — відповідаєте ви!</h2></div>`:`<div class="center"><h2>Кіт у мішку дістався іншому гравцю.</h2></div>`;
-  else if(state.phase==='video_result'){h+=`<div class="question">${GameUI.esc(state.current.q)}</div>${mediaQuestionHTML(state.current)}<p class="center">✅ Продовження відео</p>`}
-  else if(state.phase==='result')h+=`<div class="center"><h2>Результат зафіксовано</h2></div>`;
+  else if(state.phase==='video_result'){h+=`<div class="question">${GameUI.esc(state.current.q)}</div>${mediaQuestionHTML(state.current)}<p class="center">✅ Продовження відео</p><div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a??''))}</h2>${answerMediaHTML(state.current)}</div>`}
+  else if(state.phase==='result')h+=`<div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a??''))}</h2>${answerMediaHTML(state.current)}</div>`;
   else if(state.phase==='final_bets'){let max=Math.max(0,p.score);h+=p.hasBet?`<div class="center"><h2>Ставку прийнято ✅</h2></div>`:`<h2>Фінальна ставка</h2><p>Від 0 до ${max}</p><input id="bet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendBet" class="btn gold">Підтвердити ставку</button>`}
   else if(state.phase==='final_ready'){h+=`<div class="center"><h2>Фінальне питання</h2><p class="muted">Слухайте ведучого. Таймер ще не запущено.</p><div class="huge">30</div></div>`}
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
