@@ -485,10 +485,13 @@
               "q": "Назвіть персонажа, зображеного на фотографії, та відтворіть його фірмовий бойовий клич! Це спонсорське запитання: за правильне ім’я — 600 балів, а якщо ведучий зарахує озвучення — 1200 балів.",
               "a": "Мурлок (Murloc) із World of Warcraft.",
               "approval": "user-approved",
-              "type": "image",
+              "type": "imageReveal",
               "image": "/media/murloc.jpg",
               "answerAudio": "/media/murloc_sound.mp3",
-              "sponsorDouble": true
+              "sponsorDouble": true,
+              "revealValues": [
+                600
+              ]
             },
             {
               "value": 800,
