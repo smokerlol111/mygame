@@ -624,7 +624,8 @@ io.on('connection', socket => {
   socket.on('playCue', ({code:c,type}={},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)) return cb({ok:false,error:'Немає доступу.'});
-    if(!['gong','results_theme','winner_theme','final_music_stop'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
+    if(type==='murloc_answer'){if(room.phase!=='result'||room.current?.sponsorDouble!==true||room.current?.answerAudio!=='/media/murloc.mp3')return cb({ok:false,error:'Звук доступний лише після відповіді на запитання про мурлока.'});}
+    else if(!['gong','results_theme','winner_theme','final_music_stop'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
     io.to(room.code).emit('cue',{type,at:Date.now()});
     cb({ok:true});
   });
