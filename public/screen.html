@@ -77,7 +77,8 @@ function handleFinalMusic(type){
  }
  return true;
 }
-socket.on('cue',e=>{if(!handleFinalMusic(e?.type))playCueSound(e?.type);});
+const obsMurlocAudio=new Audio('/media/murloc.mp3');obsMurlocAudio.preload='auto';
+socket.on('cue',e=>{if(e?.type==='murloc_answer'){if(state?.phase!=='result'||state.current?.sponsorDouble!==true)return;obsMurlocAudio.pause();obsMurlocAudio.currentTime=0;obsMurlocAudio.play().catch(err=>console.warn('OBS Murloc audio:',err));return;}if(!handleFinalMusic(e?.type))playCueSound(e?.type);});
 let data=null,state=null,loadedGameId='';
 
 let firstTurnClockHandle=null;
