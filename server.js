@@ -651,6 +651,7 @@ io.on('connection', socket => {
         return cb({ok:false,error:'Медіафайл не встановлено на сервері: '+q.media});
     }
     room.current = { type:special, ci, qi, value:q.value, q:q.cat ? q.cat.q : q.q, a:q.cat ? q.cat.a : q.a };
+    if(special==='normal' && q.sponsorDouble===true && q.value===600){room.current.sponsorDouble=true;room.current.answerAudio=q.answerAudio;}
     if(special==='normal' && typeof q.answerImage==='string' && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerImage))room.current.answerImage=q.answerImage;
     if(special==='normal' && typeof q.answerVideo==='string' && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerVideo))room.current.answerVideo=q.answerVideo;
     // Media questions: direct HTTPS links or same-origin files under /media/.
@@ -841,13 +842,14 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('judge', ({ code: c, correct }, cb = () => {}) => {
+  socket.on('judge', ({ code: c, correct, sponsorBonus }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.current || !room.buzzer) return;
     const p = room.players.find(x => x.id === room.buzzer);
     if (!p) return;
     const value = room.current.value;
-    p.score += correct ? value : -value;
+    const awarded = correct && room.current.sponsorDouble===true && sponsorBonus===true ? value*2 : value;
+    p.score += correct ? awarded : -value;
     if (correct) {
       room.revealAnswer = true;
       room.resultReason = 'correct';
