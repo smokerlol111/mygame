@@ -487,7 +487,7 @@
               "approval": "user-approved",
               "type": "imageReveal",
               "image": "/media/murloc.jpg",
-              "answerAudio": "/media/murloc_sound.mp3",
+              "answerAudio": "/media/murloc.mp3",
               "sponsorDouble": true,
               "revealValues": [
                 600
