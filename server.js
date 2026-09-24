@@ -732,13 +732,15 @@ io.on('connection', socket => {
   socket.on('finishVideoResult',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)||room?.phase!=='video_result')return cb({ok:false,error:'Немає продовження відео'});
+    room.current.mediaPaused=true;
     room.phase='result';cb({ok:true});emitState(room);
   });
 
   socket.on('continueVideo',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
-    if(!isHost(socket,room)||room?.current?.questionType!=='video'||!room.current.pauseAt)return cb({ok:false,error:'Відео недоступне'});
+    if(!isHost(socket,room)||room?.phase!=='video_result'||room.current?.questionType!=='video')return cb({ok:false,error:'Відео недоступне'});
     room.current.videoContinued=true;
+    room.current.mediaPaused=false;
     cb({ok:true});emitState(room);
   });
 
@@ -850,7 +852,7 @@ io.on('connection', socket => {
       room.revealAnswer = true;
       room.resultReason = 'correct';
       if(room.current?.questionType)room.current.mediaPaused=true;
-      if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
+      if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
       else room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
@@ -865,7 +867,7 @@ io.on('connection', socket => {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
-        if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
+        if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
         else room.phase = 'result';
       } else {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
@@ -922,7 +924,7 @@ io.on('connection', socket => {
     if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
-    if(room.current.questionType==='video' && room.current.pauseAt){room.current.videoContinued=true;room.current.mediaPaused=false;room.phase='video_result';}
+    if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
     else room.phase = 'result';
     emitState(room);
   });
