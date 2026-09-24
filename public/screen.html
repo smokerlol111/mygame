@@ -60,7 +60,24 @@ function playCueSound(type){
   if(p&&p.catch)p.catch(()=>{});
  }catch(e){}
 }
-socket.on('cue',e=>playCueSound(e?.type));
+// Final ceremony music plays only in the OBS screen, not on player devices.
+const finalMusic={
+ results_theme:new Audio('/media/results_theme.mp3'),
+ winner_theme:new Audio('/media/winner_theme.mp3')
+};
+let activeFinalMusic=null;
+Object.values(finalMusic).forEach(a=>{a.preload='auto';a.volume=0.35;});
+function handleFinalMusic(type){
+ if(!['results_theme','winner_theme','final_music_stop'].includes(type))return false;
+ for(const a of Object.values(finalMusic)){a.pause();a.currentTime=0;}
+ activeFinalMusic=null;
+ if(type!=='final_music_stop'){
+  const a=finalMusic[type];activeFinalMusic=a;
+  a.play().catch(err=>console.warn('OBS final music playback blocked:',err));
+ }
+ return true;
+}
+socket.on('cue',e=>{if(!handleFinalMusic(e?.type))playCueSound(e?.type);});
 let data=null,state=null,loadedGameId='';
 
 let firstTurnClockHandle=null;
