@@ -624,7 +624,7 @@ io.on('connection', socket => {
   socket.on('playCue', ({code:c,type}={},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)) return cb({ok:false,error:'Немає доступу.'});
-    if(!['gong'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
+    if(!['gong','results_theme','winner_theme','final_music_stop'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
     io.to(room.code).emit('cue',{type,at:Date.now()});
     cb({ok:true});
   });
