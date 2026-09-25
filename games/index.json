@@ -22,5 +22,13 @@
     "description": "SMOKERLOL QUIZ #3 — музика, кіно, ігри та культура нульових",
     "file": "back_to_2000s_test.json",
     "enabled": true
+  },
+  {
+    "id": "friends-super-final",
+    "title": "Friends Super Final",
+    "icon": "🏆",
+    "description": "SMOKERLOL QUIZ #4 — суперфінал друзів",
+    "file": "friends_super_final.json",
+    "enabled": true
   }
 ]
