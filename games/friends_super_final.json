@@ -2,7 +2,7 @@
   "id": "friends-super-final",
   "title": "FRIENDS SUPER FINAL",
   "status": "development",
-  "notes": "SMOKERLOL QUIZ #4. Пакет у розробці. Додано перші чотири категорії Раунду 1.",
+  "notes": "SMOKERLOL QUIZ #4. Пакет у розробці. Додано всі п'ять категорій Раунду 1.",
   "rounds": [
     {
       "name": "Раунд 1",
@@ -200,6 +200,59 @@
               "q": "У листопаді 1988 року одна самовідтворювана програма спричинила масштабні порушення роботи раннього інтернету, зачепивши приблизно шість тисяч комп'ютерів. Під якою назвою цей комп'ютерний черв'як увійшов в історію?",
               "a": "Черв'як Морріса (Morris worm)",
               "answerReference": "Черв'як Морріса (Morris worm)",
+              "approval": "user-approved"
+            }
+          ]
+        },
+        {
+          "name": "Сюрприз",
+          "questions": [
+            {
+              "value": 100,
+              "topic": "Вомбат — кубічні випорожнення",
+              "q": "Яка тварина випорожнюється кубиками?",
+              "a": "Вомбат",
+              "answerReference": "Вомбат",
+              "answerImage": "/media/surprise_wombat.jpg",
+              "approval": "user-approved"
+            },
+            {
+              "value": 200,
+              "topic": "Загадка дружини — єхидна",
+              "q": "Розгляньте загадку на фотографії. Яку тварину описано?",
+              "a": "Єхидна",
+              "answerReference": "Єхидна",
+              "type": "imageReveal",
+              "image": "/media/surprise_echidna.jpg",
+              "revealValues": [
+                200
+              ],
+              "approval": "user-approved"
+            },
+            {
+              "value": 300,
+              "topic": "Графіт — кристалічна форма вуглецю",
+              "q": "Графіт — це мінерал, який є кристалічною модифікацією якого елементу?",
+              "a": "Вуглець (карбон)",
+              "answerReference": "Вуглець (карбон)",
+              "approval": "user-approved"
+            },
+            {
+              "value": 400,
+              "topic": "Тибетська лисиця — квадратна мордочка",
+              "q": "Яка тварина має найбільш квадратну мордочку?",
+              "a": "Тибетська лисиця",
+              "answerReference": "Тибетська лисиця",
+              "answerImage": "/media/surprise_tibetan_fox.jpg",
+              "approval": "user-approved"
+            },
+            {
+              "value": 500,
+              "topic": "Фараонова змія",
+              "q": "Що утвориться, якщо підпалити кальцій глюконат, або соду з цукром?",
+              "a": "Фараонова змія",
+              "answerReference": "Фараонова змія",
+              "answerImage": "/media/surprise_pharaoh_snake.jpg",
               "approval": "user-approved"
             }
           ]
