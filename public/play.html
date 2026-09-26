@@ -320,7 +320,7 @@ function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHand
 function render(){
   if(!state)return;
   const p=me(); if(!p){clearSession(true);login(urlCode||'');return;}
-  let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
+  let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
     const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia();app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
