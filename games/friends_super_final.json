@@ -311,6 +311,71 @@
               "approval": "user-approved"
             }
           ]
+        },
+        {
+          "name": "З перших секунд",
+          "questions": [
+            {
+              "value": 200,
+              "topic": "20th Century Fox — фанфара",
+              "q": "Цю фанфару мільйони людей чули ще до початку самого фільму. Яка кіностудія використовує її у своїй заставці?",
+              "a": "20th Century Fox / 20th Century Studios",
+              "answerReference": "20th Century Fox / 20th Century Studios",
+              "type": "audio",
+              "media": "/media/round2_200_20th_century_fox.mp3",
+              "approval": "user-approved"
+            },
+            {
+              "value": 400,
+              "topic": "Секретні матеріали — заставка",
+              "q": "Іноді достатньо кількох нот, щоб стало трохи моторошно. Заставку якого серіалу ви чуєте?",
+              "a": "«Секретні матеріали» / The X-Files",
+              "answerReference": "«Секретні матеріали» / The X-Files",
+              "type": "audio",
+              "media": "/media/round2_400_x_files_theme.mp3",
+              "approval": "user-approved"
+            },
+            {
+              "value": 600,
+              "topic": "MGM — Mayer",
+              "q": "Один із найстаріших символів Голлівуду з'являється ще до початку фільму: лев у кільці з кіноплівки. Яке слово розшифровує останню літеру M у назві MGM?",
+              "a": "Mayer (Metro-Goldwyn-Mayer)",
+              "answerReference": "Mayer (Metro-Goldwyn-Mayer)",
+              "approval": "user-approved"
+            },
+            {
+              "value": 800,
+              "topic": "Кримінальне чтиво — Pumpkin і Honey Bunny",
+              "q": "На самому початку «Кримінального чтива», ще до знаменитих титрів, ми бачимо розмову двох персонажів у кафе. Якими прізвиськами вони називають одне одного?",
+              "a": "Pumpkin і Honey Bunny",
+              "answerReference": "Pumpkin і Honey Bunny",
+              "approval": "user-approved"
+            },
+            {
+              "value": 1000,
+              "topic": "Реквієм за мрією — Lux Aeterna",
+              "q": "Ця композиція стала настільки відомою, що її часто впізнають навіть люди, які не пам'ятають, для якого фільму вона була написана. Назвіть фільм.",
+              "a": "«Реквієм за мрією» / Requiem for a Dream",
+              "answerReference": "«Реквієм за мрією» / Requiem for a Dream",
+              "type": "audioReveal",
+              "media": "/media/round2_1000_lux_aeterna.mp3",
+              "revealValues": [
+                1000,
+                800,
+                600,
+                400,
+                200
+              ],
+              "revealSeconds": [
+                2,
+                4,
+                7,
+                11,
+                16
+              ],
+              "approval": "user-approved"
+            }
+          ]
         }
       ]
     }
