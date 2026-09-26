@@ -462,7 +462,23 @@ io.on('connection', socket => {
     emitState(room);
   });
 
-  // v3.1: HOST-only voice mapping and manual test events. The Discord bridge is NOT connected yet.
+  // HOST-only Discord Active Speaker controls and player mappings.
+  socket.on('voiceGetStatus',({code:c},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може переглядати статус Discord.'});
+    cb({ok:true,status:voiceBotStatus,error:voiceBotError});
+  });
+  socket.on('voiceSetEnabled',({code:c,enabled},cb=()=>{})=>{
+    const room=getRoom(c);
+    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може керувати Discord Active Speaker.'});
+    if(!voiceBotProcess?.connected)return cb({ok:false,error:'Discord-бот зараз недоступний.'});
+    voiceBotError='';
+    voiceBotStatus=enabled?'connecting':'disconnected';
+    voiceBotProcess.send({type:enabled?'voiceConnect':'voiceDisconnect'});
+    if(!enabled){voiceLastEvent=0;clearDiscordSpeaking();}
+    io.to(room.hostSocket).emit('voiceBotStatus',{code:room.code,status:voiceBotStatus,error:''});
+    cb({ok:true,status:voiceBotStatus});
+  });
   socket.on('voiceSetMapping',({code:c,playerId,discordId},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може змінювати прив’язки.'});
@@ -1170,7 +1186,15 @@ function clearDiscordSpeaking(){
   }
 }
 function handleDiscordVoiceMessage(message){
-  if(!message || message.type!=='voiceActivity')return;
+  if(!message)return;
+  if(message.type==='voiceStatus'){
+    voiceBotStatus=String(message.status||'disconnected');
+    voiceBotError=String(message.error||'');
+    for(const room of rooms.values())if(room.hostSocket)io.to(room.hostSocket).emit('voiceBotStatus',{code:room.code,status:voiceBotStatus,error:voiceBotError});
+    if(voiceBotStatus!=='connected'){voiceLastEvent=0;clearDiscordSpeaking();}
+    return;
+  }
+  if(message.type!=='voiceActivity')return;
   if(message.guildId!==process.env.DISCORD_GUILD_ID || message.channelId!==process.env.DISCORD_VOICE_CHANNEL_ID)return;
   if(!Array.isArray(message.userIds) || message.userIds.length>100)return;
   const active=new Set(message.userIds.filter(id=>typeof id==='string' && /^\d{17,20}$/.test(id)));
@@ -1190,16 +1214,19 @@ voiceStaleTimer.unref?.();
 
 // DEV-only: optional bot process shares this free Render Web Service.
 let voiceBotProcess=null;
+let voiceBotStatus='unavailable';
+let voiceBotError='';
 function startOptionalVoiceBot(){
   const names=['DISCORD_BOT_TOKEN','DISCORD_GUILD_ID','DISCORD_VOICE_CHANNEL_ID'];
   const present=names.filter(name=>Boolean(process.env[name]));
   if(!present.length){console.log('Discord voice bot disabled (no environment variables).');return;}
   if(present.length!==names.length){console.warn('Discord voice bot disabled: incomplete environment variables.');return;}
   const {fork}=require('child_process');
-  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit'});
+  voiceBotStatus='starting';voiceBotError='';
+  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit',ipc:true});
   voiceBotProcess.on('message',handleDiscordVoiceMessage);
   voiceBotProcess.on('error',err=>console.error('Discord voice bot process:',err.message));
-  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceLastEvent=0;clearDiscordSpeaking();});
+  voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceBotStatus='unavailable';voiceBotError='Discord-бот зупинено.';voiceLastEvent=0;clearDiscordSpeaking();});
 }
 storage.init().then(()=>server.listen(PORT,'0.0.0.0',()=>{
   console.log(`SMOKERLOL v3.0.0-rc: http://0.0.0.0:${PORT}`);
