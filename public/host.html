@@ -69,7 +69,7 @@ function playHostFinalMusic(type){
 }
 const hostMurlocAudio=new Audio('/media/murloc.mp3');hostMurlocAudio.preload='auto';
 socket.on('cue',e=>{if(e?.type==='murloc_answer'){hostMurlocAudio.pause();hostMurlocAudio.currentTime=0;hostMurlocAudio.play().catch(err=>console.warn('Host Murloc audio:',err));return;}if(!playHostFinalMusic(e?.type))playCueSound(e?.type);});
- let voiceMappings={},voiceTestIds=[],voicePanelOpen=false,voiceDraftIds={};
+ let voiceMappings={},voiceTestIds=[],voicePanelOpen=false,voiceDraftIds={},voiceBotStatus='unknown',voiceBotError='';
 let state=null,data=null,gamesList=[],seasonAdminToken='',selectedGameId='',hostSpecialCells={},code='',hostToken=localStorage.getItem('sgHostToken')||'',storedCode=localStorage.getItem('sgRoomCode')||'';
 function setNetBadge(ok){
  const el=document.getElementById('netBadge');if(!el)return;
@@ -177,6 +177,7 @@ socket.on('state',async s=>{if(code&&s.code!==code)return;state=s;code=s.code;if
 socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.specialCells||{};voiceMappings=s.voiceMappings||{};hostAudienceWinner=s.audienceWinner||null;if(data&&state)render()});
 socket.on('voiceMappings',x=>{if(x.code!==code)return;voiceMappings=x.mappings||{};render()});
 socket.on('voiceSpeaking',x=>{if(!state||x.code!==code)return;state.voice={...(state.voice||{}),speakingPlayerIds:x.playerIds||[]};document.querySelectorAll('.scorebar .player[data-player-id]').forEach(el=>el.classList.toggle('voice-speaking',x.playerIds?.includes(el.dataset.playerId)));});
+socket.on('voiceBotStatus',x=>{if(!state||x.code!==code)return;voiceBotStatus=x.status||'unknown';voiceBotError=x.error||'';render()});
 socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
 function updatePlayerNetwork(playerId){
  const p=state?.players?.find(p=>p.id===playerId);if(!p)return;
@@ -244,8 +245,12 @@ function hostPlayersHTML(players,buzzer){
 function voiceControlsHTML(){
  if(!state)return '';
  const active=state.voice?.speakingPlayerIds||[];
- return `<details id="voicePanel" class="panel" style="margin-top:14px" ${voicePanelOpen?'open':''}><summary style="cursor:pointer;font-weight:900">🎙️ Discord Active Speaker — прив’язка і тест</summary>
- <p class="muted">Поки що це ручний тест підсвічування. Автоматичний голосовий міст Discord ще не підключений. Discord ID не показується глядачам.</p>
+ const connected=voiceBotStatus==='connected',busy=voiceBotStatus==='connecting'||voiceBotStatus==='starting';
+ const statusText=connected?'🟢 Увімкнено':busy?'🟡 Підключення…':voiceBotStatus==='unavailable'?'🔴 Недоступно':'⚫ Вимкнено';
+ return `<details id="voicePanel" class="panel" style="margin-top:14px" ${voicePanelOpen?'open':''}><summary style="cursor:pointer;font-weight:900">🎙️ Discord Active Speaker — ${statusText}</summary>
+ <div class="row" style="margin:12px 0;align-items:center"><button class="btn ${connected?'secondary':'gold'}" id="voiceToggle" ${busy?'disabled':''}>${connected?'■ Вимкнути Discord Active Speaker':'▶ Увімкнути Discord Active Speaker'}</button><b>${statusText}</b></div>
+ ${voiceBotError?`<p class="bad">${GameUI.esc(voiceBotError)}</p>`:''}
+ <p class="muted">Бот залишається онлайн у Discord, але до голосового каналу підключається тільки після натискання кнопки. Discord ID не показується глядачам.</p>
  ${(state.players||[]).map(p=>`<div class="row" style="margin:10px 0;align-items:center"><b style="min-width:120px">${GameUI.esc(p.name)}</b><input class="voiceId" data-id="${p.id}" placeholder="Discord User ID" value="${GameUI.esc(Object.prototype.hasOwnProperty.call(voiceDraftIds,p.id)?voiceDraftIds[p.id]:(voiceMappings[p.id]||''))}" style="min-width:190px;flex:1"><button class="btn voiceSave" data-id="${p.id}">Зберегти ID</button><label><input type="checkbox" class="voiceTest" data-id="${p.id}" ${voiceTestIds.includes(p.id)?'checked':''}> 🎙️ Тест</label></div>`).join('')}
  <div class="row"><button class="btn" id="voiceApply">▶ Показати активних</button><button class="btn secondary" id="voiceClear">■ Вимкнути підсвічування</button></div></details>`;
 }
@@ -464,6 +469,8 @@ function bind(){const $=id=>document.getElementById(id); if($('finishVideoResult
  });
  const voicePanel=$('voicePanel');
  if(voicePanel)voicePanel.addEventListener('toggle',()=>{voicePanelOpen=voicePanel.open});
+ if($('voiceToggle'))$('voiceToggle').onclick=()=>emit('voiceSetEnabled',{enabled:voiceBotStatus!=='connected'},r=>{if(!r?.ok)alert(r?.error||'Не вдалося змінити стан Discord Active Speaker');else{voiceBotStatus=r.status||voiceBotStatus;render()}});
+ if(voiceBotStatus==='unknown')emit('voiceGetStatus',{},r=>{if(r?.ok){voiceBotStatus=r.status||'unavailable';voiceBotError=r.error||'';render()}});
  document.querySelectorAll('.voiceId').forEach(input=>input.addEventListener('input',()=>{voiceDraftIds[input.dataset.id]=input.value}));
  document.querySelectorAll('.voiceTest').forEach(input=>input.addEventListener('change',()=>{
    const id=input.dataset.id;
