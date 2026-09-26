@@ -191,13 +191,31 @@ socket.on('state',async s=>{
   const nextMe=s.players?.find(p=>p.id===playerId);
   state=s;
 
-  // During the running final timer, do NOT rebuild the whole phone UI every second.
-  // Replacing the textarea DOM node makes mobile browsers dismiss the keyboard.
-  if(prevState?.phase==='final_question' && s.phase==='final_question' &&
-     !!prevMe?.hasFinalAnswer===!!nextMe?.hasFinalAnswer){
-    const timer=document.getElementById('finalSeconds');
-    if(timer)timer.textContent=String(s.finalSeconds);
-    return;
+  // Preserve unsent input while routine state updates arrive.
+  // Rebuilding app.innerHTML replaces the focused input/textarea and clears what the player typed.
+  if(prevState?.phase===s.phase){
+    if(s.phase==='final_question' && !!prevMe?.hasFinalAnswer===!!nextMe?.hasFinalAnswer){
+      const timer=document.getElementById('finalSeconds');
+      if(timer)timer.textContent=String(s.finalSeconds);
+      return;
+    }
+    if(s.phase==='numeric_question'){
+      const input=document.getElementById('numericAnswer');
+      const submitted=s.numericChallenge?.submittedPlayerIds||[];
+      if(input && !submitted.includes(playerId)){
+        const timer=document.getElementById('numericTimer');
+        const end=Number(s.numericChallenge?.endsAt||0);
+        if(timer&&end)timer.textContent=String(Math.max(0,Math.ceil((end-Date.now())/1000)));
+        return;
+      }
+    }
+    if(s.phase==='first_turn_quiz'){
+      const input=document.getElementById('firstTurnAnswer');
+      const submitted=s.firstTurnQuiz?.submittedPlayerIds||[];
+      if(input && s.firstTurnQuiz?.timerStatus==='running' && !submitted.includes(playerId)){
+        return;
+      }
+    }
   }
   render();
 });
