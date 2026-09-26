@@ -39,7 +39,6 @@ body.screen .wrap{max-width:none;padding-left:340px;padding-right:24px;box-sizin
 </style><style>
 /* v3.1 Active Speaker: highlight the EXISTING score cards, no separate overlay. */
 #app .scorebar .player.voice-speaking{border:3px solid #a78bfa!important;background:rgba(124,58,237,.35)!important;box-shadow:0 0 0 3px rgba(167,139,250,.22),0 0 28px rgba(167,139,250,.65)!important;transition:background .12s,border .12s,box-shadow .12s}
-#app .scorebar .player.voice-speaking::after{content:'🎙️ ГОВОРИТЬ';display:block;color:#d8b4fe;font-size:12px;font-weight:900}
 </style>
 </head><body class="screen"><div class="cameraSafe">КАМЕРА 16:9</div><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
 const socket=io(),app=document.getElementById('app');
