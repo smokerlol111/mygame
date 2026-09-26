@@ -17,6 +17,8 @@
 .playerImageRevealImg{display:block;width:100%;max-height:48vh;object-fit:contain;transition:filter .65s ease,transform .65s ease}
 .playerImageRevealValue{display:inline-block;margin:0 0 10px;padding:7px 15px;border-radius:999px;font-weight:900;font-size:22px;background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 .playerImageRevealStage{margin-top:5px;font-size:13px;opacity:.72}
+
+#playerCueMixer input[type="range"]{padding:0;border:0}
 </style>
 </head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app');
