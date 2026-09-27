@@ -532,9 +532,10 @@
     "a": "—"
   },
   "firstTurnQuiz": {
-    "q": "Розігрів ще не додано.",
-    "a": "—",
-    "numericAnswer": 0
+    "title": "Розіграш першого ходу",
+    "question": "Скільки всього епізодів має оригінальний серіал «Друзі»?",
+    "answer": 236,
+    "unit": "епізодів"
   },
   "audienceRounds": [],
   "audienceQuestionSeconds": 30,
