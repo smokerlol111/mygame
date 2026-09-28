@@ -1223,7 +1223,7 @@ function startOptionalVoiceBot(){
   if(present.length!==names.length){console.warn('Discord voice bot disabled: incomplete environment variables.');return;}
   const {fork}=require('child_process');
   voiceBotStatus='starting';voiceBotError='';
-  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:'inherit',ipc:true});
+  voiceBotProcess=fork(path.join(__dirname,'voice-bot','bot.js'),[],{env:process.env,stdio:['inherit','inherit','inherit','ipc']});
   voiceBotProcess.on('message',handleDiscordVoiceMessage);
   voiceBotProcess.on('error',err=>console.error('Discord voice bot process:',err.message));
   voiceBotProcess.on('exit',(code,signal)=>{console.warn('Discord voice bot exited:',code,signal);voiceBotProcess=null;voiceBotStatus='unavailable';voiceBotError='Discord-бот зупинено.';voiceLastEvent=0;clearDiscordSpeaking();});
