@@ -682,7 +682,7 @@ io.on('connection', socket => {
       if(q.type==='audioReveal'){
         const values=Array.isArray(q.revealValues)&&q.revealValues.length?q.revealValues:[q.value,Math.round(q.value*.8),Math.round(q.value*.6),Math.round(q.value*.4),Math.round(q.value*.2)];
         room.current.revealValues=values.map(v=>Number(v));
-        room.current.revealSeconds=Array.isArray(q.revealSeconds)&&q.revealSeconds.length===values.length?q.revealSeconds.map(v=>Math.max(1,Number(v)||1)):[2,4,7,11,16].slice(0,values.length);
+        room.current.revealSeconds=Array.isArray(q.revealSeconds)&&q.revealSeconds.length===values.length?q.revealSeconds.map(v=>Math.max(1,Number(v)||1)):[2,5,10,17,25].slice(0,values.length);
         room.current.revealStage=0;room.current.value=room.current.revealValues[0];
       }
     }
