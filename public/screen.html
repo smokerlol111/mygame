@@ -106,8 +106,9 @@ let firstTurnClockHandle=null;
 function armFirstTurnClock(){
   if(firstTurnClockHandle){clearInterval(firstTurnClockHandle);firstTurnClockHandle=null}
   const el=document.getElementById('firstTurnTimer');
-  const end=Number(state?.firstTurnQuiz?.endsAt||0);
-  if(!el||!end||state?.firstTurnQuiz?.timerStatus!=='running')return;
+  const remaining=Number(state?.firstTurnQuiz?.remainingMs||0);
+  if(!el||remaining<=0||state?.firstTurnQuiz?.timerStatus!=='running')return;
+  const end=Date.now()+remaining;
   const tick=()=>{
     const left=Math.max(0,Math.ceil((end-Date.now())/1000));
     el.textContent=String(left);
@@ -237,7 +238,7 @@ function imageRevealHTML(cur,host=false){
 let audienceClockHandle=null;
 function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');if(!el)return;const end=Number(state?.audience?.endsAt)||Date.now()+Math.max(0,Number(state?.audience?.remainingMs||0));const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
 let numericClockHandle=null;
-function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),end=Number(state?.numericChallenge?.endsAt||0);if(!el||!end)return;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
+function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),remaining=Number(state?.numericChallenge?.remainingMs||0);if(!el||remaining<=0)return;const end=Date.now()+remaining;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
 function fitQuestionToOBS(){
  if(!['question','buzz','answering','cat_question','result','video_result','va_bank_question','duel_question'].includes(state?.phase))return;
  const panel=app.querySelector('.panel'),question=panel?.querySelector('.question'),scores=app.querySelector('.scorebar');
@@ -262,7 +263,7 @@ function render(){if(!state||!data)return;let h=``;
  if(state.phase==='lobby')h+=`<div class="panel center"><div class="roomCode">${state.code}</div><h2>Приєднуйтесь з телефону</h2></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='first_turn_quiz'){
    const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
-   const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">30</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
+   const timer=status==='running'?`<div class="huge"><span id="firstTurnTimer">${Math.max(0,Math.ceil(Number(q.remainingMs||0)/1000))}</span></div>`:status==='expired'?'<div class="huge">0</div><h2>⏱ ЧАС ВИЙШОВ</h2>':'<div class="huge">30</div><p class="muted">Таймер ще не запущено</p>';
    h+=`<div class="panel center"><div class="huge">🎯</div><h1>РОЗІГРАШ ПЕРШОГО ХОДУ</h1><div class="question" style="font-size:clamp(20px,2.2vw,34px);line-height:1.22;max-width:1040px;margin:16px auto">${GameUI.esc(q.question||'')}</div>${timer}<p class="muted">Хто буде найближчим до правильної відповіді?</p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:14px auto 0;max-width:760px;text-align:left">
    ${state.players.map(p=>{const done=submitted.includes(p.id);const label=done?'✅ Відповів':status==='expired'?'❌ Немає відповіді':'⏳ Думає';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border:1px solid #3a2b60;border-radius:12px;background:rgba(255,255,255,.025);font-size:17px"><b>${GameUI.esc(p.name)}</b><span>${label}</span></div>`}).join('')}
@@ -278,7 +279,7 @@ function render(){if(!state||!data)return;let h=``;
    ${revealCount===0?'<p class="muted" style="margin-top:24px">Готуємо результати…</p>':''}
    </div>`}
  else if(state.phase==='numeric_ready'){const n=state.numericChallenge||{};h+=`<div class="panel center"><div class="huge">🔢 30</div><h1>ЧИСЛОВЕ ПИТАННЯ • ${n.value} БАЛІВ</h1><div class="question">${GameUI.esc(n.question||'')}</div><h2>⏳ ЧЕКАЄМО СТАРТУ ВЕДУЧОГО</h2></div>`}
- else if(state.phase==='numeric_question'){const n=state.numericChallenge||{},sub=n.submittedPlayerIds||[],left=n.endsAt?Math.max(0,Math.ceil((n.endsAt-Date.now())/1000)):0;h+=`<div class="panel center"><div class="huge">🔢 <span id="numericTimer">${left}</span></div><h1>ЧИСЛОВЕ ПИТАННЯ • ${n.value} БАЛІВ</h1><div class="question">${GameUI.esc(n.question||'')}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><span>${GameUI.esc(p.name)}</span><b>${sub.includes(p.id)?'✅ Відповів':'⏳ Думає'}</b></div>`).join('')}</div></div>`}
+ else if(state.phase==='numeric_question'){const n=state.numericChallenge||{},sub=n.submittedPlayerIds||[],left=Math.max(0,Math.ceil(Number(n.remainingMs||0)/1000));h+=`<div class="panel center"><div class="huge">🔢 <span id="numericTimer">${left}</span></div><h1>ЧИСЛОВЕ ПИТАННЯ • ${n.value} БАЛІВ</h1><div class="question">${GameUI.esc(n.question||'')}</div><div class="finalList">${state.players.map(p=>`<div class="finalItem"><span>${GameUI.esc(p.name)}</span><b>${sub.includes(p.id)?'✅ Відповів':'⏳ Думає'}</b></div>`).join('')}</div></div>`}
  else if(state.phase==='numeric_result'){const n=state.numericChallenge||{},rs=n.results||[],rev=n.revealCount||0,revealed=rs.slice(Math.max(0,rs.length-rev)).reverse();h+=`<div class="panel center"><div class="huge">${n.correctAnswer}</div><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2><div class="finalList">${revealed.map(r=>{const place=rs.findIndex(x=>x.id===r.id)+1;return `<div class="finalItem"><span class="winner">${place===1?'🥇 ':''}${place}. ${GameUI.esc(r.name)}</span><span>${r.noAnswer?'— НЕМАЄ ВІДПОВІДІ':`Відповідь: <b>${r.answer}</b> • різниця: <b>${r.diff}</b>${place===1?' • +'+n.value:''}`}</span></div>`}).join('')}</div></div>`}
  else if(state.phase==='board'){let chooser=state.players.find(p=>p.id===state.turnPlayerId);h+=`<div class="center" style="margin:8px 0 22px;font-size:30px;line-height:1.2;font-weight:700">🎯 Питання обирає: <b style="font-size:36px">${GameUI.esc(chooser?.name||'—')}</b></div>${GameUI.boardHTML(data,state,false)}${GameUI.playersHTML(state.players)}`;}
  else if(state.phase==='audience_lobby'){const a=state.audience||{};h+=`<div class="panel center"><div style="font-size:26px;font-weight:900;letter-spacing:.15em">👥 ГРАЮТЬ ГЛЯДАЧІ</div><h1 style="font-size:52px">${GameUI.esc(a.title||'')}</h1><img class="audQr" src="/audience-qr/${state.code}"><h2>Скануй QR • введи нік • забирай приз</h2><p style="font-size:24px">У грі: <b>${a.joined||0}</b></p></div>`}
