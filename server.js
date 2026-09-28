@@ -872,8 +872,8 @@ io.on('connection', socket => {
       room.revealAnswer = true;
       room.resultReason = 'correct';
       if(room.current?.questionType)room.current.mediaPaused=true;
-      if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
-      else room.phase = 'result';
+      if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+      room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
       room.buzzer = null;
@@ -887,8 +887,8 @@ io.on('connection', socket => {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
-        if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
-        else room.phase = 'result';
+        if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+        room.phase = 'result';
       } else {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
         room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
@@ -944,8 +944,8 @@ io.on('connection', socket => {
     if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
-    if(room.current.questionType==='video'){room.current.videoContinued=false;room.current.mediaPaused=true;room.phase='video_result';}
-    else room.phase = 'result';
+    if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+    room.phase = 'result';
     emitState(room);
   });
   socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
