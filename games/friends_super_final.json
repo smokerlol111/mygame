@@ -372,10 +372,10 @@
               ],
               "revealSeconds": [
                 2,
-                4,
-                7,
-                11,
-                16
+                5,
+                10,
+                17,
+                25
               ],
               "approval": "user-approved"
             }
