@@ -367,6 +367,7 @@ function limitMediaPreview(){
   });
  }
  if(cur?.questionType!=='audioReveal')return;
+ if(['result','video_result'].includes(state?.phase))return; // After judging, host may replay the full recording.
  if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
  const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
  document.querySelectorAll('.quizMedia').forEach(el=>{
