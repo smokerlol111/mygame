@@ -463,14 +463,18 @@ io.on('connection', socket => {
   });
 
   // HOST-only Discord Active Speaker controls and player mappings.
-  socket.on('voiceGetStatus',({code:c},cb=()=>{})=>{
+  socket.on('voiceGetStatus',({code:c,hostToken},cb=()=>{})=>{
     const room=getRoom(c);
-    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може переглядати статус Discord.'});
+    const hostOk=isHost(socket,room)||(room&&hostToken&&hostToken===room.hostToken);
+    if(!hostOk)return cb({ok:false,error:'Лише ведучий може переглядати статус Discord.'});
+    if(!isHost(socket,room)){socket.data.hostToken=room.hostToken;room.hostSocket=socket.id;socket.data.roomCode=room.code;socket.join(room.code);}
     cb({ok:true,status:voiceBotStatus,error:voiceBotError});
   });
-  socket.on('voiceSetEnabled',({code:c,enabled},cb=()=>{})=>{
+  socket.on('voiceSetEnabled',({code:c,enabled,hostToken},cb=()=>{})=>{
     const room=getRoom(c);
-    if(!isHost(socket,room))return cb({ok:false,error:'Лише ведучий може керувати Discord Active Speaker.'});
+    const hostOk=isHost(socket,room)||(room&&hostToken&&hostToken===room.hostToken);
+    if(!hostOk)return cb({ok:false,error:'Лише ведучий може керувати Discord Active Speaker.'});
+    if(!isHost(socket,room)){socket.data.hostToken=room.hostToken;room.hostSocket=socket.id;socket.data.roomCode=room.code;socket.join(room.code);}
     if(!voiceBotProcess?.connected)return cb({ok:false,error:'Discord-бот зараз недоступний.'});
     voiceBotError='';
     voiceBotStatus=enabled?'connecting':'disconnected';
