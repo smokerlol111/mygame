@@ -100,7 +100,7 @@ function publicState(room) {
     savedSeasonId: room.savedSeasonId || null,
     numericChallenge: room.numericChallenge ? {
       question: room.numericChallenge.question, unit: room.numericChallenge.unit || '', value: room.numericChallenge.value,
-      submittedPlayerIds: Object.keys(room.numericAnswers || {}), endsAt: room.numericEndsAt || null,
+      submittedPlayerIds: Object.keys(room.numericAnswers || {}), remainingMs: room.numericEndsAt ? Math.max(0,room.numericEndsAt-Date.now()) : 0, endsAt: null,
       results: room.phase === 'numeric_result' ? room.numericResults : null, revealCount: room.numericRevealCount || 0,
       correctAnswer: room.phase === 'numeric_result' ? room.numericChallenge.answer : null
     } : null,
@@ -118,7 +118,8 @@ function publicState(room) {
       submittedPlayerIds: Object.keys(room.firstTurnAnswers || {}),
       timerStatus: room.firstTurnTimerStatus || 'ready',
       duration: 30,
-      endsAt: room.firstTurnTimerStatus === 'running' ? room.firstTurnEndsAt : null,
+      remainingMs: room.firstTurnTimerStatus === 'running' && room.firstTurnEndsAt ? Math.max(0,room.firstTurnEndsAt-Date.now()) : 0,
+      endsAt: null,
       results: room.phase === 'first_turn_result' ? room.firstTurnResults : null,
       revealCount: room.phase === 'first_turn_result' ? (room.firstTurnRevealCount || 0) : 0,
       correctAnswer: room.phase === 'first_turn_result' ? room.firstTurnQuiz.answer : null
