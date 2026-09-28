@@ -469,8 +469,8 @@ function bind(){const $=id=>document.getElementById(id); if($('finishVideoResult
  });
  const voicePanel=$('voicePanel');
  if(voicePanel)voicePanel.addEventListener('toggle',()=>{voicePanelOpen=voicePanel.open});
- if($('voiceToggle'))$('voiceToggle').onclick=()=>emit('voiceSetEnabled',{enabled:voiceBotStatus!=='connected'},r=>{if(!r?.ok)alert(r?.error||'Не вдалося змінити стан Discord Active Speaker');else{voiceBotStatus=r.status||voiceBotStatus;render()}});
- if(voiceBotStatus==='unknown')emit('voiceGetStatus',{},r=>{if(r?.ok){voiceBotStatus=r.status||'unavailable';voiceBotError=r.error||'';render()}});
+ if($('voiceToggle'))$('voiceToggle').onclick=()=>emit('voiceSetEnabled',{enabled:voiceBotStatus!=='connected',hostToken},r=>{if(!r?.ok)alert(r?.error||'Не вдалося змінити стан Discord Active Speaker');else{voiceBotStatus=r.status||voiceBotStatus;render()}});
+ if(voiceBotStatus==='unknown')emit('voiceGetStatus',{hostToken},r=>{if(r?.ok){voiceBotStatus=r.status||'unavailable';voiceBotError=r.error||'';render()}});
  document.querySelectorAll('.voiceId').forEach(input=>input.addEventListener('input',()=>{voiceDraftIds[input.dataset.id]=input.value}));
  document.querySelectorAll('.voiceTest').forEach(input=>input.addEventListener('change',()=>{
    const id=input.dataset.id;
