@@ -50,14 +50,16 @@ body.screen .wrap{position:fixed;left:340px;right:24px;top:0;bottom:0;padding:12
 .obsSegmentQuestion .question{margin:0!important;width:100%;box-sizing:border-box}
 .obsSegmentMedia{display:flex;align-items:center;justify-content:center;max-height:50vh;overflow:hidden}
 .obsSegmentMedia:empty{display:none}
-.obsSegmentMedia .media-question,.obsSegmentMedia .imageRevealWrap{margin:0 auto!important;max-height:100%;width:100%;box-sizing:border-box}
-.obsSegmentMedia .quizMedia,.obsSegmentMedia .imageRevealImg,.obsSegmentMedia img{max-height:calc(50vh - 16px)!important;object-fit:contain}
+.obsSegmentMedia .media-question,.obsSegmentMedia .imageRevealWrap{margin:0 auto!important;max-height:100%;width:100%;height:100%;box-sizing:border-box}
+.obsSegmentMedia .imageRevealFrame{height:100%;max-height:50vh;overflow:visible!important}
+.obsSegmentMedia .quizMedia,.obsSegmentMedia .imageRevealImg,.obsSegmentMedia img{display:block;width:auto!important;max-width:100%!important;height:auto!important;max-height:calc(50vh - 16px)!important;object-fit:contain!important;margin:auto}
 .obsSegmentAnswer{display:flex;align-items:center;justify-content:center;overflow:hidden;padding:6px 12px}
 .obsSegmentAnswer.is-empty{visibility:hidden!important;border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important}
 .obsSegmentAnswer .answer{margin:0!important;width:100%;text-align:center}
 .obsSegmentPlayers{display:flex;align-items:stretch;overflow:hidden}
 .obsSegmentPlayers .scorebar{width:100%;height:100%;margin:0!important;align-items:stretch}
 .obsSegmentPlayers .scorebar .player{display:flex;flex-direction:column;justify-content:center;box-sizing:border-box}
+.obsSegmentPlayers .scorebar .player.active{outline:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important}
 @media(max-width:1200px){body.screen .wrap{left:300px}.cameraSafe{width:276px!important}}
 </style>
 </head><body class="screen"><div class="cameraSafe">КАМЕРА 16:9</div><div class="wrap"><div id="app"><div class="panel center"><h2>Підключення до кімнати…</h2></div></div></div><script>
@@ -290,7 +292,7 @@ function render(){if(!state||!data)return;let h=``;
     const resultMedia=showingAnswer?answerMediaHTML(state.current):'';
     // Video/audio questions remain visible when the result appears; an answer illustration takes priority when supplied.
     const media=resultMedia||questionMedia;
-    const answer=showingAnswer?`<div class="answer"><b>Відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:state.phase==='answering'?`<div class="answer"><b>Відповідає:</b> ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</div>`:'';
+    const answer=showingAnswer?`<div class="answer"><b>Правильна відповідь:</b> ${GameUI.esc(state.current?.a||'')}</div>`:state.phase==='answering'?`<div class="answer"><b>Відповідає:</b> ${GameUI.esc(state.players.find(p=>p.id===state.buzzer)?.name||'')}</div>`:'';
     h+=`<div class="obsGameLayout">
       <div class="obsSegment obsSegmentQuestion panel"><div class="center"><b>${label}</b></div><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>
       <div class="obsSegment obsSegmentMedia">${media}</div>
