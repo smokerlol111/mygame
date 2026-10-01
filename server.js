@@ -1089,6 +1089,22 @@ io.on('connection', socket => {
     room.revealAnswer = true; room.phase = 'final_result'; cb({ok:true}); emitState(room);
   });
 
+  socket.on('testGrandFinal', ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може запускати тест.'});
+    if (!room.players.length) return cb({ok:false,error:'Додайте хоча б одного тестового гравця.'});
+    clearInterval(room.finalTimer); room.finalTimer = null;
+    const ordered = room.players.map((p,i)=>({
+      id:p.id,name:p.name,beforeScore:4000-i*700,bet:500,correct:i%2===0,
+      finalAnswer:i%2===0?'Тестова правильна відповідь':'Тестова відповідь',
+      score:4500-i*700
+    })).sort((a,b)=>b.score-a.score);
+    ordered.forEach(r=>{const p=room.players.find(x=>x.id===r.id);if(p){p.score=r.score;p.bet=r.bet;p.finalAnswer=r.finalAnswer;}});
+    room.finalResults=ordered; room.finalRevealCount=0; room.revealAnswer=true; room.phase='final_result';
+    room.savedSeasonGameId=null; room.savedSeasonId=null; room.seasonFinal=null; room.seasonCeremonyActive=false; room.seasonRevealCount=0;
+    cb({ok:true}); emitState(room);
+  });
+
   socket.on('revealNextFinalResult', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || room.phase !== 'final_result' || !Array.isArray(room.finalResults))
