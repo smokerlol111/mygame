@@ -98,6 +98,9 @@ function publicState(room) {
     finalRevealCount: room.finalRevealCount || 0,
     savedSeasonGameId: room.savedSeasonGameId || null,
     savedSeasonId: room.savedSeasonId || null,
+    seasonFinal: room.seasonFinal || null,
+    seasonCeremonyActive: !!room.seasonCeremonyActive,
+    seasonRevealCount: room.seasonRevealCount || 0,
     numericChallenge: room.numericChallenge ? {
       question: room.numericChallenge.question, unit: room.numericChallenge.unit || '', value: room.numericChallenge.value,
       submittedPlayerIds: Object.keys(room.numericAnswers || {}), remainingMs: room.numericEndsAt ? Math.max(0,room.numericEndsAt-Date.now()) : 0, endsAt: null,
@@ -279,7 +282,7 @@ io.on('connection', socket => {
       buzzer: null, revealAnswer: false, answeringLocked: new Set(),
       catChooser: null, catReceiver: null, turnPlayerId: null,
       specialCells: {}, vaBankPlayer: null, vaBankBet: null, duelPlayers: [],
-      finalSeconds: 30, finalTimer: null, finalResults: null, finalRevealCount: 0, savedSeasonGameId: null, savedSeasonId: null,
+      finalSeconds: 30, finalTimer: null, finalResults: null, finalRevealCount: 0, savedSeasonGameId: null, savedSeasonId: null, seasonFinal: null, seasonCeremonyActive: false, seasonRevealCount: 0,
       firstTurnQuiz: selectedGame.firstTurnQuiz || null,
       firstTurnAnswers: {}, firstTurnResults: null,
       firstTurnTimerStatus: 'ready', firstTurnEndsAt: null, firstTurnTimer: null,
@@ -1116,7 +1119,10 @@ io.on('connection', socket => {
   socket.on('seasonListHost', async ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
   socket.on('createSeason', async ({code:c,name}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{const id=await storage.createSeason(name);cb({ok:true,id,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
   socket.on('setSeasonStatus', async ({code:c,seasonId,status}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{await storage.setSeasonStatus(seasonId,status);cb({ok:true,seasons:await storage.listSeasons()})}catch(e){cb({ok:false,error:e.message})}});
-  socket.on('saveSeasonResult', async ({code:c,seasonId,isGrandFinal=false}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});if(room.phase!=='final_result'||!room.finalResults)return cb({ok:false,error:'Спочатку завершіть фінал.'});try{const id=await storage.saveGame({seasonId,roomCode:room.code,gameId:room.gameId,title:getRoomGame(room).menuTitle||getRoomGame(room).title,results:room.finalResults,isGrandFinal});room.savedSeasonGameId=id;room.savedSeasonId=seasonId;cb({ok:true,id});emitState(room)}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('saveSeasonResult', async ({code:c,seasonId,isGrandFinal=false}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});if(room.phase!=='final_result'||!room.finalResults)return cb({ok:false,error:'Спочатку завершіть фінал.'});try{const id=await storage.saveGame({seasonId,roomCode:room.code,gameId:room.gameId,title:getRoomGame(room).menuTitle||getRoomGame(room).title,results:room.finalResults,isGrandFinal});room.savedSeasonGameId=id;room.savedSeasonId=seasonId;room.seasonCeremonyActive=false;room.seasonRevealCount=0;if(isGrandFinal){const season=await storage.seasonDetails(seasonId);room.seasonFinal=season?{seasonId:season.id,name:season.name,leaderboard:season.leaderboard||[],isGrandFinal:true}:null;}else room.seasonFinal=null;cb({ok:true,id,isGrandFinal:!!isGrandFinal,seasonFinal:room.seasonFinal});emitState(room)}catch(e){cb({ok:false,error:e.message})}});
+  socket.on('startSeasonCeremony',({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});if(room.phase!=='final_result'||!room.seasonFinal?.leaderboard?.length)return cb({ok:false,error:'Спочатку збережіть Grand Final у сезон.'});room.seasonCeremonyActive=true;room.seasonRevealCount=0;cb({ok:true});emitState(room)});
+  socket.on('revealNextSeasonResult',({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||!room.seasonCeremonyActive)return cb({ok:false,error:'Сезонна церемонія не запущена.'});const total=room.seasonFinal?.leaderboard?.length||0;if(room.seasonRevealCount<total)room.seasonRevealCount++;cb({ok:true,revealCount:room.seasonRevealCount,total});emitState(room)});
+  socket.on('closeSeasonCeremony',({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});room.seasonCeremonyActive=false;cb({ok:true});emitState(room)});
   socket.on('correctSavedSeasonResult', async ({code:c,gameId,results}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room))return cb({ok:false,error:'Немає доступу.'});try{await storage.updateGameResults(gameId,results);cb({ok:true})}catch(e){cb({ok:false,error:e.message})}});
 
   socket.on('restartSameGame', ({ code: c }, cb = () => {}) => {
@@ -1128,7 +1134,7 @@ io.on('connection', socket => {
     room.buzzer = null; room.revealAnswer = false; room.answeringLocked = new Set();
     room.catChooser = null; room.catReceiver = null; room.turnPlayerId = null;
     room.specialCells = {}; room.vaBankPlayer = null; room.vaBankBet = null; room.duelPlayers = [];
-    room.finalSeconds = 30; room.finalResults = null; room.finalRevealCount = 0; room.savedSeasonGameId = null; room.savedSeasonId = null;
+    room.finalSeconds = 30; room.finalResults = null; room.finalRevealCount = 0; room.savedSeasonGameId = null; room.savedSeasonId = null; room.seasonFinal = null; room.seasonCeremonyActive = false; room.seasonRevealCount = 0;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
