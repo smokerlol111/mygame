@@ -179,7 +179,7 @@ socket.on('hostSecrets',s=>{if(code&&s.code!==code)return;hostSpecialCells=s.spe
 socket.on('voiceMappings',x=>{if(x.code!==code)return;voiceMappings=x.mappings||{};render()});
 socket.on('voiceSpeaking',x=>{if(!state||x.code!==code)return;state.voice={...(state.voice||{}),speakingPlayerIds:x.playerIds||[]};document.querySelectorAll('.scorebar .player[data-player-id]').forEach(el=>el.classList.toggle('voice-speaking',x.playerIds?.includes(el.dataset.playerId)));});
 socket.on('voiceBotStatus',x=>{if(!state||x.code!==code)return;voiceBotStatus=x.status||'unknown';voiceBotError=x.error||'';render()});
-socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];render()});
+socket.on('firstTurnProgress',x=>{if(!state||x.code!==code||state.phase!=='first_turn_quiz')return;state.firstTurnQuiz.submittedPlayerIds=x.submittedPlayerIds||[];if(Number.isFinite(Number(x.remainingMs)))state.firstTurnQuiz.remainingMs=Number(x.remainingMs);if(x.timerStatus)state.firstTurnQuiz.timerStatus=x.timerStatus;render()});
 function updatePlayerNetwork(playerId){
  const p=state?.players?.find(p=>p.id===playerId);if(!p)return;
  const rtt=Number.isFinite(Number(p.networkRttMs))?Math.round(Number(p.networkRttMs)):null;
