@@ -691,6 +691,11 @@ io.on('connection', socket => {
         room.current.revealStage=0;room.current.value=room.current.revealValues[0];
       }
     }
+    if (q.type === 'emoji' && special === 'normal') {
+      room.current.questionType = 'emoji';
+      room.current.emoji = String(q.emoji||'').trim();
+      if(!room.current.emoji) return cb({ok:false,error:'Для emoji-питання потрібне поле emoji.'});
+    }
     if (q.type === 'imageReveal' && special === 'normal') {
       room.current.questionType = 'imageReveal';
       room.current.image = q.image;
