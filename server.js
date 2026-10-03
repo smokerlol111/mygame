@@ -80,6 +80,7 @@ function publicState(room) {
     pausedPhase: room.pausedPhase || null,
     round: room.round,
     used: room.used,
+    board: (getRoomGame(room).rounds?.[room.round]?.categories||[]).map(cat=>({name:cat.name,questions:(cat.questions||[]).map(q=>({value:q.value}))})),
     current: room.current,
     buzzer: room.buzzer,
     catChooser: room.catChooser,
