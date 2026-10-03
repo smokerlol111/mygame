@@ -877,6 +877,13 @@ io.on('connection', socket => {
     const value = room.current.value;
     const awarded = correct && room.current.sponsorDouble===true && sponsorBonus===true ? value*2 : value;
     p.score += correct ? awarded : -value;
+    // Duel is zero-sum on a correct answer: winner gains the question value,
+    // loser loses the same value. If the opponent already answered wrong,
+    // their normal wrong-answer penalty has already been applied, so do not deduct twice.
+    if (correct && room.current?.type === 'duel') {
+      const loser = room.players.find(x => room.duelPlayers.includes(x.id) && x.id !== p.id);
+      if (loser && !room.answeringLocked.has(loser.id)) loser.score -= value;
+    }
     if (correct) {
       room.revealAnswer = true;
       room.resultReason = 'correct';
