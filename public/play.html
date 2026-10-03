@@ -194,6 +194,11 @@ socket.on('state',async s=>{
   // Preserve unsent input while routine state updates arrive.
   // Rebuilding app.innerHTML replaces the focused input/textarea and clears what the player typed.
   if(prevState?.phase===s.phase){
+    if(s.phase==='final_bets' && !!prevMe?.hasBet===!!nextMe?.hasBet){
+      // Other players submitting bets causes room state broadcasts. Do not rebuild
+      // this player's focused number input while they are still typing.
+      if(!nextMe?.hasBet && document.getElementById('bet'))return;
+    }
     if(s.phase==='final_question' && !!prevMe?.hasFinalAnswer===!!nextMe?.hasFinalAnswer){
       const timer=document.getElementById('finalSeconds');
       if(timer)timer.textContent=String(s.finalSeconds);
