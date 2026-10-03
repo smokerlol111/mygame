@@ -447,7 +447,7 @@ io.on('connection', socket => {
   // Relay host media controls to the OBS screen only; never trust player sockets.
   socket.on('hostMediaControl', (payload = {}, cb = () => {}) => {
     const room = getRoom(payload.code);
-    if (!room || !isHost(socket, room) || !room.current || !['question','buzz','answering','video_result'].includes(room.phase)) return cb({ok:false});
+    if (!room || !isHost(socket, room) || !room.current || !['question','buzz','answering','result','video_result'].includes(room.phase)) return cb({ok:false});
     if (!['audio','audioReveal','video'].includes(room.current.questionType)) return cb({ok:false});
     const action = payload.action;
     if (!['play','pause','seek'].includes(action)) return cb({ok:false});
@@ -563,7 +563,7 @@ io.on('connection', socket => {
     cb({ok:true, submittedPlayerIds});
     // Не перебудовуємо UI телефонів інших гравців під час введення:
     // прогрес слухають тільки HOST/OBS.
-    io.to(room.code).emit('firstTurnProgress', { code:room.code, submittedPlayerIds });
+    io.to(room.code).emit('firstTurnProgress', { code:room.code, submittedPlayerIds, remainingMs: room.firstTurnEndsAt ? Math.max(0,room.firstTurnEndsAt-Date.now()) : 0, timerStatus: room.firstTurnTimerStatus });
   });
 
   socket.on('revealFirstTurnResults', ({ code: c }, cb = () => {}) => {
