@@ -38,7 +38,7 @@ body.screen .wrap{max-width:none;padding-left:340px;padding-right:24px;box-sizin
 @media(max-width:1200px){body.screen .wrap{padding-left:300px}.cameraSafe{width:250px}}
 </style><style>
 /* v3.1 Active Speaker: highlight the EXISTING score cards, no separate overlay. */
-#app .scorebar .player.voice-speaking{border:3px solid #a78bfa!important;background:rgba(124,58,237,.35)!important;box-shadow:0 0 0 3px rgba(167,139,250,.22),0 0 28px rgba(167,139,250,.65)!important;transition:background .12s,border .12s,box-shadow .12s}
+#app .scorebar .player.voice-speaking{border-color:#a78bfa!important;outline:3px solid #a78bfa!important;outline-offset:-3px!important;background:rgba(124,58,237,.35)!important;box-shadow:0 0 0 3px rgba(167,139,250,.22),0 0 28px rgba(167,139,250,.65)!important;transform:none!important;transition:background .12s,outline-color .12s,box-shadow .12s}
 /* OBS v3 test layout: fixed camera block + four right-side gameplay segments. */
 body.screen{overflow:hidden}
 body.screen .wrap{position:fixed;left:340px;right:24px;top:0;bottom:0;padding:12px 0!important;max-width:none;box-sizing:border-box}
