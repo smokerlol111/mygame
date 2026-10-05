@@ -83,6 +83,8 @@ function publicState(room) {
     board: (getRoomGame(room).rounds?.[room.round]?.categories||[]).map(cat=>({name:cat.name,questions:(cat.questions||[]).map(q=>({value:q.value}))})),
     current: room.current ? {
       ...room.current,
+      // Keep unrevealed Triplet questions/answers server-side, but preserve public media fields
+      // such as emoji/image/audio for the ACTIVE question.
       triplet: room.current.triplet ? {
         index: room.current.triplet.index,
         total: room.current.triplet.total,
