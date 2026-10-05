@@ -82,9 +82,25 @@ function publicState(room) {
     used: room.used,
     board: (getRoomGame(room).rounds?.[room.round]?.categories||[]).map(cat=>({name:cat.name,questions:(cat.questions||[]).map(q=>({value:q.value}))})),
     current: room.current ? {
-      ...room.current,
-      // Keep unrevealed Triplet questions/answers server-side, but preserve public media fields
-      // such as emoji/image/audio for the ACTIVE question.
+      type: room.current.type,
+      ci: room.current.ci,
+      qi: room.current.qi,
+      value: room.current.value,
+      q: room.current.q,
+      questionType: room.current.questionType || null,
+      emoji: room.current.emoji || '',
+      image: room.current.image || '',
+      media: room.current.media || '',
+      revealStage: room.current.revealStage,
+      revealValues: room.current.revealValues,
+      revealSeconds: room.current.revealSeconds,
+      pauseAt: room.current.pauseAt,
+      videoContinued: room.current.videoContinued,
+      mediaPaused: room.current.mediaPaused,
+      // Answers stay hidden until the server explicitly reveals them.
+      a: room.revealAnswer ? room.current.a : '',
+      answerImage: room.revealAnswer ? (room.current.answerImage || '') : '',
+      answerVideo: room.revealAnswer ? (room.current.answerVideo || '') : '',
       triplet: room.current.triplet ? {
         index: room.current.triplet.index,
         total: room.current.triplet.total,
