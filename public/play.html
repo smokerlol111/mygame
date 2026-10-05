@@ -334,8 +334,10 @@ function playerQuestionHTML(cur){
   return `<div class="question" style="font-size:clamp(1.15rem,4vw,1.65rem);margin-bottom:14px">${GameUI.esc(cur.q)}</div>`;
 }
 function playerEmojiHTML(cur){
-  if(!cur||cur.questionType!=='emoji'||!cur.emoji)return '';
-  return `<div class="center" style="font-size:clamp(3rem,14vw,6rem);line-height:1.25;letter-spacing:.08em;margin:22px 0 28px">${GameUI.esc(cur.emoji)}</div>`;
+  if(!cur)return '';
+  const emoji=String(cur.emoji||'').trim();
+  if(!emoji)return '';
+  return `<div class="center" style="font-size:clamp(3rem,14vw,6rem);line-height:1.25;letter-spacing:.08em;margin:22px 0 28px">${GameUI.esc(emoji)}</div>`;
 }
 function playerImageRevealHTML(cur){
  if(!cur||cur.questionType!=='imageReveal')return '';
