@@ -691,7 +691,10 @@ io.on('connection', socket => {
     if (room.used[key]) return cb({ok:false,error:'Цю клітинку вже зіграно.'});
     resetQuestionState(room);
     room.players.forEach(p=>p.falseStartUntil=0);
-    const special = room.gameId==='media-test' ? 'normal' : (q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal'));
+    // Question-defined formats (emoji, Triplet, numeric/media) must never be replaced
+    // by a randomly assigned special cell. Otherwise their payload/mechanic disappears.
+    const formatLocked = ['emoji','triplet','numericClosest','audio','audioReveal','video','imageReveal'].includes(q.type);
+    const special = room.gameId==='media-test' || formatLocked ? 'normal' : (q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal'));
     // Check that test assets actually exist before marking a cell as used.
     if(room.gameId==='media-test' && String(q.media||'').startsWith('/media/')){
       const mediaPath=path.resolve(__dirname,'public',String(q.media).replace(/^\//,''));
