@@ -45,6 +45,26 @@ async function setSeasonStatus(id,status){
  }
 }
 function normalizeResults(results,multiplier=1){const m=Math.max(1,Number(multiplier)||1);return(results||[]).slice().sort((a,b)=>b.score-a.score||String(a.name).localeCompare(String(b.name),'uk')).map((r,i)=>({playerId:r.id||r.playerId||'',name:String(r.name||'Гравець').slice(0,40),score:Number(r.score)||0,place:i+1,seasonPoints:(POINTS[i]||0)*m}));}
+function seasonNumber(season){const m=String(season?.name||'').match(/(?:сезон|season)\s*(\d+)/i);return m?Number(m[1]):0}
+function isQualifierSeason(season){return seasonNumber(season)>=2}
+function qualifierSummary(games){
+ const qualifiers=[],wildMap=new Map();
+ const qualifiersGames=(games||[]).filter(g=>!g.isGrandFinal).slice().sort((a,b)=>String(a.playedAt).localeCompare(String(b.playedAt))).slice(0,3);
+ for(const g of qualifiersGames){
+  const rs=(g.results||[]).slice().sort((a,b)=>a.place-b.place);
+  const winner=rs.find(r=>r.place===1);
+  if(winner)qualifiers.push({name:winner.name,playerId:winner.playerId||'',gameId:g.id,gameTitle:g.title,score:Number(winner.score)||0});
+  for(const r of rs.filter(x=>x.place>1)){
+   const k=String(r.name).trim().toLocaleLowerCase('uk');
+   const prev=wildMap.get(k);
+   const candidate={name:r.name,playerId:r.playerId||'',place:r.place,seasonPoints:Number(r.seasonPoints)||0,score:Number(r.score)||0,gameId:g.id};
+   if(!prev||candidate.seasonPoints>prev.seasonPoints||(candidate.seasonPoints===prev.seasonPoints&&candidate.score>prev.score))wildMap.set(k,candidate);
+  }
+ }
+ const qualifiedNames=new Set(qualifiers.map(x=>String(x.name).trim().toLocaleLowerCase('uk')));
+ const wildCardRanking=[...wildMap.values()].filter(x=>!qualifiedNames.has(String(x.name).trim().toLocaleLowerCase('uk'))).sort((a,b)=>b.seasonPoints-a.seasonPoints||b.score-a.score||a.name.localeCompare(b.name,'uk'));
+ return{qualifiers,wildCard:qualifiersGames.length>=3?(wildCardRanking[0]||null):null,wildCardLeader:wildCardRanking[0]||null,wildCardRanking,qualifierGamesPlayed:qualifiersGames.length,qualifierGamesTotal:3,grandFinalists:[...qualifiers,...(qualifiersGames.length>=3&&wildCardRanking[0]?[{...wildCardRanking[0],wildCard:true}]:[])]};
+}
 async function saveGame({seasonId,roomCode,gameId,title,results,isGrandFinal=false}){const normalized=normalizeResults(results,isGrandFinal?2:1);if(!seasonId)throw Error('Оберіть сезон.');if(!normalized.length)throw Error('Немає результатів.');
  const id=slugId('game');if(usePostgres){try{await pool.query(`INSERT INTO quiz_games(id,season_id,room_code,game_id,title,is_grand_final,results) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,[id,seasonId,roomCode,gameId,title,!!isGrandFinal,JSON.stringify(normalized)]);}catch(e){if(e.code==='23505')throw Error('Результат цієї гри вже збережено.');throw e;}}
  else{if(fileData.games.some(g=>g.roomCode===roomCode))throw Error('Результат цієї гри вже збережено.');if(!fileData.seasons.some(s=>s.id===seasonId))throw Error('Сезон не знайдено.');fileData.games.push({id,seasonId,roomCode,gameId,title,playedAt:nowIso(),isGrandFinal:!!isGrandFinal,results:normalized});saveFile();}return id;}
@@ -62,6 +82,6 @@ async function deleteGame(gameId){
 }
 async function gamesForSeason(seasonId){if(usePostgres){const {rows}=await pool.query(`SELECT id,season_id AS "seasonId",room_code AS "roomCode",game_id AS "gameId",title,played_at AS "playedAt",is_grand_final AS "isGrandFinal",results FROM quiz_games WHERE season_id=$1 ORDER BY played_at DESC`,[seasonId]);return rows;}return fileData.games.filter(g=>g.seasonId===seasonId).sort((a,b)=>String(b.playedAt).localeCompare(String(a.playedAt)));}
 function leaderboardFromGames(games){const m=new Map();for(const g of games)for(const r of(g.results||[])){const k=String(r.name).trim().toLocaleLowerCase('uk');let p=m.get(k);if(!p){p={name:r.name,games:0,wins:0,podiums:0,seasonPoints:0,totalGameScore:0};m.set(k,p)}p.games++;if(r.place===1)p.wins++;if(r.place<=3)p.podiums++;p.seasonPoints+=Number(r.seasonPoints)||0;p.totalGameScore+=Number(r.score)||0;}return[...m.values()].sort((a,b)=>b.seasonPoints-a.seasonPoints||b.wins-a.wins||b.podiums-a.podiums||b.totalGameScore-a.totalGameScore||a.name.localeCompare(b.name,'uk'));}
-async function seasonDetails(id){const seasons=await listSeasons(),season=seasons.find(s=>s.id===id);if(!season)return null;const games=await gamesForSeason(id),leaderboard=leaderboardFromGames(games);return{...season,games,leaderboard,champion:season.status==='completed'&&games.length?leaderboard[0]||null:null};}
+async function seasonDetails(id){const seasons=await listSeasons(),season=seasons.find(s=>s.id===id);if(!season)return null;const games=await gamesForSeason(id),leaderboard=leaderboardFromGames(games),qualifierMode=isQualifierSeason(season),qualification=qualifierMode?qualifierSummary(games):null;const grandFinal=games.find(g=>g.isGrandFinal),grandWinner=grandFinal?.results?.slice().sort((a,b)=>a.place-b.place)[0]||null;return{...season,games,leaderboard,seasonFormat:qualifierMode?'qualifiers': 'points',qualification,champion:season.status==='completed'&&games.length?(qualifierMode?(grandWinner||null):(leaderboard[0]||null)):null};}
 async function publicData(){const seasons=await listSeasons(),out=[];for(const s of seasons)out.push(await seasonDetails(s.id));return{seasons:out,points:POINTS,storage:usePostgres?'postgres':'json'};}
 module.exports={init,createSeason,listSeasons,setSeasonStatus,saveGame,updateGameResults,deleteGame,seasonDetails,publicData,POINTS};
