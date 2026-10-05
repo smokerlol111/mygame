@@ -713,6 +713,14 @@ io.on('connection', socket => {
     } else if (special === 'duel') {
       room.phase = 'duel_choose';
       room.duelPlayers = room.turnPlayerId ? [room.turnPlayerId] : [];
+    } else if (q.type === 'triplet' && special === 'normal') {
+      const items=Array.isArray(q.triplet)?q.triplet:[];
+      if(items.length<3) return cb({ok:false,error:'ТРИПЛЕТ має містити щонайменше 3 питання.'});
+      const first=items[0];
+      room.current.questionType='triplet';
+      room.current.triplet={index:0,total:items.length,baseValue:q.value,items:items.map(x=>({value:Number(x.value),q:String(x.q||''),a:String(x.a||'')})),answererId:room.turnPlayerId};
+      room.current.value=Number(first.value); room.current.q=String(first.q||''); room.current.a=String(first.a||'');
+      room.phase='triplet_question';
     } else if (q.type === 'numericClosest' && special === 'normal') {
       room.numericChallenge={question:q.q,answer:Number(q.numericAnswer),unit:q.unit||'',value:q.value,seconds:Number(q.seconds||30)};
       room.numericAnswers={}; room.numericSubmittedAt={}; room.numericResults=null; room.numericRevealCount=0;
@@ -965,6 +973,33 @@ io.on('connection', socket => {
     emitState(room);
   });
   socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
+
+  socket.on('judgeTriplet', ({ code:c, correct }, cb=()=>{}) => {
+    const room=getRoom(c);
+    if(!isHost(socket,room)||room.phase!=='triplet_question'||room.current?.questionType!=='triplet') return cb({ok:false,error:'ТРИПЛЕТ зараз неактивний.'});
+    const t=room.current.triplet, p=room.players.find(x=>x.id===t?.answererId);
+    if(!t||!p) return cb({ok:false,error:'Гравця ТРИПЛЕТА не знайдено.'});
+    const value=Number(room.current.value)||0;
+    p.score += correct ? value : -value;
+    room.revealAnswer=true; room.resultReason=correct?'triplet_correct':'triplet_wrong'; room.phase='triplet_result';
+    cb({ok:true}); emitState(room);
+  });
+
+  socket.on('nextTriplet', ({ code:c }, cb=()=>{}) => {
+    const room=getRoom(c);
+    if(!isHost(socket,room)||room.phase!=='triplet_result'||room.current?.questionType!=='triplet') return cb({ok:false,error:'Немає завершеного етапу ТРИПЛЕТА.'});
+    const t=room.current.triplet;
+    if(t.index < t.total-1){
+      t.index += 1;
+      const item=t.items[t.index];
+      room.current.value=Number(item.value)||0; room.current.q=item.q; room.current.a=item.a;
+      room.revealAnswer=false; room.resultReason=null; room.buzzer=null; room.answeringLocked=new Set(); room.phase='triplet_question';
+    } else {
+      const key=`${room.round}:${room.current.ci}:${room.current.qi}`;
+      room.used[key]=true; advanceTurn(room); room.current=null; resetQuestionState(room); room.phase='board';
+    }
+    cb({ok:true}); emitState(room);
+  });
 
   socket.on('selectCatReceiver', ({ code: c, playerId }, cb = () => {}) => {
     const room = getRoom(c);
