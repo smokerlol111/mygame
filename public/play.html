@@ -329,6 +329,10 @@ function limitMediaPreview(){
   el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
  });
 }
+function playerQuestionHTML(cur){
+  if(!cur||!cur.q)return '';
+  return `<div class="question" style="font-size:clamp(1.15rem,4vw,1.65rem);margin-bottom:14px">${GameUI.esc(cur.q)}</div>`;
+}
 function playerEmojiHTML(cur){
   if(!cur||cur.questionType!=='emoji'||!cur.emoji)return '';
   return `<div class="center" style="font-size:clamp(3rem,14vw,6rem);line-height:1.25;letter-spacing:.08em;margin:22px 0 28px">${GameUI.esc(cur.emoji)}</div>`;
@@ -381,13 +385,13 @@ function render(){
   }
   else if(state.phase==='triplet_question'){const t=state.current?.triplet||{},mine=t.answererId===playerId;h+=`<div class="center"><div class="huge">🔥 ТРИПЛЕТ</div><h2>${Number(t.index||0)+1}/${t.total||3} • ${state.current?.value||0} балів</h2>${mine?'<h2>Відповідаєте ви!</h2><p class="muted">Відповідайте вголос. Усі три питання обов’язкові.</p>':'<p class="muted">Відповідає '+GameUI.esc(state.players.find(x=>x.id===t.answererId)?.name||'інший гравець')+'</p>'}</div>`;}
   else if(state.phase==='triplet_result'){const t=state.current?.triplet||{};h+=`<div class="center"><div class="huge">🔥 ${Number(t.index||0)+1}/${t.total||3}</div><h2>Правильна відповідь:</h2><div class="answer">${GameUI.esc(String(state.current?.a||''))}</div><p class="muted">Готуємо ${Number(t.index||0)>=Number(t.total||3)-1?'повернення на дошку':'наступне питання'}…</p></div>`;}
-  else if(state.phase==='question')h+=playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current)+buzzButtonHTML(false);
+  else if(state.phase==='question')h+=playerQuestionHTML(state.current)+playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current)+buzzButtonHTML(false);
   else if(state.phase==='buzz'){
-    h+=playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);
+    h+=playerQuestionHTML(state.current)+playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);
     if(state.current?.type==='duel' && !state.duelPlayers.includes(playerId)) h+=`<div class="center"><h2>⚔️ Дуель</h2><p class="muted">Відповідають учасники дуелі.</p></div>`;
     else h+=buzzButtonHTML(true);
   }
-  else if(state.phase==='answering'){h+=playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
+  else if(state.phase==='answering'){h+=playerQuestionHTML(state.current)+playerEmojiHTML(state.current)+playerImageRevealHTML(state.current)+mediaQuestionHTML(state.current);h+=state.buzzer===playerId?`<div class="center"><div class="huge">ВИ!</div><h2>Відповідайте вголос</h2></div>`:`<div class="center"><h2>Відповідає інший гравець</h2></div>`;}
   else if(state.phase==='va_bank_bet'){
     if(state.vaBankPlayer===playerId){let max=Math.max(0,p.score);h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2></div><p>Ваша ставка: від 0 до ${max}</p><input id="vbBet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendVbBet" class="btn gold">Підтвердити ставку</button>`}
     else h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2><p class="muted">Гравець робить ставку.</p></div>`;
