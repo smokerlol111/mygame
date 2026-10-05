@@ -30,5 +30,13 @@
     "description": "SMOKERLOL QUIZ #4 — суперфінал друзів",
     "file": "friends_super_final.json",
     "enabled": true
+  },
+  {
+    "id": "season2-kinohardkor-2",
+    "title": "КІНОХАРДКОР 2.0",
+    "icon": "🎬",
+    "description": "Сезон 2 • Гра #1 • тест Раунду 1 і механіки ТРИПЛЕТ",
+    "file": "season2_kinohardkor_2_0.json",
+    "enabled": true
   }
 ]
