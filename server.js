@@ -81,7 +81,15 @@ function publicState(room) {
     round: room.round,
     used: room.used,
     board: (getRoomGame(room).rounds?.[room.round]?.categories||[]).map(cat=>({name:cat.name,questions:(cat.questions||[]).map(q=>({value:q.value}))})),
-    current: room.current,
+    current: room.current ? {
+      ...room.current,
+      triplet: room.current.triplet ? {
+        index: room.current.triplet.index,
+        total: room.current.triplet.total,
+        baseValue: room.current.triplet.baseValue,
+        answererId: room.current.triplet.answererId
+      } : undefined
+    } : null,
     buzzer: room.buzzer,
     catChooser: room.catChooser,
     catReceiver: room.catReceiver,
