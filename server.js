@@ -108,6 +108,24 @@ function publicState(room) {
         answererId: room.current.triplet.answererId
       } : undefined
     } : null,
+    // Dedicated safe payload for PLAYER/OBS rendering of the currently active question.
+    // This intentionally duplicates only public question fields so UI rendering does not depend
+    // on the internal room.current object shape.
+    activeQuestion: room.current ? {
+      value: room.current.value,
+      q: room.current.q || '',
+      questionType: room.current.questionType || null,
+      emoji: room.current.emoji || '',
+      image: room.current.image || '',
+      media: room.current.media || '',
+      revealStage: room.current.revealStage,
+      revealValues: room.current.revealValues,
+      revealSeconds: room.current.revealSeconds,
+      pauseAt: room.current.pauseAt,
+      videoContinued: room.current.videoContinued,
+      mediaPaused: room.current.mediaPaused,
+      a: room.revealAnswer ? (room.current.a || '') : ''
+    } : null,
     buzzer: room.buzzer,
     catChooser: room.catChooser,
     catReceiver: room.catReceiver,
