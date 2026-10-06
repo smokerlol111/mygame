@@ -330,7 +330,9 @@ function limitMediaPreview(){
  });
 }
 function playerQuestionHTML(cur){
-  if(!cur||!cur.q)return '';
+  // PLAYER sees prompt text only when it is needed to understand a visual/emoji mechanic.
+  // Ordinary text questions remain host/OBS-only.
+  if(!cur||!cur.q||cur.questionType!=='emoji')return '';
   return `<div class="question" style="font-size:clamp(1.15rem,4vw,1.65rem);margin-bottom:14px">${GameUI.esc(cur.q)}</div>`;
 }
 function playerEmojiHTML(cur){
