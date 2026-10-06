@@ -113,7 +113,8 @@ function publicState(room) {
     // on the internal room.current object shape.
     activeQuestion: room.current ? {
       value: room.current.value,
-      q: room.current.q || '',
+      // PLAYER only needs prompt text for emoji questions. Ordinary text questions stay off the phone.
+      q: room.current.questionType === 'emoji' ? (room.current.q || '') : '',
       questionType: room.current.questionType || null,
       emoji: room.current.emoji || '',
       image: room.current.image || '',
