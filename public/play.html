@@ -75,7 +75,6 @@ for(const key of Object.keys(cueAudio)){
 // Attempt audio unlock on the first ordinary player interaction; no separate enable button.
 document.addEventListener('pointerdown',()=>{
  if(!cueUnlocked)unlockCueAudio();
- if(!playerVideoUnlocked)unlockPlayerVideoMedia();
  const notice=document.getElementById('cueAudioNotice');
  if(notice)notice.hidden=true;
 },{capture:true});
