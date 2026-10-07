@@ -297,6 +297,7 @@ function showReconnectPlayButton(el){
  };
  el.insertAdjacentElement('afterend',btn);
 }
+let pendingMediaControl=null;
 function applyMediaControl(command){
  const cur=state?.current;
  if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
@@ -305,7 +306,7 @@ function applyMediaControl(command){
  if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
  if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
  const el=document.querySelector('.quizMedia');
- if(!el)return;
+ if(!el){pendingMediaControl=command;return;}
  const apply=()=>{
   if(!el.isConnected)return;
   if(command.action==='seek'||command.action==='play'){
@@ -319,6 +320,12 @@ function applyMediaControl(command){
  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
 }
 socket.on('mediaControl',applyMediaControl);
+function flushPendingMediaControl(){
+ if(!pendingMediaControl)return;
+ const command=pendingMediaControl;
+ pendingMediaControl=null;
+ applyMediaControl(command);
+}
 
 function mediaQuestionHTML(cur,host=false){
  if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
@@ -437,7 +444,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -494,7 +501,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
