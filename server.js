@@ -211,11 +211,11 @@ function emitVideoContinuation(room) {
     sentAt
   });
 }
-function isRoomMediaQuestion(room) {
-  return !!room?.current && ['audio','audioReveal','video'].includes(room.current.questionType);
+function isRoomAudioQuestion(room) {
+  return !!room?.current && ['audio','audioReveal'].includes(room.current.questionType);
 }
-function roomMediaTime(room, now=Date.now()) {
-  if (!isRoomMediaQuestion(room)) return 0;
+function roomAudioTime(room, now=Date.now()) {
+  if (!isRoomAudioQuestion(room)) return 0;
   const cur=room.current;
   const base=Math.max(0,Number(cur.mediaTime||0));
   if(cur.mediaPlaying && !cur.mediaPaused && Number(cur.mediaUpdatedAt||0)>0){
@@ -223,31 +223,31 @@ function roomMediaTime(room, now=Date.now()) {
   }
   return base;
 }
-function pauseRoomMedia(room) {
-  if(!isRoomMediaQuestion(room)) return;
+function pauseRoomAudio(room) {
+  if(!isRoomAudioQuestion(room)) return;
   const now=Date.now();
-  room.current.mediaTime=roomMediaTime(room,now);
+  room.current.mediaTime=roomAudioTime(room,now);
   room.current.mediaPaused=true;
   room.current.mediaPlaying=false;
   room.current.mediaUpdatedAt=now;
 }
-function resumeRoomMedia(room) {
-  if(!isRoomMediaQuestion(room)) return;
+function resumeRoomAudio(room) {
+  if(!isRoomAudioQuestion(room)) return;
   const now=Date.now();
-  room.current.mediaTime=roomMediaTime(room,now);
+  room.current.mediaTime=roomAudioTime(room,now);
   room.current.mediaPaused=false;
   room.current.mediaPlaying=true;
   room.current.mediaUpdatedAt=now;
 }
-function resetRoomMedia(room,time=0) {
-  if(!isRoomMediaQuestion(room)) return;
+function resetRoomAudio(room,time=0) {
+  if(!isRoomAudioQuestion(room)) return;
   room.current.mediaTime=Math.max(0,Number(time)||0);
   room.current.mediaPaused=true;
   room.current.mediaPlaying=false;
   room.current.mediaUpdatedAt=Date.now();
 }
-function emitRoomMediaControl(room,action) {
-  if(!isRoomMediaQuestion(room)) return;
+function emitRoomAudioControl(room,action) {
+  if(!isRoomAudioQuestion(room)) return;
   io.to(room.code).emit('mediaControl',{
     code:room.code,
     action,
@@ -515,23 +515,23 @@ io.on('connection', socket => {
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
     const leadMs=1200;
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null; if(isRoomMediaQuestion(room))resumeRoomMedia(room); room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; if(room.current?.questionType==='video')room.current.mediaPaused=false; else if(isRoomAudioQuestion(room))resumeRoomAudio(room); room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt,playerIds:[...(room.duelPlayers||[])]})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
-    if(isRoomMediaQuestion(room))setTimeout(()=>emitRoomMediaControl(room,'play'),50);
+    if(isRoomAudioQuestion(room))setTimeout(()=>emitRoomAudioControl(room,'play'),50);
   });
 
   socket.on('emergencyRevealQuestion', ({code:c}={},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного звичайного питання.'});
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
-    room.buzzer=null; if(isRoomMediaQuestion(room))pauseRoomMedia(room); room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
+    room.buzzer=null; if(room.current?.questionType==='video')room.current.mediaPaused=true; else if(isRoomAudioQuestion(room))pauseRoomAudio(room); room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
     cb({ok:true}); emitState(room);
     if(room.phase==='result' && room.current?.questionType==='video' && room.current?.videoContinued){
       setTimeout(()=>emitVideoContinuation(room),50);
     } else if(room.current?.questionType==='audio' || room.current?.questionType==='audioReveal'){
-      setTimeout(()=>emitRoomMediaControl(room,room.current.mediaPlaying?'play':'pause'),50);
+      setTimeout(()=>emitRoomAudioControl(room,room.current.mediaPlaying?'play':'pause'),50);
     }
   });
 
@@ -837,7 +837,7 @@ io.on('connection', socket => {
       room.current.questionType=q.type;
       room.current.media=source;
       room.current.mediaTime=0;
-      room.current.mediaPaused=true;
+      if(q.type==='audio'||q.type==='audioReveal')room.current.mediaPaused=true;
       room.current.mediaPlaying=false;
       room.current.mediaUpdatedAt=Date.now();
       if(q.type==='video' && Number(q.pauseAt ?? q.stopAt)>0){room.current.pauseAt=Number(q.pauseAt ?? q.stopAt);room.current.videoContinued=false;}
@@ -943,9 +943,9 @@ io.on('connection', socket => {
     if(room.current.revealStage>=room.current.revealValues.length-1)return cb({ok:false,error:'Усі фрагменти відкриті.'});
     room.current.revealStage++;
     room.current.value=room.current.revealValues[room.current.revealStage];
-    resetRoomMedia(room,0);
+    resetRoomAudio(room,0);
     cb({ok:true});emitState(room);
-    setTimeout(()=>emitRoomMediaControl(room,'pause'),50);
+    setTimeout(()=>emitRoomAudioControl(room,'pause'),50);
   });
 
   socket.on('revealImageStep', ({ code: c }, cb = () => {}) => {
@@ -1031,9 +1031,9 @@ io.on('connection', socket => {
         room.buzzer=winner.playerId;
         room.buzzOpensAt=null;
         room.phase='answering';
-        if(isRoomMediaQuestion(room))pauseRoomMedia(room);
+        if(room.current?.questionType==='video')room.current.mediaPaused=true; else if(isRoomAudioQuestion(room))pauseRoomAudio(room);
         emitState(room);
-        if(isRoomMediaQuestion(room))setTimeout(()=>emitRoomMediaControl(room,'pause'),20);
+        if(isRoomAudioQuestion(room))setTimeout(()=>emitRoomAudioControl(room,'pause'),20);
       },FAIR_WINDOW_MS);
     }
   });
@@ -1056,7 +1056,7 @@ io.on('connection', socket => {
     if (correct) {
       room.revealAnswer = true;
       room.resultReason = 'correct';
-      if(isRoomMediaQuestion(room))pauseRoomMedia(room);
+      if(room.current?.questionType==='video')room.current.mediaPaused=true; else if(isRoomAudioQuestion(room))pauseRoomAudio(room);
       if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
       room.phase = 'result';
     } else {
@@ -1069,13 +1069,13 @@ io.on('connection', socket => {
         : room.players;
       const everyoneWrong = eligiblePlayers.length > 0 && eligiblePlayers.every(x => room.answeringLocked.has(x.id));
       if (everyoneWrong) {
-        if(isRoomMediaQuestion(room))pauseRoomMedia(room);
+        if(room.current?.questionType==='video')room.current.mediaPaused=true; else if(isRoomAudioQuestion(room))pauseRoomAudio(room);
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
         if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
         room.phase = 'result';
       } else {
-        if(isRoomMediaQuestion(room))resumeRoomMedia(room);
+        if(room.current?.questionType==='video')room.current.mediaPaused=false; else if(isRoomAudioQuestion(room))resumeRoomAudio(room);
         room.phase = 'buzz'; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+800;
         io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
       }
@@ -1126,7 +1126,7 @@ io.on('connection', socket => {
   socket.on('revealAnswer', ({ code: c }) => {
     const room = getRoom(c); if (!isHost(socket, room) || !room.current) return;
     room.buzzer = null;
-    if(isRoomMediaQuestion(room))pauseRoomMedia(room);
+    if(room.current?.questionType==='video')room.current.mediaPaused=true; else if(isRoomAudioQuestion(room))pauseRoomAudio(room);
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
     if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
@@ -1135,7 +1135,7 @@ io.on('connection', socket => {
     if(room.current?.questionType==='video' && room.current?.videoContinued){
       setTimeout(()=>emitVideoContinuation(room),50);
     } else if(room.current?.questionType==='audio' || room.current?.questionType==='audioReveal'){
-      setTimeout(()=>emitRoomMediaControl(room,'pause'),50);
+      setTimeout(()=>emitRoomAudioControl(room,'pause'),50);
     }
   });
   socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
