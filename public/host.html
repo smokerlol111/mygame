@@ -312,7 +312,7 @@ function mediaQuestionHTML(cur,host=false){
  const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
  const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
  const media=video?`<video class="quizMedia" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
- return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}${host&&video&&cur.pauseAt&&!cur.videoContinued?'<button class="btn gold" id="continueVideo">▶ Показати продовження</button>':''}</div>`;
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
 }
 let mediaPlaybackSnapshot=null;
 function captureMediaPlayback(){
@@ -354,20 +354,29 @@ function bindHostMediaControls(){
 function stopDetachedMedia(){
  document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{el.pause();el.removeAttribute('src');el.load();});
 }
+let videoResumeKey='';
 function resumeVideoResult(){
- if(state?.phase!=='video_result'||state.current?.questionType!=='video')return;
+ if(!['result','video_result'].includes(state?.phase)||state.current?.questionType!=='video'||!state.current?.videoContinued)return;
+ const key=[state.round,state.current?.ci,state.current?.qi].join(':');
+ if(videoResumeKey===key)return;
+ videoResumeKey=key;
  document.querySelectorAll('video.quizMedia').forEach(el=>{
-  const resume=()=>{el.currentTime=Number(state.current.pauseAt||0);el.play().catch(()=>{});};
+  const resume=()=>{
+   if(!el.isConnected)return;
+   const pauseAt=Number(state.current?.pauseAt||0);
+   if(pauseAt>0)el.currentTime=pauseAt;
+   el.play().catch(()=>{});
+  };
   if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
  });
 }
 function limitMediaPreview(){
  const cur=state?.current;
  if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
-  document.querySelectorAll('.quizMedia').forEach(el=>{
-   const stop=()=>{if(el.currentTime>=cur.pauseAt){el.pause();el.currentTime=cur.pauseAt;}};
+  document.querySelectorAll('video.quizMedia').forEach(el=>{
+   let pausedAtStop=false;
+   const stop=()=>{if(!pausedAtStop&&el.currentTime>=cur.pauseAt){pausedAtStop=true;el.pause();el.currentTime=cur.pauseAt;}};
    el.addEventListener('timeupdate',stop);
-   el.addEventListener('seeking',stop);
   });
  }
  if(cur?.questionType!=='audioReveal')return;
