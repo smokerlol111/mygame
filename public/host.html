@@ -319,7 +319,7 @@ let mediaPlaybackSnapshot=null;
 function captureMediaPlayback(){
  const el=document.querySelector('video.quizVideo,audio.quizAudio');
  if(!el||!state?.current)return null;
- return {node:el,src:el.getAttribute('src'),kind:el.tagName,stage:Number(state.current.revealStage||0)};
+ return {node:el,src:el.getAttribute('src'),kind:el.tagName,stage:Number(state.current.revealStage||0),time:Number(el.currentTime||0),playing:!el.paused};
 }
 function stopDetachedMedia(snapshot){
  const el=document.querySelector('video.quizVideo,audio.quizAudio');
@@ -335,6 +335,10 @@ function restoreMediaPlayback(snapshot){
  const sameStage=fresh.tagName==='VIDEO'||snapshot.stage===Number(state.current.revealStage||0);
  if(sameKind&&sameSrc&&sameStage){
   fresh.replaceWith(snapshot.node);
+  const el=snapshot.node;
+  if(Number.isFinite(snapshot.time)&&Math.abs(el.currentTime-snapshot.time)>.15){try{el.currentTime=snapshot.time}catch(e){}}
+  if(snapshot.playing&&state?.phase!=='answering'){const p=el.play();if(p&&p.catch)p.catch(()=>{})}
+  else if(!snapshot.playing)el.pause();
   return;
  }
  try{snapshot.node.pause();snapshot.node.removeAttribute('src');snapshot.node.load()}catch(e){}
