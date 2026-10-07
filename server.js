@@ -96,10 +96,6 @@ function publicState(room) {
       revealSeconds: room.current.revealSeconds,
       pauseAt: room.current.pauseAt,
       videoContinued: room.current.videoContinued,
-      mediaPaused: room.current.mediaPaused,
-      mediaTime: Number(room.current.mediaTime||0),
-      mediaPlaying: !!room.current.mediaPlaying,
-      mediaUpdatedAt: Number(room.current.mediaUpdatedAt||0),
       videoTime: Number(room.current.videoTime||0),
       videoPlaying: !!room.current.videoPlaying,
       videoUpdatedAt: Number(room.current.videoUpdatedAt||0),
@@ -133,10 +129,6 @@ function publicState(room) {
       revealSeconds: room.current.revealSeconds,
       pauseAt: room.current.pauseAt,
       videoContinued: room.current.videoContinued,
-      mediaPaused: room.current.mediaPaused,
-      mediaTime: Number(room.current.mediaTime||0),
-      mediaPlaying: !!room.current.mediaPlaying,
-      mediaUpdatedAt: Number(room.current.mediaUpdatedAt||0),
       videoTime: Number(room.current.videoTime||0),
       videoPlaying: !!room.current.videoPlaying,
       videoUpdatedAt: Number(room.current.videoUpdatedAt||0),
@@ -209,21 +201,6 @@ function emitPlayerPresence(room, player) {
     syncReady: !!player.connected && Number(player.syncSamples||0)>=3 && Date.now()-Number(player.lastSyncAt||0)<12000
   });
 }
-function emitVideoContinuation(room) {
-  if (!room?.current || room.current.questionType !== 'video' || !room.current.videoContinued) return;
-  const time = Number(room.current.mediaTime ?? room.current.pauseAt ?? 0);
-  const sentAt = Number(room.current.mediaUpdatedAt || Date.now());
-  io.to(room.code).emit('mediaControl', {
-    code: room.code,
-    action: 'play',
-    time,
-    media: room.current.media,
-    phase: room.phase,
-    stage: room.current.revealStage,
-    sentAt
-  });
-}
-
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
 function isHost(socket, room) { return room && socket.data.hostToken && socket.data.hostToken === room.hostToken; }
 function currentQuestion(room) {
@@ -481,7 +458,7 @@ io.on('connection', socket => {
     if(room.current.type==='final'||['cat_question','va_bank_question'].includes(room.phase))
       return cb({ok:false,error:'Для цього типу питання BUZZ не використовується.'});
     const leadMs=1200;
-    room.buzzer=null; room.phase='buzz'; room.resultReason=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
+    room.buzzer=null; room.phase='buzz'; room.resultReason=null; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
     setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt,playerIds:[...(room.duelPlayers||[])]})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
@@ -491,7 +468,7 @@ io.on('connection', socket => {
     const room=getRoom(c);
     if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного звичайного питання.'});
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
-    room.buzzer=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
+    room.buzzer=null; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
     cb({ok:true}); emitState(room);
     if(room.phase==='result' && room.current?.questionType==='video' && room.current?.videoContinued){
       setTimeout(()=>emitVideoContinuation(room),50);
@@ -577,7 +554,6 @@ io.on('connection', socket => {
     });
     cb({ok:true});
   });
-  socket.on('hostMediaControl', (_payload = {}, cb = () => {}) => cb({ok:false,error:'Legacy media control disabled.'}));
   socket.on('joinScreen', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!room) return cb({ ok: false, error: 'Кімнату не знайдено.' });
@@ -811,9 +787,6 @@ io.on('connection', socket => {
       if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
       room.current.questionType=q.type;
       room.current.media=source;
-      room.current.mediaTime=0;
-      room.current.mediaPlaying=false;
-      room.current.mediaUpdatedAt=Date.now();
       if(q.type==='video'){
         room.current.videoTime=0;room.current.videoPlaying=false;room.current.videoUpdatedAt=Date.now();
         if(Number(q.pauseAt ?? q.stopAt)>0){room.current.pauseAt=Number(q.pauseAt ?? q.stopAt);room.current.videoContinued=false;}
@@ -905,7 +878,6 @@ io.on('connection', socket => {
   socket.on('finishVideoResult',({code:c},cb=()=>{})=>{
     const room=getRoom(c);
     if(!isHost(socket,room)||room?.phase!=='video_result')return cb({ok:false,error:'Немає продовження відео'});
-    room.current.mediaPaused=true;
     room.phase='result';cb({ok:true});emitState(room);
   });
 
