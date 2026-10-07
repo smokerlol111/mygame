@@ -182,6 +182,15 @@ function emitState(room) {
   // Players and the OBS screen never receive the special-cell map.
   if (room.hostSocket) io.to(room.hostSocket).emit('hostSecrets', { code: room.code, specialCells: room.specialCells || {}, voiceMappings:room.voiceMappings||{}, audienceWinner: room.audienceWinners?.[room.audienceWinners.length-1] || null });
 }
+function emitPlayerPresence(room, player) {
+  if (!room?.hostSocket || !player) return;
+  io.to(room.hostSocket).emit('playerPresence', {
+    code: room.code,
+    playerId: player.id,
+    connected: !!player.connected,
+    syncReady: !!player.connected && Number(player.syncSamples||0)>=3 && Date.now()-Number(player.lastSyncAt||0)<12000
+  });
+}
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
 function isHost(socket, room) { return room && socket.data.hostToken && socket.data.hostToken === room.hostToken; }
@@ -354,13 +363,15 @@ io.on('connection', socket => {
     socket.data.roomCode = room.code;
     socket.join(room.code);
     cb({ ok: true, code: room.code, gameId: room.gameId, state: publicState(room), specialCells: room.specialCells || {} });
-    emitState(room);
+    // Rejoining HOST already receives the full room state in the callback.
+    // Do not rebroadcast it and rebuild active media on every client.
   });
 
   socket.on('joinPlayer', ({ code: c, name, playerId }, cb = () => {}) => {
     const room = getRoom(c);
     if (!room) return cb({ ok: false, error: 'Кімнату не знайдено.' });
     let p = room.players.find(x => x.id === playerId);
+    const reconnectingExistingPlayer = !!p;
     if (!p) {
       if (room.players.length >= 4) return cb({ ok: false, error: 'У кімнаті вже 4 гравці.' });
       const clean = String(name || '').trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
@@ -374,7 +385,13 @@ io.on('connection', socket => {
     socket.data.roomCode = room.code;
     socket.join(room.code);
     cb({ ok: true, playerId: p.id, code: room.code, name: p.name });
-    emitState(room);
+    if (reconnectingExistingPlayer && room.phase !== 'lobby') {
+      // Refreshing a player phone must not reset HOST/OBS/video on the rest of the room.
+      socket.emit('state', publicState(room));
+      emitPlayerPresence(room, p);
+    } else {
+      emitState(room);
+    }
   });
 
   socket.on('leavePlayer', ({ code: c } = {}, cb = () => {}) => {
@@ -434,7 +451,7 @@ io.on('connection', socket => {
     const leadMs=1200;
     room.buzzer=null; room.phase='buzz'; room.resultReason=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false; room.buzzCandidates=[]; if(room.buzzResolveTimer){clearTimeout(room.buzzResolveTimer);room.buzzResolveTimer=null;} room.buzzOpensAt=Date.now()+leadMs;
     io.to(room.code).emit('buzzScheduled',{opensAt:room.buzzOpensAt});
-    setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt})},leadMs);
+    setTimeout(()=>{if(rooms.get(room.code)===room&&room.phase==='buzz'&&!room.buzzer)io.to(room.code).emit('cue',{type:'buzz_open',at:room.buzzOpensAt,playerIds:[...(room.duelPlayers||[])]})},leadMs);
     cb({ok:true,opensAt:room.buzzOpensAt}); emitState(room);
   });
 
@@ -497,7 +514,8 @@ io.on('connection', socket => {
     if (!['audio','audioReveal','video'].includes(room.current.questionType)) return cb({ok:false});
     const action = payload.action;
     if (!['play','pause','seek'].includes(action)) return cb({ok:false});
-    if (action === 'play' && room.current.mediaPaused) { room.current.mediaPaused=false; emitState(room); }
+    if (action === 'play') room.current.mediaPaused=false;
+    if (action === 'pause') room.current.mediaPaused=true;
     const time = Number(payload.time);
     if (!Number.isFinite(time) || time < 0) return cb({ok:false});
     io.to(room.code).emit('screenMediaControl', {code:room.code, action, time, media:room.current.media, phase:room.phase, stage:room.current.revealStage});
@@ -509,7 +527,8 @@ io.on('connection', socket => {
     socket.data.roomCode = room.code;
     socket.join(room.code);
     cb({ ok: true, code: room.code });
-    emitState(room);
+    // OBS receives its own current snapshot. Its reload must not make HOST/PLAYER rerender media.
+    socket.emit('state', publicState(room));
   });
 
   // HOST-only Discord Active Speaker controls and player mappings.
@@ -692,7 +711,11 @@ io.on('connection', socket => {
     if(!isHost(socket,room)) return cb({ok:false,error:'Немає доступу.'});
     if(type==='murloc_answer'){if(room.phase!=='result'||room.current?.sponsorDouble!==true||room.current?.answerAudio!=='/media/murloc.mp3')return cb({ok:false,error:'Звук доступний лише після відповіді на запитання про мурлока.'});}
     else if(!['gong','results_theme','winner_theme','final_music_stop'].includes(type)) return cb({ok:false,error:'Невідомий звук.'});
-    io.to(room.code).emit('cue',{type,at:Date.now()});
+    const cue={type,at:Date.now()};
+    if(type==='gong' && room.current?.type==='duel' && Array.isArray(room.duelPlayers) && room.duelPlayers.length){
+      cue.playerIds=[...room.duelPlayers];
+    }
+    io.to(room.code).emit('cue',cue);
     cb({ok:true});
   });
 
@@ -1270,7 +1293,10 @@ io.on('connection', socket => {
     const p = room.players.find(x => x.id === socket.data.playerId);
     if (p && p.socketId === socket.id) { p.connected = false; p.socketId = null; p.syncSamples=0; p.lastSyncAt=0; }
     const a = room.audience.find(x => x.id === socket.data.audienceId); if(a){a.connected=false;a.socketId=null;}
-    if((p && !p.connected)||a) emitState(room);
+    if(p && !p.connected){
+      if(room.phase==='lobby') emitState(room); else emitPlayerPresence(room,p);
+    }
+    if(a) emitState(room);
   });
 });
 
