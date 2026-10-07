@@ -284,6 +284,7 @@ function syncedMediaTime(cur){
  if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
  return base+Math.max(0,(serverNow()-Number(cur.mediaUpdatedAt))/1000);
 }
+let pendingMediaControl=null;
 function applyMediaControl(command){
  const cur=state?.current;
  if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
