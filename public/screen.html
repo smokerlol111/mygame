@@ -129,8 +129,8 @@ let code=location.pathname.split('/').filter(Boolean)[1]||new URLSearchParams(lo
 async function ensureGameData(gameId){if(!gameId||gameId===loadedGameId)return;const r=await fetch(`/games/${encodeURIComponent(gameId)}.json`,{cache:'no-store'});if(!r.ok)throw new Error('Game HTTP '+r.status);data=await r.json();loadedGameId=gameId}
 function setObsNet(ok){const el=document.getElementById('obsNet');if(el){el.textContent=ok?'🟢 LIVE':'🔴 OFFLINE';el.style.opacity=ok?'.45':'1'}}
 function joinObs(){if(!code)return;socket.emit('joinScreen',{code},r=>{if(!r?.ok)app.innerHTML=`<div class="panel center"><h2>${r?.error||'Кімнату не знайдено.'}</h2></div>`})}
-if(code)joinObs();else app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
-socket.on('connect',()=>{setObsNet(true);joinObs()});
+if(!code)app.innerHTML=`<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
+socket.on('connect',()=>{setObsNet(true);if(code)joinObs()});
 socket.on('disconnect',()=>setObsNet(false));
 socket.on('roomClosed',({code:closedCode})=>{
  if(closedCode!==code)return;
