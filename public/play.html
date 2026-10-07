@@ -28,6 +28,32 @@ const cueAudio={
  buzz_open:new Audio('/sounds/buzz.mp3')
 };
 let cueUnlocked=false;
+const playerVideoUnlock=document.createElement('video');
+playerVideoUnlock.src='/media/r2_c1_200.mp4';
+playerVideoUnlock.preload='metadata';
+playerVideoUnlock.playsInline=true;
+playerVideoUnlock.style.display='none';
+playerVideoUnlock.volume=0;
+document.body.appendChild(playerVideoUnlock);
+let playerVideoUnlocked=false;
+function unlockPlayerVideoMedia(){
+ if(playerVideoUnlocked)return;
+ try{
+  playerVideoUnlock.currentTime=0;
+  const p=playerVideoUnlock.play();
+  if(p&&p.then){
+   p.then(()=>{
+    playerVideoUnlock.pause();
+    try{playerVideoUnlock.currentTime=0}catch(e){}
+    playerVideoUnlocked=true;
+   }).catch(err=>console.warn('PLAYER video unlock:',err));
+  }else{
+   playerVideoUnlock.pause();
+   try{playerVideoUnlock.currentTime=0}catch(e){}
+   playerVideoUnlocked=true;
+  }
+ }catch(err){console.warn('PLAYER video unlock error:',err)}
+}
 for(const [key,a] of Object.entries(cueAudio)){
  a.preload='auto';
  const saved=Number(localStorage.getItem('sgPlayerCueVolume_'+key));
@@ -75,6 +101,7 @@ for(const key of Object.keys(cueAudio)){
 // Attempt audio unlock on the first ordinary player interaction; no separate enable button.
 document.addEventListener('pointerdown',()=>{
  if(!cueUnlocked)unlockCueAudio();
+ if(!playerVideoUnlocked)unlockPlayerVideoMedia();
  const notice=document.getElementById('cueAudioNotice');
  if(notice)notice.hidden=true;
 },{capture:true});
