@@ -363,18 +363,24 @@ function stopDetachedMedia(snapshot){
   el.pause();el.removeAttribute('src');el.load();
  });
 }
+function syncedMediaTime(cur){
+ const base=Math.max(0,Number(cur?.mediaTime||0));
+ if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
+ return base+Math.max(0,(Date.now()-Number(cur.mediaUpdatedAt))/1000);
+}
 let videoResumeKey='';
 function resumeVideoResult(){
- if(!['result','video_result'].includes(state?.phase)||state.current?.questionType!=='video'||!state.current?.videoContinued){videoResumeKey='';return;}
- const key=[state.round,state.current?.ci,state.current?.qi].join(':');
+ const cur=state?.current;
+ if(!['result','video_result'].includes(state?.phase)||cur?.questionType!=='video'||!cur?.videoContinued){videoResumeKey='';return;}
+ const key=[state.round,cur?.ci,cur?.qi,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
  if(videoResumeKey===key)return;
  videoResumeKey=key;
  document.querySelectorAll('video.quizMedia').forEach(el=>{
   const resume=()=>{
    if(!el.isConnected)return;
-   const pauseAt=Number(state.current?.pauseAt||0);
-   if(pauseAt>0)el.currentTime=pauseAt;
-   el.play().catch(()=>{});
+   const target=syncedMediaTime(cur);
+   if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
+   if(cur.mediaPlaying)el.play().catch(()=>{});else el.pause();
   };
   if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
  });
