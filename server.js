@@ -197,6 +197,20 @@ function emitPlayerPresence(room, player) {
     syncReady: !!player.connected && Number(player.syncSamples||0)>=3 && Date.now()-Number(player.lastSyncAt||0)<12000
   });
 }
+function emitVideoContinuation(room) {
+  if (!room?.current || room.current.questionType !== 'video' || !room.current.videoContinued) return;
+  const time = Number(room.current.mediaTime ?? room.current.pauseAt ?? 0);
+  const sentAt = Number(room.current.mediaUpdatedAt || Date.now());
+  io.to(room.code).emit('mediaControl', {
+    code: room.code,
+    action: 'play',
+    time,
+    media: room.current.media,
+    phase: room.phase,
+    stage: room.current.revealStage,
+    sentAt
+  });
+}
 
 function getRoom(c) { return rooms.get(String(c || '').toUpperCase()); }
 function isHost(socket, room) { return room && socket.data.hostToken && socket.data.hostToken === room.hostToken; }
@@ -466,6 +480,9 @@ io.on('connection', socket => {
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
     room.buzzer=null; if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
     cb({ok:true}); emitState(room);
+    if(room.phase==='result' && room.current?.questionType==='video' && room.current?.videoContinued){
+      setTimeout(()=>emitVideoContinuation(room),50);
+    }
   });
 
   socket.on('emergencyFinishTile', ({code:c}={},cb=()=>{})=>{
@@ -1060,6 +1077,9 @@ io.on('connection', socket => {
     if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
     room.phase = 'result';
     emitState(room);
+    if(room.current?.questionType==='video' && room.current?.videoContinued){
+      setTimeout(()=>emitVideoContinuation(room),50);
+    }
   });
   socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
 
