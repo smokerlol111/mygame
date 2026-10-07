@@ -731,7 +731,7 @@ io.on('connection', socket => {
       if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
       room.current.questionType=q.type;
       room.current.media=source;
-      if(q.type==='video' && Number(q.pauseAt)>0){room.current.pauseAt=Number(q.pauseAt);room.current.videoContinued=false;}
+      if(q.type==='video' && Number(q.pauseAt ?? q.stopAt)>0){room.current.pauseAt=Number(q.pauseAt ?? q.stopAt);room.current.videoContinued=false;}
       if(q.type==='audioReveal'){
         const values=Array.isArray(q.revealValues)&&q.revealValues.length?q.revealValues:[q.value,Math.round(q.value*.8),Math.round(q.value*.6),Math.round(q.value*.4),Math.round(q.value*.2)];
         room.current.revealValues=values.map(v=>Number(v));
