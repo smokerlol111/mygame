@@ -349,7 +349,7 @@ let applyingServerMediaControl=false;
 let pendingServerMediaControl=null;
 function applyServerMediaControl(command){
  const cur=state?.current;
- if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
+ if(!cur||!['audio','audioReveal'].includes(cur.questionType)||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
  cur.mediaTime=Number(command.time)||0;
  cur.mediaUpdatedAt=Number(command.sentAt)||Date.now();
  if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
@@ -378,7 +378,7 @@ function bindHostMediaControls(){
  if(!el||el.dataset.mediaControlBound)return;
  el.dataset.mediaControlBound='1';
  const send=action=>{
-  if(applyingServerMediaControl||!state?.current)return;
+  if((['audio','audioReveal'].includes(state?.current?.questionType)&&applyingServerMediaControl)||!state?.current)return;
   socket.emit('hostMediaControl',{code:state.code,action,time:el.currentTime});
  };
  el.addEventListener('play',()=>send('play'));
