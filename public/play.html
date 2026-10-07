@@ -385,22 +385,27 @@ function resumeVideoResult(){
   if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
  });
 }
+let primedVideoQuestionKey='';
 function primePlayerVideoFrame(){
  const cur=state?.current;
- if(cur?.questionType!=='video')return;
- document.querySelectorAll('video.quizMedia').forEach(el=>{
-  if(el.dataset.framePrimeBound==='1')return;
-  el.dataset.framePrimeBound='1';
-  const prime=()=>{
-   if(!el.isConnected||state?.current?.questionType!=='video')return;
-   if(state.current?.mediaPlaying||Number(state.current?.mediaTime||0)>0.1)return;
-   if(el.currentTime>0.01)return;
-   try{el.currentTime=0.05}catch(e){}
-  };
-  if(el.readyState>=1)prime();else el.addEventListener('loadedmetadata',prime,{once:true});
-  el.addEventListener('seeked',()=>{if(!state?.current?.mediaPlaying)el.pause()},{once:true});
-  try{el.load()}catch(e){}
- });
+ if(cur?.questionType!=='video'){
+  primedVideoQuestionKey='';
+  return;
+ }
+ const el=document.querySelector('video.quizMedia');
+ if(!el)return;
+ const key=[state?.round,cur?.ci,cur?.qi,cur?.media].join(':');
+ if(primedVideoQuestionKey===key)return;
+ primedVideoQuestionKey=key;
+ const prime=()=>{
+  if(!el.isConnected||state?.current?.questionType!=='video')return;
+  if(state.current?.mediaPlaying||Number(state.current?.mediaTime||0)>0.1)return;
+  if(el.currentTime>0.01)return;
+  try{el.currentTime=0.05}catch(e){}
+ };
+ if(el.readyState>=1)prime();else el.addEventListener('loadedmetadata',prime,{once:true});
+ el.addEventListener('seeked',()=>{if(!state?.current?.mediaPlaying)el.pause()},{once:true});
+ try{el.load()}catch(e){}
 }
 function limitMediaPreview(){
  const cur=state?.current;
