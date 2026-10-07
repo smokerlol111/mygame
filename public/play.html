@@ -340,6 +340,7 @@ function bindPlayerLocalMedia(){
   };
   playerVideo.addEventListener('timeupdate',guard);
   playerVideo.addEventListener('seeking',guard);
+  playerVideo.addEventListener('play',()=>{if(state?.phase==='answering')playerVideo.pause();});
  }
  if(playerAudio.dataset.localGuardBound!=='1'){
   playerAudio.dataset.localGuardBound='1';
@@ -356,6 +357,7 @@ function bindPlayerLocalMedia(){
   };
   playerAudio.addEventListener('timeupdate',guard);
   playerAudio.addEventListener('seeking',guard);
+  playerAudio.addEventListener('play',()=>{if(state?.phase==='answering'||state?.phase==='result')playerAudio.pause();});
  }
 }
 bindPlayerLocalMedia();
