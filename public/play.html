@@ -28,32 +28,6 @@ const cueAudio={
  buzz_open:new Audio('/sounds/buzz.mp3')
 };
 let cueUnlocked=false;
-const playerVideoUnlock=document.createElement('video');
-playerVideoUnlock.src='/media/r2_c1_200.mp4';
-playerVideoUnlock.preload='metadata';
-playerVideoUnlock.playsInline=true;
-playerVideoUnlock.style.display='none';
-playerVideoUnlock.volume=0;
-document.body.appendChild(playerVideoUnlock);
-let playerVideoUnlocked=false;
-function unlockPlayerVideoMedia(){
- if(playerVideoUnlocked)return;
- try{
-  playerVideoUnlock.currentTime=0;
-  const p=playerVideoUnlock.play();
-  if(p&&p.then){
-   p.then(()=>{
-    playerVideoUnlock.pause();
-    try{playerVideoUnlock.currentTime=0}catch(e){}
-    playerVideoUnlocked=true;
-   }).catch(err=>console.warn('PLAYER video unlock:',err));
-  }else{
-   playerVideoUnlock.pause();
-   try{playerVideoUnlock.currentTime=0}catch(e){}
-   playerVideoUnlocked=true;
-  }
- }catch(err){console.warn('PLAYER video unlock error:',err)}
-}
 for(const [key,a] of Object.entries(cueAudio)){
  a.preload='auto';
  const saved=Number(localStorage.getItem('sgPlayerCueVolume_'+key));
@@ -412,28 +386,6 @@ function resumeVideoResult(){
   if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
  });
 }
-let primedVideoQuestionKey='';
-function primePlayerVideoFrame(){
- const cur=state?.current;
- if(cur?.questionType!=='video'){
-  primedVideoQuestionKey='';
-  return;
- }
- const el=document.querySelector('video.quizMedia');
- if(!el)return;
- const key=[state?.round,cur?.ci,cur?.qi,cur?.media].join(':');
- if(primedVideoQuestionKey===key)return;
- primedVideoQuestionKey=key;
- const prime=()=>{
-  if(!el.isConnected||state?.current?.questionType!=='video')return;
-  if(state.current?.mediaPlaying||Number(state.current?.mediaTime||0)>0.1)return;
-  if(el.currentTime>0.01)return;
-  try{el.currentTime=0.05}catch(e){}
- };
- if(el.readyState>=1)prime();else el.addEventListener('loadedmetadata',prime,{once:true});
- el.addEventListener('seeked',()=>{if(!state?.current?.mediaPlaying)el.pause()},{once:true});
- try{el.load()}catch(e){}
-}
 function limitMediaPreview(){
  const cur=state?.current;
  if(cur?.questionType==='video'&&cur.pauseAt){
@@ -495,7 +447,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);primePlayerVideoFrame();limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -552,7 +504,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);primePlayerVideoFrame();limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
