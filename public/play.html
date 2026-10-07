@@ -335,7 +335,8 @@ function mediaQuestionHTML(cur,host=false){
  const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
  const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
  const media=video?`<video class="quizMedia protectedMedia" src="${src}" data-pause-at="${Number(cur.pauseAt||0)}" controls controlsList="nodownload noremoteplayback" disablePictureInPicture playsinline preload="metadata" oncontextmenu="return false" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia protectedMedia" src="${src}" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio>`;
- return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
+ const manualContinue=video&&['result','video_result'].includes(state?.phase)?'<div class="center" style="margin-top:10px"><button class="btn gold" id="playerContinueVideo">▶ Продовжити відео</button></div>':'';
+ return `<div class="panel media-question" style="margin:12px auto;max-width:820px"><div class="muted">${video?'🎬 Відеопитання':progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}${manualContinue}</div>`;
 }
 let mediaPlaybackSnapshot=null;
 function captureMediaPlayback(){
@@ -396,11 +397,22 @@ function resumeVideoResult(){
 }
 function limitMediaPreview(){
  const cur=state?.current;
- if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
-  document.querySelectorAll('.quizMedia').forEach(el=>{
-   const stop=()=>{if(el.currentTime>=cur.pauseAt){el.pause();el.currentTime=cur.pauseAt;}};
-   el.addEventListener('timeupdate',stop);
-   el.addEventListener('seeking',stop);
+ if(cur?.questionType==='video'&&cur.pauseAt){
+  document.querySelectorAll('video.quizMedia').forEach(el=>{
+   if(el.dataset.stopGuardBound==='1')return;
+   el.dataset.stopGuardBound='1';
+   const guard=()=>{
+    const live=state?.current;
+    if(!live||live.questionType!=='video'||live.media!==el.getAttribute('src'))return;
+    if(live.videoContinued||['result','video_result'].includes(state?.phase))return;
+    const stopAt=Number(live.pauseAt||0);
+    if(stopAt>0&&el.currentTime>=stopAt){
+      el.pause();
+      if(Math.abs(el.currentTime-stopAt)>.05)el.currentTime=stopAt;
+    }
+   };
+   el.addEventListener('timeupdate',guard);
+   el.addEventListener('seeking',guard);
   });
  }
  if(cur?.questionType!=='audioReveal')return;
@@ -509,6 +521,15 @@ function render(){
   document.getElementById('leaveRoom').onclick=leaveRoom;
   if(document.getElementById('buzz'))document.getElementById('buzz').onpointerdown=()=>{
     socket.emit('buzz',{code,pressedAtServerTime:serverNow()},r=>{if(r?.falseStart){const p=me();if(p){p.falseStartUntil=Number(r.until||0);p.falseStartRemainingMs=3000;penaltySourceUntil=0;}render()}});
+  };
+  const playerContinueVideo=document.getElementById('playerContinueVideo');
+  if(playerContinueVideo)playerContinueVideo.onclick=()=>{
+    const el=document.querySelector('video.quizMedia');
+    const cur=state?.current;
+    if(!el||!cur)return;
+    const stopAt=Number(cur.pauseAt||0);
+    if(stopAt>0&&el.currentTime<stopAt-.1){try{el.currentTime=stopAt}catch(e){}}
+    el.play().then(()=>playerContinueVideo.remove()).catch(()=>{});
   };
   if(document.getElementById('sendNumeric'))document.getElementById('sendNumeric').onclick=()=>{const answer=document.getElementById('numericAnswer').value;socket.emit('submitNumericAnswer',{code,answer},r=>{if(!r?.ok)alert(r?.error||'Не вдалося')})};
   if(document.getElementById('sendFirstTurn'))document.getElementById('sendFirstTurn').onclick=()=>{
