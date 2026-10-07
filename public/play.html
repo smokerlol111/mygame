@@ -20,8 +20,8 @@
 
 #playerCueMixer input[type="range"]{padding:0;border:0}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="playerVideoPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><video id="playerVideo" class="protectedMedia" disablePictureInPicture playsinline preload="auto" tabindex="-1" oncontextmenu="return false" style="width:100%;max-height:50vh;pointer-events:none"></video></div><div id="app" class="panel"></div></div><script>
-const socket=io(),app=document.getElementById('app'),playerVideoPanel=document.getElementById('playerVideoPanel'),playerVideo=document.getElementById('playerVideo');
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="playerVideoPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><video id="playerVideo" class="protectedMedia" controls controlsList="nodownload noremoteplayback" playsinline preload="metadata" oncontextmenu="return false" style="width:100%;max-height:50vh"></video></div><div id="playerAudioPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><div id="playerAudioInfo" class="muted" style="margin-bottom:8px"></div><audio id="playerAudio" class="protectedMedia" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio></div><div id="app" class="panel"></div></div><script>
+const socket=io(),app=document.getElementById('app'),playerVideoPanel=document.getElementById('playerVideoPanel'),playerVideo=document.getElementById('playerVideo'),playerAudioPanel=document.getElementById('playerAudioPanel'),playerAudio=document.getElementById('playerAudio'),playerAudioInfo=document.getElementById('playerAudioInfo');
 // Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
  question:new Audio('/sounds/question.mp3'),
@@ -279,202 +279,92 @@ function answerMediaHTML(cur){
 // Best-effort PLAYER protection: hide browser download UI and block ordinary context-menu saving.
 document.addEventListener('contextmenu',e=>{if(e.target?.closest?.('.protectedMedia'))e.preventDefault()});
 document.addEventListener('dragstart',e=>{if(e.target?.closest?.('.protectedMedia'))e.preventDefault()});
-function syncedMediaTime(cur){
- const base=Math.max(0,Number(cur?.mediaTime||0));
- if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
- return base+Math.max(0,(serverNow()-Number(cur.mediaUpdatedAt))/1000);
+function playerMediaSrc(cur){
+ const src=String(cur?.media||'');
+ return src.startsWith('/media/')||/^https:\/\//i.test(src)?src:'';
 }
-let pendingMediaControl=null;
-let playerVideoBootstrappedKey='';
-function playPlayerVideoWithIOSBootstrap(el,command,cur){
- const key=[state?.round,cur?.ci,cur?.qi,cur?.media].join(':');
- const target=Math.max(0,Number(command.time||0));
- const normalPlay=()=>{
-  if(!el.isConnected)return;
-  if(Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
-  const p=el.play();
-  if(p&&p.catch)p.catch(()=>{});
- };
- if(el!==playerVideo||target>0.1||playerVideoBootstrappedKey===key){
-  normalPlay();
-  return;
- }
- playerVideoBootstrappedKey=key;
- const bootstrap=()=>{
-  if(!el.isConnected)return;
-  const seekBack=()=>{
-   if(!el.isConnected)return;
-   el.removeEventListener('seeked',seekBack);
-   const playFromZero=()=>{
-    if(!el.isConnected)return;
-    el.removeEventListener('seeked',playFromZero);
-    const p=el.play();
-    if(p&&p.catch)p.catch(()=>{});
-   };
-   el.addEventListener('seeked',playFromZero,{once:true});
-   try{el.currentTime=0}catch(e){normalPlay()}
-  };
-  el.addEventListener('seeked',seekBack,{once:true});
-  try{el.currentTime=0.05}catch(e){normalPlay()}
- };
- if(el.readyState>=1)bootstrap();else el.addEventListener('loadedmetadata',bootstrap,{once:true});
-}
-function applyMediaControl(command){
- const cur=state?.current;
- if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
- cur.mediaTime=Number(command.time)||0;
- cur.mediaUpdatedAt=Number(command.sentAt)||Date.now()+serverClockOffsetMs;
- if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
- if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
- const el=getPlayerMediaElement();
- if(!el){pendingMediaControl=command;return;}
- const apply=()=>{
-  if(!el.isConnected)return;
-  if(command.action==='play'){
-   playPlayerVideoWithIOSBootstrap(el,command,cur);
-  }else{
-   if(command.action==='seek'&&Math.abs(el.currentTime-Number(command.time||0))>.05){
-    try{el.currentTime=Number(command.time||0)}catch(e){}
-   }
-   if(command.action==='pause')el.pause();
-  }
- };
- if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
-}
-socket.on('mediaControl',applyMediaControl);
-function flushPendingMediaControl(){
- if(!pendingMediaControl)return;
- const command=pendingMediaControl;
- pendingMediaControl=null;
- applyMediaControl(command);
-}
-
 function syncPersistentPlayerVideo(){
  const cur=state?.current;
  const show=cur?.questionType==='video'&&['question','buzz','answering','result','video_result'].includes(state?.phase);
- if(!show){
-  playerVideoPanel.style.display='none';
-  if(!cur||cur.questionType!=='video')playerVideo.pause();
-  return;
- }
- const src=String(cur.media||'');
- if(!(src.startsWith('/media/')||/^https:\/\//i.test(src))){
-  playerVideoPanel.style.display='none';
-  return;
- }
+ if(!show){playerVideoPanel.style.display='none';if(cur?.questionType!=='video')playerVideo.pause();return;}
+ const src=playerMediaSrc(cur);
+ if(!src){playerVideoPanel.style.display='none';return;}
  playerVideoPanel.style.display='block';
- playerVideo.dataset.pauseAt=String(Number(cur.pauseAt||0));
+ playerAudioPanel.style.display='none';
+ playerAudio.pause();
+ playerVideo.dataset.stopAt=String(Number(cur.pauseAt||0));
  if(playerVideo.getAttribute('src')!==src){
   playerVideo.pause();
   playerVideo.setAttribute('src',src);
   try{playerVideo.currentTime=0}catch(e){}
   playerVideo.load();
  }
+ if(state.phase==='answering')playerVideo.pause();
 }
-function getPlayerMediaElement(){
- return state?.current?.questionType==='video'?playerVideo:document.querySelector('audio.quizMedia');
-}
-
-function mediaQuestionHTML(cur,host=false){
- if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
- const url=String(cur.media||'');
- if(!(url.startsWith('/media/')||/^https:\/\//i.test(url)))return '';
- const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
- const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
- const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
- if(video)return '';
- const media=`<audio class="quizMedia protectedMedia" src="${src}" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio>`;
- const label=`<div class="muted">${progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>`;
- return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${label}${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
-}
-let mediaPlaybackSnapshot=null;
-function captureMediaPlayback(){
- const el=document.querySelector('audio.quizMedia');
- if(!el||!state?.current)return null;
- return {node:el,src:el.getAttribute('src'),pauseAt:Number(el.dataset?.pauseAt||0),time:el.currentTime,playing:!el.paused,phase:state.phase,stage:state.current.revealStage};
-}
-function restoreMediaPlayback(snapshot){
- let el=document.querySelector('.quizMedia');
- if(!el||!state?.current)return;
- const sameVideo=snapshot?.node?.tagName==='VIDEO'&&el.tagName==='VIDEO'&&snapshot.src===el.getAttribute('src')&&snapshot.pauseAt===Number(el.dataset?.pauseAt||0);
- if(sameVideo){
-  const fresh=el;
-  fresh.pause();fresh.removeAttribute('src');fresh.load();
-  fresh.replaceWith(snapshot.node);
-  el=snapshot.node;
- }
- const same=snapshot&&snapshot.src===el.getAttribute('src')&&(el.tagName==='VIDEO'||snapshot.stage===state.current.revealStage);
- const restore=()=>{
-  if(!el.isConnected)return;
-  if(!sameVideo&&same&&Number.isFinite(snapshot.time)){
-   try{el.currentTime=snapshot.time}catch(e){}
-  }
-  if(state.current.mediaPaused){
-   el.pause();
-  }else if(same&&(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')){
-   el.play().catch(()=>{});
-  }
- };
- if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
- if(el.dataset.mediaPauseGuardBound!=='1'){
-  el.dataset.mediaPauseGuardBound='1';
-  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
- }
-}
-function stopDetachedMedia(snapshot){
- document.querySelectorAll('audio.quizMedia').forEach(el=>{
-  if(snapshot?.node===el&&el.tagName==='VIDEO'){el.remove();return;}
-  el.pause();el.removeAttribute('src');el.load();
- });
-}
-let videoResumeKey='';
-function resumeVideoResult(){
+function syncPersistentPlayerAudio(){
  const cur=state?.current;
- if(!['result','video_result'].includes(state?.phase)||cur?.questionType!=='video'||!cur?.videoContinued){videoResumeKey='';return;}
- const key=[state.round,cur?.ci,cur?.qi,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
- if(videoResumeKey===key)return;
- videoResumeKey=key;
- [playerVideo].forEach(el=>{
-  const resume=()=>{
-   if(!el.isConnected)return;
-   const target=syncedMediaTime(cur);
-   if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
-   if(cur.mediaPlaying){
-    const p=el.play();
-    if(p&&p.catch)p.catch(()=>{});
-   }else el.pause();
+ const show=['audio','audioReveal'].includes(cur?.questionType)&&['question','buzz','answering','result'].includes(state?.phase);
+ if(!show){playerAudioPanel.style.display='none';if(!['audio','audioReveal'].includes(cur?.questionType))playerAudio.pause();return;}
+ const src=playerMediaSrc(cur);
+ if(!src){playerAudioPanel.style.display='none';return;}
+ playerAudioPanel.style.display='block';
+ playerVideoPanel.style.display='none';
+ playerVideo.pause();
+ const stage=Number(cur.revealStage||0);
+ const stageChanged=playerAudio.dataset.stage!==String(stage);
+ if(playerAudio.getAttribute('src')!==src){
+  playerAudio.pause();playerAudio.setAttribute('src',src);playerAudio.dataset.stage=String(stage);
+  try{playerAudio.currentTime=0}catch(e){}
+  playerAudio.load();
+ }else if(cur.questionType==='audioReveal'&&stageChanged){
+  playerAudio.pause();playerAudio.dataset.stage=String(stage);
+  try{playerAudio.currentTime=0}catch(e){}
+ }
+ const last=cur.questionType==='audioReveal'&&stage>=(cur.revealValues?.length||1)-1;
+ const seconds=cur.questionType==='audioReveal'&&!last?Number(cur.revealSeconds?.[stage]||2):0;
+ playerAudioInfo.textContent=cur.questionType==='audioReveal'?(last?'🎵 Повне аудіо':`🎵 Фрагмент до ${seconds} с • ${cur.value} балів`):'🎵 Аудіопитання';
+ if(state.phase==='answering'||state.phase==='result')playerAudio.pause();
+}
+function bindPlayerLocalMedia(){
+ if(playerVideo.dataset.localGuardBound!=='1'){
+  playerVideo.dataset.localGuardBound='1';
+  const guard=()=>{
+   const cur=state?.current;
+   if(cur?.questionType!=='video'||cur.media!==playerVideo.getAttribute('src'))return;
+   if(cur.videoContinued||['result','video_result'].includes(state?.phase))return;
+   const stopAt=Number(cur.pauseAt||0);
+   if(stopAt>0&&playerVideo.currentTime>=stopAt){
+    playerVideo.pause();
+    if(Math.abs(playerVideo.currentTime-stopAt)>.05){try{playerVideo.currentTime=stopAt}catch(e){}}
+   }
   };
-  if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
- });
-}
-function limitMediaPreview(){
- const cur=state?.current;
- if(cur?.questionType==='video'&&cur.pauseAt){
-  [playerVideo].forEach(el=>{
-   if(el.dataset.stopGuardBound==='1')return;
-   el.dataset.stopGuardBound='1';
-   const guard=()=>{
-    const live=state?.current;
-    if(!live||live.questionType!=='video'||live.media!==el.getAttribute('src'))return;
-    if(live.videoContinued||['result','video_result'].includes(state?.phase))return;
-    const stopAt=Number(live.pauseAt||0);
-    if(stopAt>0&&el.currentTime>=stopAt){
-      el.pause();
-      if(Math.abs(el.currentTime-stopAt)>.05)el.currentTime=stopAt;
-    }
-   };
-   el.addEventListener('timeupdate',guard);
-   el.addEventListener('seeking',guard);
-  });
+  playerVideo.addEventListener('timeupdate',guard);
+  playerVideo.addEventListener('seeking',guard);
  }
- if(cur?.questionType!=='audioReveal')return;
- if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
- const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
- document.querySelectorAll('.quizMedia').forEach(el=>{
-  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
-  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
- });
+ if(playerAudio.dataset.localGuardBound!=='1'){
+  playerAudio.dataset.localGuardBound='1';
+  const guard=()=>{
+   const cur=state?.current;
+   if(cur?.questionType!=='audioReveal'||cur.media!==playerAudio.getAttribute('src'))return;
+   const stage=Number(cur.revealStage||0),last=stage>=(cur.revealValues?.length||1)-1;
+   if(last||['result','video_result'].includes(state?.phase))return;
+   const seconds=Number(cur.revealSeconds?.[stage]||2);
+   if(seconds>0&&playerAudio.currentTime>=seconds){
+    playerAudio.pause();
+    if(Math.abs(playerAudio.currentTime-seconds)>.05){try{playerAudio.currentTime=seconds}catch(e){}}
+   }
+  };
+  playerAudio.addEventListener('timeupdate',guard);
+  playerAudio.addEventListener('seeking',guard);
+ }
 }
+bindPlayerLocalMedia();
+function mediaQuestionHTML(){return '';}
+function captureMediaPlayback(){return null;}
+function restoreMediaPlayback(){}
+function stopDetachedMedia(){}
+function resumeVideoResult(){}
+function limitMediaPreview(){}
 function playerQuestionHTML(cur){
   // PLAYER sees prompt text only when it is needed to understand a visual/emoji mechanic.
   // Ordinary text questions remain host/OBS-only.
@@ -508,7 +398,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    app.innerHTML=h;syncPersistentPlayerVideo();syncPersistentPlayerAudio(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -565,7 +455,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();syncPersistentPlayerAudio();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
