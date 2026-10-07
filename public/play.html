@@ -294,17 +294,34 @@ function applyMediaControl(command){
  if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
  const el=getPlayerMediaElement();
  if(!el){pendingMediaControl=command;return;}
+ if(cur.questionType==='video'){
+  const expected=String(command.media||'');
+  const actual=String(el.getAttribute('src')||'');
+  if(!actual||actual!==expected){pendingMediaControl=command;return;}
+ }
  const apply=()=>{
   if(!el.isConnected)return;
   if(command.action==='seek'||command.action==='play'){
    if(Math.abs(el.currentTime-Number(command.time||0))>.8){try{el.currentTime=Number(command.time||0)}catch(e){}}
   }
   if(command.action==='play'){
-   const p=el.play();
-   if(p&&p.catch)p.catch(()=>{});
+   const start=()=>{
+    if(!el.isConnected)return;
+    const p=el.play();
+    if(p&&p.catch)p.catch(()=>{pendingMediaControl=command;});
+   };
+   if(el.readyState>=3)start();
+   else {
+    pendingMediaControl=command;
+    el.addEventListener('canplay',()=>{if(pendingMediaControl===command){pendingMediaControl=null;start()}},{once:true});
+   }
   }else if(command.action==='pause')el.pause();
  };
- if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+ if(command.action==='play'){
+  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+ }else{
+  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+ }
 }
 socket.on('mediaControl',applyMediaControl);
 function flushPendingMediaControl(){
