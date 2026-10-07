@@ -468,11 +468,10 @@ io.on('connection', socket => {
     const room=getRoom(c);
     if(!isHost(socket,room)||!room.current||room.current.type==='final')return cb({ok:false,error:'Немає активного звичайного питання.'});
     if(room.paused)return cb({ok:false,error:'Спочатку зніміть паузу.'});
-    room.buzzer=null; room.revealAnswer=true; room.resultReason='host_emergency'; room.phase='result';
+    room.buzzer=null; room.revealAnswer=true; room.resultReason='host_emergency';
+    if(room.current?.questionType==='video'){room.current.videoContinued=true;room.current.videoPlaying=false;room.current.videoUpdatedAt=Date.now();}
+    room.phase='result';
     cb({ok:true}); emitState(room);
-    if(room.phase==='result' && room.current?.questionType==='video' && room.current?.videoContinued){
-      setTimeout(()=>emitVideoContinuation(room),50);
-    }
   });
 
   socket.on('emergencyFinishTile', ({code:c}={},cb=()=>{})=>{
