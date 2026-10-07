@@ -416,7 +416,7 @@ function resumeVideoResult(){
 function limitMediaPreview(){
  const cur=state?.current;
  if(cur?.questionType==='video'&&cur.pauseAt){
-  document.querySelectorAll('video.quizMedia').forEach(el=>{
+  [playerVideo].forEach(el=>{
    if(el.dataset.stopGuardBound==='1')return;
    el.dataset.stopGuardBound='1';
    const guard=()=>{
