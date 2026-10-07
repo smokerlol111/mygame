@@ -20,8 +20,8 @@
 
 #playerCueMixer input[type="range"]{padding:0;border:0}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="app" class="panel"></div></div><script>
-const socket=io(),app=document.getElementById('app');
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="playerVideoPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><video id="playerVideo" class="protectedMedia" disablePictureInPicture playsinline preload="auto" tabindex="-1" oncontextmenu="return false" style="width:100%;max-height:50vh;pointer-events:none"></video></div><div id="app" class="panel"></div></div><script>
+const socket=io(),app=document.getElementById('app'),playerVideoPanel=document.getElementById('playerVideoPanel'),playerVideo=document.getElementById('playerVideo');
 // Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
  question:new Audio('/sounds/question.mp3'),
@@ -293,7 +293,7 @@ function applyMediaControl(command){
  cur.mediaUpdatedAt=Number(command.sentAt)||Date.now()+serverClockOffsetMs;
  if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
  if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
- const el=document.querySelector('.quizMedia');
+ const el=getPlayerMediaElement();
  if(!el){pendingMediaControl=command;return;}
  const apply=()=>{
   if(!el.isConnected)return;
@@ -315,6 +315,32 @@ function flushPendingMediaControl(){
  applyMediaControl(command);
 }
 
+function syncPersistentPlayerVideo(){
+ const cur=state?.current;
+ const show=cur?.questionType==='video'&&['question','buzz','answering','result','video_result'].includes(state?.phase);
+ if(!show){
+  playerVideoPanel.style.display='none';
+  if(!cur||cur.questionType!=='video')playerVideo.pause();
+  return;
+ }
+ const src=String(cur.media||'');
+ if(!(src.startsWith('/media/')||/^https:\/\//i.test(src))){
+  playerVideoPanel.style.display='none';
+  return;
+ }
+ playerVideoPanel.style.display='block';
+ playerVideo.dataset.pauseAt=String(Number(cur.pauseAt||0));
+ if(playerVideo.getAttribute('src')!==src){
+  playerVideo.pause();
+  playerVideo.setAttribute('src',src);
+  try{playerVideo.currentTime=0}catch(e){}
+  playerVideo.load();
+ }
+}
+function getPlayerMediaElement(){
+ return state?.current?.questionType==='video'?playerVideo:document.querySelector('audio.quizMedia');
+}
+
 function mediaQuestionHTML(cur,host=false){
  if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
  const url=String(cur.media||'');
@@ -322,13 +348,14 @@ function mediaQuestionHTML(cur,host=false){
  const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
  const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
  const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
- const media=video?`<video class="quizMedia protectedMedia" src="${src}" data-pause-at="${Number(cur.pauseAt||0)}" disablePictureInPicture playsinline preload="auto" tabindex="-1" oncontextmenu="return false" style="width:100%;max-height:50vh;pointer-events:none"></video>`:`<audio class="quizMedia protectedMedia" src="${src}" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio>`;
- const label=video?'':`<div class="muted">${progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>`;
+ if(video)return '';
+ const media=`<audio class="quizMedia protectedMedia" src="${src}" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio>`;
+ const label=`<div class="muted">${progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>`;
  return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${label}${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
 }
 let mediaPlaybackSnapshot=null;
 function captureMediaPlayback(){
- const el=document.querySelector('.quizMedia');
+ const el=document.querySelector('audio.quizMedia');
  if(!el||!state?.current)return null;
  return {node:el,src:el.getAttribute('src'),pauseAt:Number(el.dataset?.pauseAt||0),time:el.currentTime,playing:!el.paused,phase:state.phase,stage:state.current.revealStage};
 }
@@ -361,7 +388,7 @@ function restoreMediaPlayback(snapshot){
  }
 }
 function stopDetachedMedia(snapshot){
- document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{
+ document.querySelectorAll('audio.quizMedia').forEach(el=>{
   if(snapshot?.node===el&&el.tagName==='VIDEO'){el.remove();return;}
   el.pause();el.removeAttribute('src');el.load();
  });
@@ -373,7 +400,7 @@ function resumeVideoResult(){
  const key=[state.round,cur?.ci,cur?.qi,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
  if(videoResumeKey===key)return;
  videoResumeKey=key;
- document.querySelectorAll('video.quizMedia').forEach(el=>{
+ [playerVideo].forEach(el=>{
   const resume=()=>{
    if(!el.isConnected)return;
    const target=syncedMediaTime(cur);
@@ -447,7 +474,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -504,7 +531,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
