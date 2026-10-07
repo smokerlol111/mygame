@@ -367,7 +367,10 @@ function restoreMediaPlayback(snapshot){
   }
  };
  if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
- el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+ if(el.dataset.mediaPauseGuardBound!=='1'){
+  el.dataset.mediaPauseGuardBound='1';
+  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+ }
 }
 function stopDetachedMedia(snapshot){
  document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{
