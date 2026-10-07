@@ -285,6 +285,40 @@ function syncedMediaTime(cur){
  return base+Math.max(0,(serverNow()-Number(cur.mediaUpdatedAt))/1000);
 }
 let pendingMediaControl=null;
+let playerVideoBootstrappedKey='';
+function playPlayerVideoWithIOSBootstrap(el,command,cur){
+ const key=[state?.round,cur?.ci,cur?.qi,cur?.media].join(':');
+ const target=Math.max(0,Number(command.time||0));
+ const normalPlay=()=>{
+  if(!el.isConnected)return;
+  if(Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
+  const p=el.play();
+  if(p&&p.catch)p.catch(()=>{});
+ };
+ if(el!==playerVideo||target>0.1||playerVideoBootstrappedKey===key){
+  normalPlay();
+  return;
+ }
+ playerVideoBootstrappedKey=key;
+ const bootstrap=()=>{
+  if(!el.isConnected)return;
+  const seekBack=()=>{
+   if(!el.isConnected)return;
+   el.removeEventListener('seeked',seekBack);
+   const playFromZero=()=>{
+    if(!el.isConnected)return;
+    el.removeEventListener('seeked',playFromZero);
+    const p=el.play();
+    if(p&&p.catch)p.catch(()=>{});
+   };
+   el.addEventListener('seeked',playFromZero,{once:true});
+   try{el.currentTime=0}catch(e){normalPlay()}
+  };
+  el.addEventListener('seeked',seekBack,{once:true});
+  try{el.currentTime=0.05}catch(e){normalPlay()}
+ };
+ if(el.readyState>=1)bootstrap();else el.addEventListener('loadedmetadata',bootstrap,{once:true});
+}
 function applyMediaControl(command){
  const cur=state?.current;
  if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
@@ -296,13 +330,14 @@ function applyMediaControl(command){
  if(!el){pendingMediaControl=command;return;}
  const apply=()=>{
   if(!el.isConnected)return;
-  if(command.action==='seek'||command.action==='play'){
-   if(Math.abs(el.currentTime-Number(command.time||0))>.8){try{el.currentTime=Number(command.time||0)}catch(e){}}
-  }
   if(command.action==='play'){
-   const p=el.play();
-   if(p&&p.catch)p.catch(()=>{});
-  }else if(command.action==='pause')el.pause();
+   playPlayerVideoWithIOSBootstrap(el,command,cur);
+  }else{
+   if(command.action==='seek'&&Math.abs(el.currentTime-Number(command.time||0))>.05){
+    try{el.currentTime=Number(command.time||0)}catch(e){}
+   }
+   if(command.action==='pause')el.pause();
+  }
  };
  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
 }
