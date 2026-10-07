@@ -144,6 +144,12 @@ socket.on('connect',()=>{
 });
 socket.on('disconnect',()=>setNetBadge(false));
 
+function applyJoinedState(s){
+ if(!s||s.code!==code)return;
+ state=s;
+ render();
+}
+
 
 function clearSession(keepName=true){
   playerId=''; code=''; state=null; joined=false;
@@ -168,7 +174,8 @@ function login(prefill=urlCode||''){
       if(!r.ok)return showError(r.error||'Не вдалося приєднатися.');
       playerId=r.playerId; code=r.code; name=r.name; joined=true;
       localStorage.setItem('sgPlayerId',playerId); localStorage.setItem('sgCode',code); localStorage.setItem('sgPlayerName',name);
-       setTimeout(syncClockSample,60);
+      if(r.state)applyJoinedState(r.state);
+      setTimeout(syncClockSample,60);
       history.replaceState(null,'',`/play?room=${encodeURIComponent(code)}`);
     });
   };
@@ -182,7 +189,8 @@ if(playerId&&savedCode&&name&&(!urlCode||urlCode===savedCode)){
     if(!r.ok){clearSession(true);login(urlCode||'');return;}
     playerId=r.playerId;code=r.code;name=r.name;joined=true;
     localStorage.setItem('sgPlayerId',playerId);localStorage.setItem('sgCode',code);localStorage.setItem('sgPlayerName',name);
-       setTimeout(syncClockSample,60);
+    if(r.state)applyJoinedState(r.state);
+    setTimeout(syncClockSample,60);
   });
 }
 
@@ -270,6 +278,47 @@ function answerMediaHTML(cur){
 // Best-effort PLAYER protection: hide browser download UI and block ordinary context-menu saving.
 document.addEventListener('contextmenu',e=>{if(e.target?.closest?.('.protectedMedia'))e.preventDefault()});
 document.addEventListener('dragstart',e=>{if(e.target?.closest?.('.protectedMedia'))e.preventDefault()});
+function syncedMediaTime(cur){
+ const base=Math.max(0,Number(cur?.mediaTime||0));
+ if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
+ return base+Math.max(0,(serverNow()-Number(cur.mediaUpdatedAt))/1000);
+}
+function showReconnectPlayButton(el){
+ if(!el?.isConnected||document.getElementById('mediaReconnectPlay'))return;
+ const btn=document.createElement('button');
+ btn.id='mediaReconnectPlay';btn.className='btn gold';btn.textContent='▶ Продовжити відео';
+ btn.style.marginTop='10px';
+ btn.onclick=()=>{
+  const cur=state?.current;if(!cur)return;
+  const target=syncedMediaTime(cur);
+  if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
+  el.play().then(()=>btn.remove()).catch(()=>{});
+ };
+ el.insertAdjacentElement('afterend',btn);
+}
+function applyMediaControl(command){
+ const cur=state?.current;
+ if(!cur||command?.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
+ cur.mediaTime=Number(command.time)||0;
+ cur.mediaUpdatedAt=Number(command.sentAt)||Date.now()+serverClockOffsetMs;
+ if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
+ if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
+ const el=document.querySelector('.quizMedia');
+ if(!el)return;
+ const apply=()=>{
+  if(!el.isConnected)return;
+  if(command.action==='seek'||command.action==='play'){
+   if(Math.abs(el.currentTime-Number(command.time||0))>.8){try{el.currentTime=Number(command.time||0)}catch(e){}}
+  }
+  if(command.action==='play'){
+   const p=el.play();
+   if(p&&p.then)p.then(()=>document.getElementById('mediaReconnectPlay')?.remove()).catch(()=>showReconnectPlayButton(el));
+  }else if(command.action==='pause')el.pause();
+ };
+ if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
+}
+socket.on('mediaControl',applyMediaControl);
+
 function mediaQuestionHTML(cur,host=false){
  if(!cur||!['audio','audioReveal','video'].includes(cur.questionType))return '';
  const url=String(cur.media||'');
@@ -319,16 +368,20 @@ function stopDetachedMedia(snapshot){
 }
 let videoResumeKey='';
 function resumeVideoResult(){
- if(!['result','video_result'].includes(state?.phase)||state.current?.questionType!=='video'||!state.current?.videoContinued){videoResumeKey='';return;}
- const key=[state.round,state.current?.ci,state.current?.qi].join(':');
+ const cur=state?.current;
+ if(!['result','video_result'].includes(state?.phase)||cur?.questionType!=='video'||!cur?.videoContinued){videoResumeKey='';return;}
+ const key=[state.round,cur?.ci,cur?.qi,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
  if(videoResumeKey===key)return;
  videoResumeKey=key;
  document.querySelectorAll('video.quizMedia').forEach(el=>{
   const resume=()=>{
    if(!el.isConnected)return;
-   const pauseAt=Number(state.current?.pauseAt||0);
-   if(pauseAt>0)el.currentTime=pauseAt;
-   el.play().catch(()=>{});
+   const target=syncedMediaTime(cur);
+   if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
+   if(cur.mediaPlaying){
+    const p=el.play();
+    if(p&&p.then)p.then(()=>document.getElementById('mediaReconnectPlay')?.remove()).catch(()=>showReconnectPlayButton(el));
+   }else el.pause();
   };
   if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
  });
