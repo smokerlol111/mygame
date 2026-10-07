@@ -189,6 +189,7 @@ function restoreMediaPlayback(snapshot){
  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
 }
 // Receive host media commands in the OBS browser source.
+let pendingHostMediaControl=null;
 function applyHostMediaControl(command){
  const cur=state?.current;
  if(!cur||command.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
@@ -197,7 +198,7 @@ function applyHostMediaControl(command){
  if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
  if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
  const el=document.querySelector('.quizMedia');
- if(!el)return;
+ if(!el){pendingHostMediaControl=command;return;}
  const apply=()=>{
   if(!el.isConnected)return;
   if(command.action==='seek'||(command.action==='play'&&Math.abs(el.currentTime-command.time)>0.8)){
@@ -215,6 +216,12 @@ function applyHostMediaControl(command){
 }
 socket.on('mediaControl',applyHostMediaControl);
 socket.on('screenMediaControl',applyHostMediaControl);
+function flushPendingHostMediaControl(){
+ if(!pendingHostMediaControl)return;
+ const command=pendingHostMediaControl;
+ pendingHostMediaControl=null;
+ applyHostMediaControl(command);
+}
 function stopDetachedMedia(snapshot){
  document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{
   if(snapshot?.node===el&&el.tagName==='VIDEO'){el.remove();return;}
@@ -363,5 +370,5 @@ function render(){if(!state||!data)return;let h=``;
      h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
    }
  }
- const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
+ const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingHostMediaControl();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>
