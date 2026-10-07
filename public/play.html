@@ -137,6 +137,7 @@ socket.on('connect',()=>{
        localStorage.setItem('sgPlayerId',playerId);
        localStorage.setItem('sgCode',code);
        localStorage.setItem('sgPlayerName',name);
+       if(r.state)applyJoinedState(r.state);
        setTimeout(syncClockSample,60);
      }
    });
