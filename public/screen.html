@@ -235,6 +235,23 @@ function syncedMediaTime(cur){
  if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
  return base+Math.max(0,(Date.now()-Number(cur.mediaUpdatedAt))/1000);
 }
+let audioResumeKey='';
+function resumeAudioFromState(){
+ const cur=state?.current;
+ if(!['audio','audioReveal'].includes(cur?.questionType)){audioResumeKey='';return;}
+ const key=[state.round,cur?.ci,cur?.qi,cur?.revealStage,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
+ if(audioResumeKey===key)return;
+ audioResumeKey=key;
+ const el=document.querySelector('audio.quizMedia');
+ if(!el)return;
+ const sync=()=>{
+  if(!el.isConnected)return;
+  const target=syncedMediaTime(cur);
+  if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.5){try{el.currentTime=target}catch(e){}}
+  if(cur.mediaPlaying&&!cur.mediaPaused){el.dataset.hostPaused='0';el.muted=false;el.volume=1;el.play().catch(()=>{})}else{el.dataset.hostPaused='1';el.pause()}
+ };
+ if(el.readyState>=1)sync();else el.addEventListener('loadedmetadata',sync,{once:true});
+}
 let videoResumeKey='';
 function resumeVideoResult(){
  const cur=state?.current;
@@ -274,11 +291,22 @@ function limitMediaPreview(){
  }
  if(cur?.questionType!=='audioReveal')return;
  if(['result','video_result'].includes(state?.phase))return;
- if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
- const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
- document.querySelectorAll('.quizMedia').forEach(el=>{
-  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
-  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
+ if(cur.revealStage>=cur.revealValues.length-1)return;
+ const stage=Number(cur.revealStage||0);
+ const seconds=Number(cur.revealSeconds?.[stage]||2);
+ document.querySelectorAll('audio.quizMedia').forEach(el=>{
+  if(el.dataset.audioRevealGuardStage===String(stage))return;
+  el.dataset.audioRevealGuardStage=String(stage);
+  let hit=false;
+  const liveStage=()=>state?.current?.questionType==='audioReveal'&&Number(state.current.revealStage||0)===stage&&!['result','video_result'].includes(state?.phase);
+  el.addEventListener('timeupdate',()=>{
+   if(!liveStage()||hit)return;
+   if(el.currentTime>=seconds){hit=true;el.pause();try{el.currentTime=0}catch(e){}}
+  });
+  el.addEventListener('seeking',()=>{
+   if(!liveStage()||hit)return;
+   if(el.currentTime>seconds){hit=true;el.pause();try{el.currentTime=0}catch(e){}}
+  });
  });
 }
 function emojiQuestionHTML(cur){return cur?.questionType==='emoji'&&cur.emoji?`<div class="emojiQuestion">${GameUI.esc(cur.emoji)}</div>`:'';}
@@ -383,5 +411,5 @@ function render(){if(!state||!data)return;let h=``;
      h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
    }
  }
- const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingHostMediaControl();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
+ const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeAudioFromState();resumeVideoResult();flushPendingHostMediaControl();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>
