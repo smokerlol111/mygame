@@ -368,7 +368,7 @@ function render(){
   else if(state.phase==='first_turn_quiz'){
     const q=state.firstTurnQuiz||{}, submitted=q.submittedPlayerIds||[], status=q.timerStatus||'ready';
     if(submitted.includes(playerId)){
-      h+=`<div class="center"><div class="huge">🎯</div><h2>Відповідь зафіксовано ✅</h2>${status==='running'?'<div class="huge"><span id="firstTurnTimer">'+Math.max(0,Math.ceil(Number(q.remainingMs||0)/1000))+'</span></div>':''}<p class="muted">Чекаємо на інших гравців.</p></div>`;
+      h+=`<div class="center"><div class="huge">🎯</div><h2>Відповідь зафіксовано ✅</h2><p class="muted">Чекаємо на інших гравців.</p></div>`;
     } else if(status==='ready'){
       h+=`<div class="center"><div class="huge">🎯</div><h2>Розіграш першого ходу</h2></div><div class="question" style="font-size:1.2rem">${GameUI.esc(q.question||'')}</div><div class="center"><div class="huge">30</div><p class="muted">Чекаємо, поки ведучий запустить таймер.</p></div>`;
     } else if(status==='expired'){
