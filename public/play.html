@@ -383,7 +383,7 @@ function mediaQuestionHTML(cur,host=false){
  const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
  const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
  if(video)return '';
- const media=`<audio class="quizMedia protectedMedia" src="${src}" preload="metadata" oncontextmenu="return false" style="width:100%;pointer-events:none"></audio>`;
+ const media=`<audio class="quizMedia protectedMedia" src="${src}" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio>`;
  const label=`<div class="muted">${progress?'🎵 Аудіо — фрагмент '+(cur.revealStage+1)+' / '+cur.revealValues.length:'🎵 Аудіопитання'}</div>`;
  return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${label}${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
 }
@@ -427,23 +427,6 @@ function stopDetachedMedia(snapshot){
   el.pause();el.removeAttribute('src');el.load();
  });
 }
-let audioResumeKey='';
-function resumeAudioFromState(){
- const cur=state?.current;
- if(!['audio','audioReveal'].includes(cur?.questionType)){audioResumeKey='';return;}
- const key=[state.round,cur?.ci,cur?.qi,cur?.revealStage,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
- if(audioResumeKey===key)return;
- audioResumeKey=key;
- const el=document.querySelector('audio.quizMedia');
- if(!el)return;
- const sync=()=>{
-  if(!el.isConnected)return;
-  const target=syncedMediaTime(cur);
-  if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.5){try{el.currentTime=target}catch(e){}}
-  if(cur.mediaPlaying&&!cur.mediaPaused){const p=el.play();if(p&&p.catch)p.catch(()=>{})}else el.pause();
- };
- if(el.readyState>=1)sync();else el.addEventListener('loadedmetadata',sync,{once:true});
-}
 let videoResumeKey='';
 function resumeVideoResult(){
  const cur=state?.current;
@@ -485,23 +468,11 @@ function limitMediaPreview(){
   });
  }
  if(cur?.questionType!=='audioReveal')return;
- if(['result','video_result'].includes(state?.phase))return;
- if(cur.revealStage>=cur.revealValues.length-1)return;
- const stage=Number(cur.revealStage||0);
- const seconds=Number(cur.revealSeconds?.[stage]||2);
- document.querySelectorAll('audio.quizMedia').forEach(el=>{
-  if(el.dataset.audioRevealGuardStage===String(stage))return;
-  el.dataset.audioRevealGuardStage=String(stage);
-  let hit=false;
-  const liveStage=()=>state?.current?.questionType==='audioReveal'&&Number(state.current.revealStage||0)===stage&&!['result','video_result'].includes(state?.phase);
-  el.addEventListener('timeupdate',()=>{
-   if(!liveStage()||hit)return;
-   if(el.currentTime>=seconds){hit=true;el.pause();try{el.currentTime=0}catch(e){}}
-  });
-  el.addEventListener('seeking',()=>{
-   if(!liveStage()||hit)return;
-   if(el.currentTime>seconds){hit=true;el.pause();try{el.currentTime=0}catch(e){}}
-  });
+ if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
+ const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
+ document.querySelectorAll('.quizMedia').forEach(el=>{
+  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
+  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
  });
 }
 function playerQuestionHTML(cur){
@@ -537,7 +508,7 @@ function render(){
   let h=`<div class="top"><div><b>${GameUI.esc(p.name)}</b><div class="muted">Кімната ${state.code}</div></div><div class="score">${p.score}</div></div><div class="row" style="justify-content:flex-end;margin-bottom:14px"><button class="btn secondary" id="leaveRoom">Вийти з кімнати</button></div>`;
   if(state.phase==='paused'){
     h+=`<div class="center"><div class="huge">⏸</div><h1>ТЕХНІЧНА ПАУЗА</h1><p class="muted">Ведучий тимчасово зупинив гру. Нічого натискати не потрібно.</p></div>`;
-    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeAudioFromState();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
+    const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl(); const leave=document.getElementById('leaveRoom');if(leave)leave.onclick=leaveRoom;return;
   }
   if(state.phase==='lobby')h+=`<div class="center"><h2>Ви в грі ✅</h2><p class="muted">Чекаємо, поки ведучий почне.</p></div>`;
   else if(state.phase==='first_turn_quiz'){
@@ -594,7 +565,7 @@ function render(){
   else if(state.phase==='final_question'){h+=p.hasFinalAnswer?`<div class="center"><h2>Відповідь надіслана ✅</h2><div class="huge"><span id="finalSeconds">${state.finalSeconds}</span></div></div>`:`<h2>Фінал • <span id="finalSeconds">${state.finalSeconds}</span> с</h2><textarea id="finalAnswer" rows="5" placeholder="Введіть відповідь" autocomplete="off"></textarea><br><br><button id="sendFinal" class="btn">Надіслати відповідь</button>`}
   else if(state.phase==='final_review')h+=`<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
   else if(state.phase==='final_result')h+=`<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeAudioFromState();resumeVideoResult();flushPendingMediaControl();
+  const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;syncPersistentPlayerVideo();restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingMediaControl();
   armFirstTurnClock();
   armNumericClock();
   armPenaltyClock();
