@@ -9,7 +9,7 @@ const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true, credentials: true }, pingInterval: 3000, pingTimeout: 6000 });
+const io = new Server(server, { cors: { origin: true, credentials: true }, pingInterval: 5000, pingTimeout: 20000 });
 const PORT = process.env.PORT || 3000;
 const gamesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, 'games', 'index.json'), 'utf8'));
 const games = new Map();
@@ -97,6 +97,9 @@ function publicState(room) {
       pauseAt: room.current.pauseAt,
       videoContinued: room.current.videoContinued,
       mediaPaused: room.current.mediaPaused,
+      mediaTime: Number(room.current.mediaTime||0),
+      mediaPlaying: !!room.current.mediaPlaying,
+      mediaUpdatedAt: Number(room.current.mediaUpdatedAt||0),
       // Answers stay hidden until the server explicitly reveals them.
       a: room.revealAnswer ? room.current.a : '',
       answerImage: room.revealAnswer ? (room.current.answerImage || '') : '',
@@ -125,6 +128,9 @@ function publicState(room) {
       pauseAt: room.current.pauseAt,
       videoContinued: room.current.videoContinued,
       mediaPaused: room.current.mediaPaused,
+      mediaTime: Number(room.current.mediaTime||0),
+      mediaPlaying: !!room.current.mediaPlaying,
+      mediaUpdatedAt: Number(room.current.mediaUpdatedAt||0),
       a: room.revealAnswer ? (room.current.a || '') : ''
     } : null,
     buzzer: room.buzzer,
@@ -384,10 +390,9 @@ io.on('connection', socket => {
     socket.data.playerId = p.id;
     socket.data.roomCode = room.code;
     socket.join(room.code);
-    cb({ ok: true, playerId: p.id, code: room.code, name: p.name });
+    cb({ ok: true, playerId: p.id, code: room.code, name: p.name, state: publicState(room) });
     if (reconnectingExistingPlayer && room.phase !== 'lobby') {
       // Refreshing a player phone must not reset HOST/OBS/video on the rest of the room.
-      socket.emit('state', publicState(room));
       emitPlayerPresence(room, p);
     } else {
       emitState(room);
@@ -507,18 +512,28 @@ io.on('connection', socket => {
     cb({ ok: true });
   });
 
-  // Relay host media controls to the OBS screen only; never trust player sockets.
+  // HOST is authoritative for media playback. Relay lightweight controls without rerendering room state.
   socket.on('hostMediaControl', (payload = {}, cb = () => {}) => {
     const room = getRoom(payload.code);
     if (!room || !isHost(socket, room) || !room.current || !['question','buzz','answering','result','video_result'].includes(room.phase)) return cb({ok:false});
     if (!['audio','audioReveal','video'].includes(room.current.questionType)) return cb({ok:false});
     const action = payload.action;
     if (!['play','pause','seek'].includes(action)) return cb({ok:false});
-    if (action === 'play') room.current.mediaPaused=false;
-    if (action === 'pause') room.current.mediaPaused=true;
     const time = Number(payload.time);
     if (!Number.isFinite(time) || time < 0) return cb({ok:false});
-    io.to(room.code).emit('screenMediaControl', {code:room.code, action, time, media:room.current.media, phase:room.phase, stage:room.current.revealStage});
+    if (action === 'play') { room.current.mediaPaused=false; room.current.mediaPlaying=true; }
+    if (action === 'pause') { room.current.mediaPaused=true; room.current.mediaPlaying=false; }
+    room.current.mediaTime=time;
+    room.current.mediaUpdatedAt=Date.now();
+    socket.to(room.code).emit('mediaControl', {
+      code:room.code,
+      action,
+      time,
+      media:room.current.media,
+      phase:room.phase,
+      stage:room.current.revealStage,
+      sentAt:room.current.mediaUpdatedAt
+    });
     cb({ok:true});
   });
   socket.on('joinScreen', ({ code: c }, cb = () => {}) => {
@@ -754,6 +769,9 @@ io.on('connection', socket => {
       if(!valid) return cb({ok:false,error:'Для медіапитання потрібне HTTPS-посилання або файл /media/…'});
       room.current.questionType=q.type;
       room.current.media=source;
+      room.current.mediaTime=0;
+      room.current.mediaPlaying=false;
+      room.current.mediaUpdatedAt=Date.now();
       if(q.type==='video' && Number(q.pauseAt ?? q.stopAt)>0){room.current.pauseAt=Number(q.pauseAt ?? q.stopAt);room.current.videoContinued=false;}
       if(q.type==='audioReveal'){
         const values=Array.isArray(q.revealValues)&&q.revealValues.length?q.revealValues:[q.value,Math.round(q.value*.8),Math.round(q.value*.6),Math.round(q.value*.4),Math.round(q.value*.2)];
@@ -967,7 +985,7 @@ io.on('connection', socket => {
       room.revealAnswer = true;
       room.resultReason = 'correct';
       if(room.current?.questionType)room.current.mediaPaused=true;
-      if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+      if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
       room.phase = 'result';
     } else {
       room.answeringLocked.add(p.id);
@@ -982,7 +1000,7 @@ io.on('connection', socket => {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
         room.revealAnswer = true;
         room.resultReason = 'all_wrong';
-        if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+        if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
         room.phase = 'result';
       } else {
         if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=false;
@@ -1039,7 +1057,7 @@ io.on('connection', socket => {
     if(['audio','audioReveal','video'].includes(room.current?.questionType))room.current.mediaPaused=true;
     room.revealAnswer = true;
     room.resultReason = 'no_answer';
-    if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;}
+    if(room.current.questionType==='video'){room.current.videoContinued=true;room.current.mediaPaused=false;room.current.mediaTime=Number(room.current.pauseAt||0);room.current.mediaPlaying=true;room.current.mediaUpdatedAt=Date.now();}
     room.phase = 'result';
     emitState(room);
   });
