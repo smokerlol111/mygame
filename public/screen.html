@@ -186,7 +186,10 @@ function restoreMediaPlayback(snapshot){
   }
  };
  if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
- el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+ if(el.dataset.mediaPauseGuardBound!=='1'){
+  el.dataset.mediaPauseGuardBound='1';
+  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
+ }
 }
 // Receive host media commands in the OBS browser source.
 let pendingHostMediaControl=null;
@@ -215,7 +218,6 @@ function applyHostMediaControl(command){
  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
 }
 socket.on('mediaControl',applyHostMediaControl);
-socket.on('screenMediaControl',applyHostMediaControl);
 function flushPendingHostMediaControl(){
  if(!pendingHostMediaControl)return;
  const command=pendingHostMediaControl;
@@ -252,11 +254,22 @@ function resumeVideoResult(){
 }
 function limitMediaPreview(){
  const cur=state?.current;
- if(cur?.questionType==='video'&&cur.pauseAt&&!cur.videoContinued){
+ if(cur?.questionType==='video'&&cur.pauseAt){
   document.querySelectorAll('video.quizMedia').forEach(el=>{
-   let pausedAtStop=false;
-   const stop=()=>{if(!pausedAtStop&&el.currentTime>=cur.pauseAt){pausedAtStop=true;el.pause();el.currentTime=cur.pauseAt;}};
+   if(el.dataset.stopGuardBound==='1')return;
+   el.dataset.stopGuardBound='1';
+   const stop=()=>{
+    const live=state?.current;
+    if(!live||live.questionType!=='video'||live.media!==el.getAttribute('src'))return;
+    if(live.videoContinued||['result','video_result'].includes(state?.phase))return;
+    const stopAt=Number(live.pauseAt||0);
+    if(stopAt>0&&el.currentTime>=stopAt){
+     el.pause();
+     if(Math.abs(el.currentTime-stopAt)>.05)el.currentTime=stopAt;
+    }
+   };
    el.addEventListener('timeupdate',stop);
+   el.addEventListener('seeking',stop);
   });
  }
  if(cur?.questionType!=='audioReveal')return;
