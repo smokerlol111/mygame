@@ -154,104 +154,94 @@ function mediaQuestionHTML(cur,host=false){
  const src=GameUI.esc(url),video=cur.questionType==='video',progress=cur.questionType==='audioReveal';
  const lastAudio=progress&&cur.revealStage>=cur.revealValues.length-1;
  const seconds=progress&&!lastAudio?Number(cur.revealSeconds?.[cur.revealStage]||2):0;
- const media=video?`<video class="quizMedia" src="${src}" data-pause-at="${Number(cur.pauseAt||0)}" controls playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+ const media=video?`<video class="quizMedia quizVideo" src="${src}" data-pause-at="${Number(cur.pauseAt||0)}" playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`:`<audio class="quizMedia quizAudio" src="${src}" preload="metadata" style="width:100%"></audio>`;
  return `<div class="panel media-question" style="margin:12px auto;max-width:820px">${media}${progress?`<div class="muted">${lastAudio?'Повне аудіо':`Фрагмент до ${seconds} с`} · ${cur.value} балів</div>`:''}${host&&progress&&cur.revealStage<cur.revealValues.length-1?'<button class="btn gold" id="revealAudioStep">▶ Наступний фрагмент</button>':''}</div>`;
 }
 let mediaPlaybackSnapshot=null;
 function captureMediaPlayback(){
- const el=document.querySelector('.quizMedia');
+ const el=document.querySelector('video.quizVideo,audio.quizAudio');
  if(!el||!state?.current)return null;
- return {node:el,src:el.getAttribute('src'),pauseAt:Number(el.dataset?.pauseAt||0),time:el.currentTime,playing:!el.paused,phase:state.phase,stage:state.current.revealStage};
+ return {node:el,src:el.getAttribute('src'),kind:el.tagName,stage:Number(state.current.revealStage||0)};
+}
+function stopDetachedMedia(snapshot){
+ const el=document.querySelector('video.quizVideo,audio.quizAudio');
+ if(!el)return;
+ if(snapshot?.node===el){el.remove();return;}
+ el.pause();el.removeAttribute('src');el.load();
 }
 function restoreMediaPlayback(snapshot){
- let el=document.querySelector('.quizMedia');
- if(!el||!state?.current)return;
- const sameVideo=snapshot?.node?.tagName==='VIDEO'&&el.tagName==='VIDEO'&&snapshot.src===el.getAttribute('src')&&snapshot.pauseAt===Number(el.dataset?.pauseAt||0);
- if(sameVideo){
-  const fresh=el;
-  fresh.pause();fresh.removeAttribute('src');fresh.load();
-  fresh.replaceWith(snapshot.node);
-  el=snapshot.node;
- }
- const same=snapshot&&snapshot.src===el.getAttribute('src')&&(el.tagName==='VIDEO'||snapshot.stage===state.current.revealStage);
- const restore=()=>{
-  if(!el.isConnected)return;
-  if(!sameVideo&&same&&Number.isFinite(snapshot.time)){
-   try{el.currentTime=snapshot.time}catch(e){}
-  }
-  if(state.current.mediaPaused||el.dataset.hostPaused==='1'){
-   el.pause();
-  }else if(same&&(snapshot.playing||snapshot.phase==='answering'&&state.phase==='buzz')){
-   el.play().catch(()=>{});
-  }
- };
- if(el.readyState>=1)restore();else el.addEventListener('loadedmetadata',restore,{once:true});
- if(el.dataset.mediaPauseGuardBound!=='1'){
-  el.dataset.mediaPauseGuardBound='1';
-  el.addEventListener('play',()=>{if(state?.current?.mediaPaused)el.pause();});
- }
+ const fresh=document.querySelector('video.quizVideo,audio.quizAudio');
+ if(!fresh||!snapshot?.node||!state?.current)return;
+ const sameKind=fresh.tagName===snapshot.kind;
+ const sameSrc=fresh.getAttribute('src')===snapshot.src;
+ const sameStage=fresh.tagName==='VIDEO'||snapshot.stage===Number(state.current.revealStage||0);
+ if(sameKind&&sameSrc&&sameStage){fresh.replaceWith(snapshot.node);return;}
+ try{snapshot.node.pause();snapshot.node.removeAttribute('src');snapshot.node.load()}catch(e){}
 }
-// Receive host media commands in the OBS browser source.
-let pendingHostMediaControl=null;
-function applyHostMediaControl(command){
+let pendingVideoControl=null,pendingAudioControl=null;
+function applyObsVideoControl(command){
  const cur=state?.current;
- if(!cur||command.code!==code||command.media!==cur.media||command.stage!==cur.revealStage)return;
- cur.mediaTime=Number(command.time)||0;
- cur.mediaUpdatedAt=Number(command.sentAt)||Date.now();
- if(command.action==='play'){cur.mediaPlaying=true;cur.mediaPaused=false}
- if(command.action==='pause'){cur.mediaPlaying=false;cur.mediaPaused=true}
- const el=document.querySelector('.quizMedia');
- if(!el){pendingHostMediaControl=command;return;}
+ if(cur?.questionType!=='video'||command?.code!==code||command.media!==cur.media)return;
+ const el=document.querySelector('video.quizVideo');
+ if(!el){pendingVideoControl=command;return;}
  const apply=()=>{
   if(!el.isConnected)return;
-  if(command.action==='seek'||(command.action==='play'&&Math.abs(el.currentTime-command.time)>0.8)){
-   try{el.currentTime=command.time}catch(e){}
-  }
-  if(command.action==='play'){
-   el.dataset.hostPaused='0';el.muted=false;el.volume=1;
-   el.play().catch(e=>console.warn('OBS media playback blocked:',e));
-  }else if(command.action==='pause'){
-    el.pause();
-    el.dataset.hostPaused='1';
-   }
+  const t=Math.max(0,Number(command.time)||0);
+  if(command.action==='seek'||Math.abs(el.currentTime-t)>.5){try{el.currentTime=t}catch(e){}}
+  if(command.action==='play'){el.muted=false;el.volume=1;el.play().catch(e=>console.warn('OBS video playback:',e))}
+  else if(command.action==='pause')el.pause();
  };
  if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
 }
-socket.on('mediaControl',applyHostMediaControl);
-function flushPendingHostMediaControl(){
- if(!pendingHostMediaControl)return;
- const command=pendingHostMediaControl;
- pendingHostMediaControl=null;
- applyHostMediaControl(command);
-}
-function stopDetachedMedia(snapshot){
- document.querySelectorAll('audio.quizMedia,video.quizMedia').forEach(el=>{
-  if(snapshot?.node===el&&el.tagName==='VIDEO'){el.remove();return;}
-  el.pause();el.removeAttribute('src');el.load();
- });
-}
-function syncedMediaTime(cur){
- const base=Math.max(0,Number(cur?.mediaTime||0));
- if(!cur?.mediaPlaying||!Number(cur?.mediaUpdatedAt||0))return base;
- return base+Math.max(0,(Date.now()-Number(cur.mediaUpdatedAt))/1000);
-}
-let videoResumeKey='';
-function resumeVideoResult(){
+function applyObsAudioControl(command){
  const cur=state?.current;
- if(!['result','video_result'].includes(state?.phase)||cur?.questionType!=='video'||!cur?.videoContinued){videoResumeKey='';return;}
- const key=[state.round,cur?.ci,cur?.qi,cur?.mediaPlaying?1:0,Number(cur?.mediaUpdatedAt||0)].join(':');
- if(videoResumeKey===key)return;
- videoResumeKey=key;
- document.querySelectorAll('video.quizMedia').forEach(el=>{
-  const resume=()=>{
-   if(!el.isConnected)return;
-   const target=syncedMediaTime(cur);
-   if(Number.isFinite(target)&&Math.abs(el.currentTime-target)>.8){try{el.currentTime=target}catch(e){}}
-   if(cur.mediaPlaying)el.play().catch(()=>{});else el.pause();
-  };
-  if(el.readyState>=1)resume();else el.addEventListener('loadedmetadata',resume,{once:true});
- });
+ if(!['audio','audioReveal'].includes(cur?.questionType)||command?.code!==code||command.media!==cur.media||Number(command.stage||0)!==Number(cur.revealStage||0))return;
+ const el=document.querySelector('audio.quizAudio');
+ if(!el){pendingAudioControl=command;return;}
+ const apply=()=>{
+  if(!el.isConnected)return;
+  const t=Math.max(0,Number(command.time)||0);
+  if(command.action==='seek'||Math.abs(el.currentTime-t)>.35){try{el.currentTime=t}catch(e){}}
+  if(command.action==='play'){el.muted=false;el.volume=1;el.play().catch(e=>console.warn('OBS audio playback:',e))}
+  else if(command.action==='pause')el.pause();
+ };
+ if(el.readyState>=1)apply();else el.addEventListener('loadedmetadata',apply,{once:true});
 }
+socket.on('videoControl',applyObsVideoControl);
+socket.on('audioControl',applyObsAudioControl);
+function flushPendingObsMedia(){
+ if(pendingVideoControl){const x=pendingVideoControl;pendingVideoControl=null;applyObsVideoControl(x)}
+ if(pendingAudioControl){const x=pendingAudioControl;pendingAudioControl=null;applyObsAudioControl(x)}
+}
+function syncObsMediaFromState(){
+ const cur=state?.current;
+ if(cur?.questionType==='video'){
+  const el=document.querySelector('video.quizVideo');if(!el)return;
+  const key=[state.round,cur.ci,cur.qi,cur.media].join(':');
+  if(el.dataset.obsSyncKey===key)return;
+  el.dataset.obsSyncKey=key;
+  const sync=()=>{
+   const base=Math.max(0,Number(cur.videoTime||0));
+   const target=cur.videoPlaying&&Number(cur.videoUpdatedAt||0)?base+Math.max(0,(Date.now()-Number(cur.videoUpdatedAt))/1000):base;
+   if(Math.abs(el.currentTime-target)>.5){try{el.currentTime=target}catch(e){}}
+   if(cur.videoPlaying){el.muted=false;el.volume=1;el.play().catch(()=>{})}else el.pause();
+  };
+  if(el.readyState>=1)sync();else el.addEventListener('loadedmetadata',sync,{once:true});
+ }else if(['audio','audioReveal'].includes(cur?.questionType)){
+  const el=document.querySelector('audio.quizAudio');if(!el)return;
+  const key=[state.round,cur.ci,cur.qi,cur.media,Number(cur.revealStage||0)].join(':');
+  if(el.dataset.obsSyncKey===key)return;
+  el.dataset.obsSyncKey=key;
+  const sync=()=>{
+   const base=Math.max(0,Number(cur.audioTime||0));
+   const target=cur.audioPlaying&&Number(cur.audioUpdatedAt||0)?base+Math.max(0,(Date.now()-Number(cur.audioUpdatedAt))/1000):base;
+   if(Math.abs(el.currentTime-target)>.35){try{el.currentTime=target}catch(e){}}
+   if(cur.audioPlaying){el.muted=false;el.volume=1;el.play().catch(()=>{})}else el.pause();
+  };
+  if(el.readyState>=1)sync();else el.addEventListener('loadedmetadata',sync,{once:true});
+ }
+}
+function resumeVideoResult(){}
 function limitMediaPreview(){
  const cur=state?.current;
  if(cur?.questionType==='video'&&cur.pauseAt){
@@ -276,10 +266,18 @@ function limitMediaPreview(){
  if(['result','video_result'].includes(state?.phase))return;
  if(cur.revealStage>=cur.revealValues.length-1)return; // Final stage: play the entire recording.
  const seconds=Number(cur.revealSeconds?.[cur.revealStage]||2);
- document.querySelectorAll('.quizMedia').forEach(el=>{
-  el.addEventListener('timeupdate',()=>{if(el.currentTime>=seconds){el.pause();el.currentTime=0;}});
-  el.addEventListener('seeking',()=>{if(el.currentTime>seconds){el.currentTime=0;el.pause();}});
- });
+ const el=document.querySelector('audio.quizAudio');
+ if(!el)return;
+ const stage=Number(cur.revealStage||0);
+ if(el.dataset.revealGuardStage===String(stage))return;
+ el.dataset.revealGuardStage=String(stage);
+ const guard=()=>{
+  const live=state?.current;
+  if(live?.questionType!=='audioReveal'||Number(live.revealStage||0)!==stage||['result','video_result'].includes(state?.phase))return;
+  if(el.currentTime>=seconds){el.pause();if(Math.abs(el.currentTime-seconds)>.05){try{el.currentTime=seconds}catch(e){}}}
+ };
+ el.addEventListener('timeupdate',guard);
+ el.addEventListener('seeking',guard);
 }
 function emojiQuestionHTML(cur){return cur?.questionType==='emoji'&&cur.emoji?`<div class="emojiQuestion">${GameUI.esc(cur.emoji)}</div>`:'';}
 function imageRevealHTML(cur,host=false){
@@ -383,5 +381,5 @@ function render(){if(!state||!data)return;let h=``;
      h+=`<div class="panel center"><div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ФІНАЛ</div>${!latest?`<div class="huge" style="margin-top:34px">🏆</div><h1 style="font-size:54px">ФІНАЛЬНІ РЕЗУЛЬТАТИ</h1><p class="muted" style="font-size:24px">Готуємо церемонію нагородження…</p>`:`<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place===1?'🏆 ПЕРЕМОЖЕЦЬ':latest.place+' МІСЦЕ'}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div style="font-size:23px;opacity:.8">Фінальна відповідь</div><div class="answer" style="font-size:clamp(28px,3vw,44px);margin:10px auto;max-width:1000px">${GameUI.esc(latest.p.finalAnswer||'—')} ${latest.p.correct?'✅':'❌'}</div><div style="font-size:25px;margin-top:18px">${latest.p.beforeScore} ${latest.p.correct?'+':'−'} ${latest.p.bet} =</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.score}</div><div class="muted" style="font-size:22px">БАЛІВ</div>`}${revealed.length>1?`<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed.slice(0,-1).map(x=>`<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.score}</b></div>`).join('')}</div>`:''}</div>`;
    }
  }
- const mediaSnapshot=captureMediaPlayback(); stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();resumeVideoResult();flushPendingHostMediaControl();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
+ const mediaSnapshot=captureMediaPlayback();stopDetachedMedia(mediaSnapshot);app.innerHTML=h;restoreMediaPlayback(mediaSnapshot);limitMediaPreview();syncObsMediaFromState();flushPendingObsMedia();applyVoiceHighlight();fitQuestionToOBS();armFirstTurnClock();armNumericClock();armAudienceClock()}
 </script></body></html>
