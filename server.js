@@ -1081,6 +1081,9 @@ io.on('connection', socket => {
       }
     }
     cb({ok:true}); emitState(room);
+    if(isRoomAudioQuestion(room)){
+      setTimeout(()=>emitRoomAudioControl(room,room.current.mediaPlaying?'play':'pause'),50);
+    }
   });
 
   socket.on('submitVaBankBet', ({ code: c, bet }, cb = () => {}) => {
