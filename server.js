@@ -52,7 +52,11 @@ app.get('/games', (_, res) => res.json(gamesIndex.filter(g => g.enabled !== fals
 app.get('/games/:id.json', (req, res) => {
   const meta = gamesIndex.find(g => g.id === req.params.id && g.enabled !== false);
   if (!meta) return res.status(404).json({ error: 'Гру не знайдено.' });
-  res.sendFile(path.join(__dirname, 'games', meta.file));
+  // Special-cell positions are HOST-only secrets; never publish them in game JSON.
+  const game = games.get(meta.id);
+  if (!game) return res.status(404).json({ error: 'Гру не знайдено.' });
+  const { specialSetup, specialPools, ...publicGame } = game;
+  res.json(publicGame);
 });
 app.get('/screen', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/screen/:code', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
