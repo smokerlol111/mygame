@@ -367,7 +367,7 @@ function render(){if(!state||!data)return;let h=``;
     </div>`;
   }
  else if(state.phase==='va_bank_bet')h+=`<div class="panel center"><div class="huge">🎰</div><h1>ВА-БАНК!</h1><p>Гравець робить ставку</p></div>${GameUI.playersHTML(state.players)}`;
- else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
+ else if(state.phase==='va_bank_question')h+=`<div class="panel center"><div class="huge">🎰 ВА-БАНК</div><h2>Ставка: ${state.vaBankBet}</h2><div class="question">${GameUI.esc(state.current?.q||'')}</div>${emojiQuestionHTML(state.current)}</div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_choose')h+=`<div class="panel center"><div class="huge">⚔️</div><h1>ДУЕЛЬ!</h1><p>Гравець обирає суперника</p></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='duel_question')h+=`<div class="panel center"><div class="huge">⚔️ ДУЕЛЬ</div><div class="question">${GameUI.esc(state.current?.q||'')}</div></div>${GameUI.playersHTML(state.players)}`;
  else if(state.phase==='cat_choose')h+=`<div class="panel center"><div class="huge">🐈</div><h1>КІТ У МІШКУ</h1><p>Ведучий обирає гравця</p></div>${GameUI.playersHTML(state.players)}`;
