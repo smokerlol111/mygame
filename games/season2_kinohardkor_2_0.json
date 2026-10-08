@@ -503,6 +503,8 @@
   "specialSetup": {
     "mode": "season2_balanced",
     "fixed": {
+      "0:1:3": "cat",
+      "0:4:0": "va_bank",
       "0:2:2": "duel"
     }
   }
