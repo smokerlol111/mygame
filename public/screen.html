@@ -300,7 +300,7 @@ function imageRevealHTML(cur,host=false){
  </div>`;
 }
 let audienceClockHandle=null;
-function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');if(!el)return;const end=Number(state?.audience?.endsAt)||Date.now()+Math.max(0,Number(state?.audience?.remainingMs||0));const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
+function armAudienceClock(){if(audienceClockHandle){clearInterval(audienceClockHandle);audienceClockHandle=null}const el=document.getElementById('audienceTimer');if(!el)return;const remaining=Math.max(0,Number(state?.audience?.remainingMs||0));const end=Date.now()+remaining;const tick=()=>{const left=Math.max(0,(end-Date.now())/1000);el.textContent=left.toFixed(1);if(left<=0){clearInterval(audienceClockHandle);audienceClockHandle=null}};tick();audienceClockHandle=setInterval(tick,100)}
 let numericClockHandle=null;
 function armNumericClock(){if(numericClockHandle){clearInterval(numericClockHandle);numericClockHandle=null}const el=document.getElementById('numericTimer'),remaining=Number(state?.numericChallenge?.remainingMs||0);if(!el||remaining<=0)return;const end=Date.now()+remaining;const tick=()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));el.textContent=left;if(left<=0){clearInterval(numericClockHandle);numericClockHandle=null}};tick();numericClockHandle=setInterval(tick,200)}
 function fitQuestionToOBS(){
