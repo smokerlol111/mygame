@@ -323,7 +323,7 @@ function syncPersistentPlayerAudio(){
  const last=cur.questionType==='audioReveal'&&stage>=(cur.revealValues?.length||1)-1;
  const seconds=cur.questionType==='audioReveal'&&!last?Number(cur.revealSeconds?.[stage]||2):0;
  playerAudioInfo.textContent=cur.questionType==='audioReveal'?(last?'🎵 Повне аудіо':`🎵 Фрагмент до ${seconds} с • ${cur.value} балів`):'🎵 Аудіопитання';
- if(state.phase==='answering'||state.phase==='result')playerAudio.pause();
+ if(state.phase==='answering')playerAudio.pause();
 }
 function bindPlayerLocalMedia(){
  if(playerVideo.dataset.localGuardBound!=='1'){
@@ -357,7 +357,7 @@ function bindPlayerLocalMedia(){
   };
   playerAudio.addEventListener('timeupdate',guard);
   playerAudio.addEventListener('seeking',guard);
-  playerAudio.addEventListener('play',()=>{if(state?.phase==='answering'||state?.phase==='result')playerAudio.pause();});
+  playerAudio.addEventListener('play',()=>{if(state?.phase==='answering')playerAudio.pause();});
  }
 }
 bindPlayerLocalMedia();
