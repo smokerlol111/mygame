@@ -499,5 +499,13 @@
       ]
     }
   ],
-  "audienceQuestionSeconds": 30
+  "audienceQuestionSeconds": 30,
+  "specialSetup": {
+    "mode": "season2_fixed",
+    "fixed": {
+      "0:1:3": "cat",
+      "0:4:0": "cat",
+      "0:2:2": "duel"
+    }
+  }
 }
