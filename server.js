@@ -168,7 +168,7 @@ function publicState(room) {
       const submitted=Object.keys(room.audienceAnswers||{});
       const counts=aq?aq.options.map((_,i)=>Object.values(room.audienceAnswers||{}).filter(x=>x.option===i).length):[];
       const ranking=(room.audienceRanking||[]).map(x=>({id:x.id,name:x.name,correct:x.correct,timeMs:x.timeMs,eligible:x.eligible}));
-      return {roundIndex:room.audienceRoundIndex,title:ar?.title||'',questionIndex:room.audienceQuestionIndex,totalQuestions:ar?.questions?.length||0,question:aq?aq.q:'',options:aq?aq.options:[],correct:['audience_result','audience_podium'].includes(room.phase)?aq?.correct:null,fact:['audience_result','audience_podium'].includes(room.phase)?aq?.fact:'',endsAt:room.audienceEndsAt||null,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0,joined:room.audience.length,submitted:submitted.length,submittedPlayerIds:submitted,counts,ranking:room.phase==='audience_podium'?ranking:[],revealCount:room.audienceRevealCount||0,winner:room.phase==='audience_podium'&&room.audienceRevealCount>=Math.min(5,ranking.length)?ranking[0]||null:null};
+      return {roundIndex:room.audienceRoundIndex,title:ar?.title||'',questionIndex:room.audienceQuestionIndex,totalQuestions:ar?.questions?.length||0,question:aq?aq.q:'',options:aq?aq.options:[],correct:['audience_result','audience_podium'].includes(room.phase)?aq?.correct:null,fact:['audience_result','audience_podium'].includes(room.phase)?aq?.fact:'',questionSeconds:Number(getRoomGame(room).audienceQuestionSeconds||15),endsAt:room.audienceEndsAt||null,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0,joined:room.audience.filter(x=>x.connected).length,submitted:submitted.length,submittedPlayerIds:submitted,counts,ranking:room.phase==='audience_podium'?ranking:[],revealCount:room.audienceRevealCount||0,winner:room.phase==='audience_podium'&&room.audienceRevealCount>=Math.min(5,ranking.length)?ranking[0]||null:null};
     })() : null,
     firstTurnQuiz: room.firstTurnQuiz ? {
       title: room.firstTurnQuiz.title,
@@ -511,6 +511,7 @@ io.on('connection', socket => {
     if (!isHost(socket, room)) return cb({ ok: false, error: 'Немає доступу до цієї кімнати.' });
     if (room.finalTimer) clearInterval(room.finalTimer);
     if (room.firstTurnTimer) clearTimeout(room.firstTurnTimer);
+    if (room.audienceTimer) clearTimeout(room.audienceTimer);
     io.to(room.code).emit('roomClosed', { code: room.code, message: 'Ведучий закрив кімнату.' });
     rooms.delete(room.code);
     socket.leave(room.code);
@@ -1142,7 +1143,11 @@ io.on('connection', socket => {
       const clean=String(name||'').trim().slice(0,24); if(!clean)return cb({ok:false,error:'Введіть нік.'});
       a={id:crypto.randomUUID(),name:clean,socketId:socket.id,connected:true,roundStats:{}}; room.audience.push(a);
     } else {a.socketId=socket.id;a.connected=true;if(name)a.name=String(name).trim().slice(0,24)||a.name;}
-    socket.data.audienceId=a.id;socket.data.roomCode=room.code;socket.join(room.code);cb({ok:true,audienceId:a.id,name:a.name,code:room.code});emitState(room);
+    socket.data.audienceId=a.id;socket.data.roomCode=room.code;socket.join(room.code);
+    const ownWin=[...(room.audienceWinners||[])].reverse().find(x=>x.id===a.id)||null;
+    cb({ok:true,audienceId:a.id,name:a.name,code:room.code,joined:room.audience.filter(x=>x.connected).length,prizeCode:ownWin?.code||''});
+    socket.emit('state',publicState(room));
+    io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
 
   socket.on('openAudienceRound', ({code:c,roundIndex}={},cb=()=>{})=>{
@@ -1166,13 +1171,15 @@ io.on('connection', socket => {
     if(!room.audienceEndsAt||Date.now()>room.audienceEndsAt)return cb({ok:false,error:'Час вийшов.'});if(room.audienceAnswers[a.id])return cb({ok:false,error:'Відповідь уже зафіксована.'});
     const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex],q=ar?.questions?.[room.audienceQuestionIndex];const o=Number(option);if(!q||!Number.isInteger(o)||o<0||o>=q.options.length)return cb({ok:false});
     const ms=Math.max(0,Date.now()-room.audienceStartedAt);room.audienceAnswers[a.id]={option:o,ms};const st=a.roundStats[room.audienceRoundIndex]||(a.roundStats[room.audienceRoundIndex]={correct:0,timeMs:0,answered:0});st.answered++;if(o===q.correct){st.correct++;st.timeMs+=ms;}
-    cb({ok:true});emitState(room);
+    cb({ok:true});
+    socket.emit('state',publicState(room));
+    io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
   socket.on('finishAudienceQuestion', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_question')return cb({ok:false});clearTimeout(room.audienceTimer);room.audienceTimer=null;room.audienceEndsAt=null;room.phase='audience_result';cb({ok:true});emitState(room)});
   socket.on('finishAudienceRound', ({code:c}={},cb=()=>{})=>{
     const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_result')return cb({ok:false});const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(room.audienceQuestionIndex!==ar.questions.length-1)return cb({ok:false,error:'Ще є питання.'});
     const prev=new Set(room.audienceWinners.map(x=>x.id));const ranked=room.audience.map(a=>{const st=a.roundStats[room.audienceRoundIndex]||{correct:0,timeMs:0};return{id:a.id,name:a.name,correct:st.correct,timeMs:st.timeMs,eligible:!prev.has(a.id)&&st.answered>0}}).filter(x=>x.eligible).sort((a,b)=>(b.correct-a.correct)||(a.timeMs-b.timeMs)||a.name.localeCompare(b.name,'uk'));
-    const win=ranked[0]||null;if(win){win.code=crypto.randomBytes(3).toString('hex').toUpperCase();room.audienceWinners.push({id:win.id,name:win.name,code:win.code,roundIndex:room.audienceRoundIndex});}
+    const win=ranked.find(x=>x.correct>0)||null;if(win){win.code=crypto.randomBytes(3).toString('hex').toUpperCase();room.audienceWinners.push({id:win.id,name:win.name,code:win.code,roundIndex:room.audienceRoundIndex});}
     room.audienceRanking=ranked;room.audienceRevealCount=0;room.phase='audience_podium';if(win){const wa=room.audience.find(x=>x.id===win.id);if(wa?.socketId)io.to(wa.socketId).emit('audiencePrize',{code:win.code,roundIndex:room.audienceRoundIndex});}cb({ok:true});emitState(room);
   });
   socket.on('revealNextAudience', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_podium')return cb({ok:false});const n=Math.min(5,room.audienceRanking?.length||0);if(room.audienceRevealCount<n)room.audienceRevealCount++;cb({ok:true});emitState(room)});
@@ -1308,6 +1315,7 @@ io.on('connection', socket => {
     room.finalSeconds = 30; room.finalResults = null; room.finalRevealCount = 0; room.savedSeasonGameId = null; room.savedSeasonId = null; room.seasonFinal = null; room.seasonCeremonyActive = false; room.seasonRevealCount = 0;
     room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
     room.firstTurnAnswers = {}; room.firstTurnResults = null;
+    clearTimeout(room.audienceTimer); room.audienceTimer=null; room.audienceRoundIndex=null; room.audienceQuestionIndex=0; room.audienceAnswers={}; room.audienceStartedAt=null; room.audienceEndsAt=null; room.audienceRanking=[]; room.audienceRevealCount=0; room.audienceWinners=[]; room.audience.forEach(a=>{a.roundStats={};});
     room.players.forEach(p => { p.score = 0; p.bet = null; p.finalAnswer = ''; });
     cb({ok:true}); emitState(room);
   });
@@ -1317,6 +1325,7 @@ io.on('connection', socket => {
     if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може закрити кімнату.'});
     clearInterval(room.finalTimer);
     clearTimeout(room.firstTurnTimer);
+    clearTimeout(room.audienceTimer);
     io.to(room.code).emit('roomClosed', { code: room.code, reason: 'Ведучий повернувся в головне меню.' });
     rooms.delete(room.code);
     socket.data.roomCode = null;
@@ -1331,7 +1340,7 @@ io.on('connection', socket => {
     if(p && !p.connected){
       if(room.phase==='lobby') emitState(room); else emitPlayerPresence(room,p);
     }
-    if(a) emitState(room);
+    if(a) io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
 });
 
