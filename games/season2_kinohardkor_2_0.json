@@ -501,10 +501,8 @@
   ],
   "audienceQuestionSeconds": 30,
   "specialSetup": {
-    "mode": "season2_fixed",
+    "mode": "season2_balanced",
     "fixed": {
-      "0:1:3": "cat",
-      "0:4:0": "cat",
       "0:2:2": "duel"
     }
   }
