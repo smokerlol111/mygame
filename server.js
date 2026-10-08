@@ -315,7 +315,7 @@ function randomSpecialCells(room) {
     for (const [key, kind] of Object.entries(game.specialSetup.fixed || {})) {
       const [ri, ci, qi] = key.split(':').map(Number);
       const q = game.rounds?.[ri]?.categories?.[ci]?.questions?.[qi];
-      if (normal(q) && ['cat', 'duel', 'va_bank'].includes(kind)) out[key] = kind;
+      if ((normal(q) || (q?.type === 'emoji' && ['cat', 'va_bank'].includes(kind))) && ['cat', 'duel', 'va_bank'].includes(kind)) out[key] = kind;
     }
     for (const ri of [0, 1]) {
       const keys = [];
@@ -799,7 +799,7 @@ io.on('connection', socket => {
     room.players.forEach(p=>p.falseStartUntil=0);
     // Question-defined formats (emoji, Triplet, numeric/media) must never be replaced
     // by a randomly assigned special cell. Otherwise their payload/mechanic disappears.
-    const formatLocked = ['emoji','triplet','numericClosest','audio','audioReveal','video','imageReveal'].includes(q.type) && !(q.type==='emoji' && room.specialCells[key]==='cat');
+    const formatLocked = ['emoji','triplet','numericClosest','audio','audioReveal','video','imageReveal'].includes(q.type) && !(q.type==='emoji' && ['cat','va_bank'].includes(room.specialCells[key]));
     const special = room.gameId==='media-test' || formatLocked ? 'normal' : (q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal'));
     // Check that test assets actually exist before marking a cell as used.
     if(room.gameId==='media-test' && String(q.media||'').startsWith('/media/')){
@@ -832,7 +832,7 @@ io.on('connection', socket => {
         room.current.revealStage=0;room.current.value=room.current.revealValues[0];
       }
     }
-    if (q.type === 'emoji' && (special === 'normal' || special === 'cat')) {
+    if (q.type === 'emoji' && ['normal','cat','va_bank'].includes(special)) {
       room.current.questionType = 'emoji';
       room.current.emoji = String(q.emoji||'').trim();
       if(!room.current.emoji) return cb({ok:false,error:'Для emoji-питання потрібне поле emoji.'});
