@@ -1336,11 +1336,11 @@ io.on('connection', socket => {
     const room = getRoom(socket.data.roomCode); if (!room) return;
     const p = room.players.find(x => x.id === socket.data.playerId);
     if (p && p.socketId === socket.id) { p.connected = false; p.socketId = null; p.syncSamples=0; p.lastSyncAt=0; }
-    const a = room.audience.find(x => x.id === socket.data.audienceId); if(a){a.connected=false;a.socketId=null;}
+    const a = room.audience.find(x => x.id === socket.data.audienceId); const audienceDisconnected=!!(a && a.socketId===socket.id); if(audienceDisconnected){a.connected=false;a.socketId=null;}
     if(p && !p.connected){
       if(room.phase==='lobby') emitState(room); else emitPlayerPresence(room,p);
     }
-    if(a) io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
+    if(audienceDisconnected) io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
 });
 
