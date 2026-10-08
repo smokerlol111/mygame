@@ -203,8 +203,8 @@ function hostBoardHTML(){
   r.categories.forEach((c,ci)=>{
    const q=c.questions[qi], key=`${state.round}:${ci}:${qi}`, used=state.used[key];
    const special=hostSpecialCells[key];
-   const mark=q.type==='triplet'?'🔥':q.cat?'🐈':special==='va_bank'?'🎰':special==='duel'?'⚔️':'';
-   const title=q.type==='triplet'?'ТРИПЛЕТ':q.cat?'Кіт у мішку':special==='va_bank'?'ВА-БАНК':special==='duel'?'ДУЕЛЬ':'';
+   const mark=q.type==='triplet'?'🔥':special==='cat'?'🐈':special==='va_bank'?'🎰':special==='duel'?'⚔️':q.cat?'🐈':'';
+   const title=q.type==='triplet'?'ТРИПЛЕТ':special==='cat'?'Кіт у мішку':special==='va_bank'?'ВА-БАНК':special==='duel'?'ДУЕЛЬ':q.cat?'Кіт у мішку':'';
    h+=`<button class="tile ${used?'used':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span style="font-size:.55em;vertical-align:middle">${mark}</span>`:''}</button>`;
   });
  }
