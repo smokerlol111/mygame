@@ -306,23 +306,33 @@ function resumeRoom(room){
 
 function randomSpecialCells(room) {
   const game = getRoomGame(room);
-  if (game.specialSetup?.mode === 'season2_fixed') {
+  if (game.specialSetup?.mode === 'season2_balanced') {
     const out = {};
-    const normal = q => q && !q.cat && (!q.type || q.type==='normal' || q.type==='text') &&
-      !q.media && !q.image && !q.audio && !q.video && !q.numericAnswer &&
-      !q.answerImage && !q.answerVideo;
-    for (const [key,kind] of Object.entries(game.specialSetup.fixed||{})) {
-      const [ri,ci,qi] = key.split(':').map(Number);
+    const normal = q => q && !q.cat && (!q.type || q.type === 'normal' || q.type === 'text') &&
+      !q.media && !q.image && !q.audio && !q.video &&
+      !q.numericAnswer && !q.answerImage && !q.answerVideo;
+    // Preserve approved fixed cells only if they are ordinary text questions.
+    for (const [key, kind] of Object.entries(game.specialSetup.fixed || {})) {
+      const [ri, ci, qi] = key.split(':').map(Number);
       const q = game.rounds?.[ri]?.categories?.[ci]?.questions?.[qi];
-      if (['cat','duel'].includes(kind) && (normal(q) || (kind==='cat' && q?.type==='emoji'))) out[key]=kind;
+      if (normal(q) && ['cat', 'duel', 'va_bank'].includes(kind)) out[key] = kind;
     }
-    for (const ri of [0,1]) {
-      const choices=[];
-      (game.rounds?.[ri]?.categories||[]).forEach((cat,ci)=>(cat.questions||[]).forEach((q,qi)=>{
-        const key=`${ri}:${ci}:${qi}`;
-        if (!out[key] && normal(q)) choices.push(key);
-      }));
-      if (choices.length) out[choices[Math.floor(Math.random()*choices.length)]]='va_bank';
+    for (const ri of [0, 1]) {
+      const keys = [];
+      (game.rounds?.[ri]?.categories || []).forEach((cat, ci) =>
+        (cat.questions || []).forEach((q, qi) => {
+          const key = `${ri}:${ci}:${qi}`;
+          if (!out[key] && normal(q)) keys.push(key);
+        })
+      );
+      for (let i = keys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [keys[i], keys[j]] = [keys[j], keys[i]];
+      }
+      const existing = Object.entries(out).filter(([key]) => key.startsWith(ri + ':')).map(([, kind]) => kind);
+      for (const kind of ['cat', 'duel', 'va_bank']) {
+        if (!existing.includes(kind) && keys.length) out[keys.pop()] = kind;
+      }
     }
     return out;
   }
