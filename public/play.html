@@ -439,7 +439,7 @@ function render(){
     if(state.vaBankPlayer===playerId){let max=Math.max(0,p.score);h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2></div><p>Ваша ставка: від 0 до ${max}</p><input id="vbBet" type="number" min="0" max="${max}" value="${max}"><br><br><button id="sendVbBet" class="btn gold">Підтвердити ставку</button>`}
     else h+=`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК!</h2><p class="muted">Гравець робить ставку.</p></div>`;
   }
-  else if(state.phase==='va_bank_question')h+=state.vaBankPlayer===playerId?`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК — відповідаєте ви!</h2><p>Ставка: ${state.vaBankBet}</p></div>`:`<div class="center"><h2>🎰 ВА-БАНК</h2><p>Відповідає інший гравець.</p></div>`;
+  else if(state.phase==='va_bank_question')h+=state.vaBankPlayer===playerId?`<div class="center"><div class="huge">🎰</div><h2>ВА-БАНК — відповідаєте ви!</h2><p>Ставка: ${state.vaBankBet}</p></div>${playerEmojiHTML(activeQuestion)}`:`<div class="center"><h2>🎰 ВА-БАНК</h2><p>Відповідає інший гравець.</p>${playerEmojiHTML(activeQuestion)}</div>`;
   else if(state.phase==='duel_choose'){
     if(state.turnPlayerId===playerId){h+=`<div class="center"><div class="huge">⚔️</div><h2>ДУЕЛЬ!</h2><p>Оберіть суперника</p></div><div class="row" style="justify-content:center">${state.players.filter(x=>x.id!==playerId).map(x=>`<button class="btn secondary duelpick" data-id="${x.id}">${GameUI.esc(x.name)}</button>`).join('')}</div>`}
     else h+=`<div class="center"><div class="huge">⚔️</div><h2>ДУЕЛЬ!</h2><p class="muted">Суперника обирає ${GameUI.esc(state.players.find(x=>x.id===state.turnPlayerId)?.name||'гравець')}.</p></div>`;
