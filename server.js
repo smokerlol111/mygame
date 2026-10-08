@@ -1147,7 +1147,6 @@ io.on('connection', socket => {
     socket.data.audienceId=a.id;socket.data.roomCode=room.code;socket.join(room.code);
     const ownWin=[...(room.audienceWinners||[])].reverse().find(x=>x.id===a.id)||null;
     cb({ok:true,audienceId:a.id,name:a.name,code:room.code,joined:room.audience.filter(x=>x.connected).length,prizeCode:ownWin?.code||''});
-    socket.emit('state',publicState(room));
     io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
 
@@ -1159,7 +1158,7 @@ io.on('connection', socket => {
   });
   socket.on('startAudienceQuestion', ({code:c}={},cb=()=>{})=>{
     const room=getRoom(c);if(!isHost(socket,room)||!['audience_lobby','audience_result'].includes(room.phase))return cb({ok:false,error:'Питання зараз не готове.'});
-    if(room.phase==='audience_lobby' && room.audience.length<1)return cb({ok:false,error:'Спочатку має приєднатися хоча б один глядач.'});
+    if(room.phase==='audience_lobby' && room.audience.filter(x=>x.connected).length<1)return cb({ok:false,error:'Спочатку має приєднатися хоча б один глядач.'});
     const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex];if(!ar)return cb({ok:false});
     if(room.phase==='audience_result' && room.audienceQuestionIndex<ar.questions.length-1)room.audienceQuestionIndex++;
     const audienceDurationMs=getRoomGame(room).audienceQuestionSeconds===30?30000:15000;
@@ -1172,8 +1171,7 @@ io.on('connection', socket => {
     if(!room.audienceEndsAt||Date.now()>room.audienceEndsAt)return cb({ok:false,error:'Час вийшов.'});if(room.audienceAnswers[a.id])return cb({ok:false,error:'Відповідь уже зафіксована.'});
     const ar=(getRoomGame(room).audienceRounds||[])[room.audienceRoundIndex],q=ar?.questions?.[room.audienceQuestionIndex];const o=Number(option);if(!q||!Number.isInteger(o)||o<0||o>=q.options.length)return cb({ok:false});
     const ms=Math.max(0,Date.now()-room.audienceStartedAt);room.audienceAnswers[a.id]={option:o,ms};const st=a.roundStats[room.audienceRoundIndex]||(a.roundStats[room.audienceRoundIndex]={correct:0,timeMs:0,answered:0});st.answered++;if(o===q.correct){st.correct++;st.timeMs+=ms;}
-    cb({ok:true});
-    socket.emit('state',publicState(room));
+    cb({ok:true,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
     io.to(room.code).emit('audienceProgress',{code:room.code,joined:room.audience.filter(x=>x.connected).length,submitted:Object.keys(room.audienceAnswers||{}).length,roundIndex:room.audienceRoundIndex,questionIndex:room.audienceQuestionIndex,remainingMs:room.audienceEndsAt?Math.max(0,room.audienceEndsAt-Date.now()):0});
   });
   socket.on('finishAudienceQuestion', ({code:c}={},cb=()=>{})=>{const room=getRoom(c);if(!isHost(socket,room)||room.phase!=='audience_question')return cb({ok:false});clearTimeout(room.audienceTimer);room.audienceTimer=null;room.audienceEndsAt=null;room.phase='audience_result';cb({ok:true});emitState(room)});
