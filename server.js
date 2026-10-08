@@ -306,6 +306,26 @@ function resumeRoom(room){
 
 function randomSpecialCells(room) {
   const game = getRoomGame(room);
+  if (game.specialSetup?.mode === 'season2_fixed') {
+    const out = {};
+    const normal = q => q && !q.cat && (!q.type || q.type==='normal' || q.type==='text') &&
+      !q.media && !q.image && !q.audio && !q.video && !q.numericAnswer &&
+      !q.answerImage && !q.answerVideo;
+    for (const [key,kind] of Object.entries(game.specialSetup.fixed||{})) {
+      const [ri,ci,qi] = key.split(':').map(Number);
+      const q = game.rounds?.[ri]?.categories?.[ci]?.questions?.[qi];
+      if (['cat','duel'].includes(kind) && (normal(q) || (kind==='cat' && q?.type==='emoji'))) out[key]=kind;
+    }
+    for (const ri of [0,1]) {
+      const choices=[];
+      (game.rounds?.[ri]?.categories||[]).forEach((cat,ci)=>(cat.questions||[]).forEach((q,qi)=>{
+        const key=`${ri}:${ci}:${qi}`;
+        if (!out[key] && normal(q)) choices.push(key);
+      }));
+      if (choices.length) out[choices[Math.floor(Math.random()*choices.length)]]='va_bank';
+    }
+    return out;
+  }
   const secondRound = game.rounds?.[1];
   if (!secondRound?.categories?.length) return {};
   // Special cells are reserved exclusively for ordinary text questions.
@@ -769,7 +789,7 @@ io.on('connection', socket => {
     room.players.forEach(p=>p.falseStartUntil=0);
     // Question-defined formats (emoji, Triplet, numeric/media) must never be replaced
     // by a randomly assigned special cell. Otherwise their payload/mechanic disappears.
-    const formatLocked = ['emoji','triplet','numericClosest','audio','audioReveal','video','imageReveal'].includes(q.type);
+    const formatLocked = ['emoji','triplet','numericClosest','audio','audioReveal','video','imageReveal'].includes(q.type) && !(q.type==='emoji' && room.specialCells[key]==='cat');
     const special = room.gameId==='media-test' || formatLocked ? 'normal' : (q.cat && room.round===1 ? 'cat' : (room.specialCells[key] || 'normal'));
     // Check that test assets actually exist before marking a cell as used.
     if(room.gameId==='media-test' && String(q.media||'').startsWith('/media/')){
@@ -802,7 +822,7 @@ io.on('connection', socket => {
         room.current.revealStage=0;room.current.value=room.current.revealValues[0];
       }
     }
-    if (q.type === 'emoji' && special === 'normal') {
+    if (q.type === 'emoji' && (special === 'normal' || special === 'cat')) {
       room.current.questionType = 'emoji';
       room.current.emoji = String(q.emoji||'').trim();
       if(!room.current.emoji) return cb({ok:false,error:'Для emoji-питання потрібне поле emoji.'});
