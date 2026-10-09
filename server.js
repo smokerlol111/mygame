@@ -656,7 +656,7 @@ io.on('connection', socket => {
     room.paused=false; room.pausedPhase=null; room.pauseFirstTurnRemaining=null; room.pauseFinalRemaining=null;
     room.phase = room.firstTurnQuiz ? 'first_turn_quiz' : 'board';
     if (!room.firstTurnQuiz) room.turnPlayerId = room.players[0]?.id || null;
-    cb({ok:true}); emitState(room);
+    cb({ok:true, specialCells: room.specialCells || {}}); emitState(room);
   });
 
   socket.on('startFirstTurnTimer', ({ code: c }, cb = () => {}) => {
