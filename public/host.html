@@ -13,10 +13,6 @@
 .imageRevealValue{display:inline-block;margin:0 0 12px;padding:8px 18px;border-radius:999px;font-weight:900;font-size:clamp(24px,3vw,42px);background:rgba(255,196,0,.14);border:1px solid rgba(255,215,70,.45)}
 .emojiQuestion{font-size:clamp(56px,8vw,104px);line-height:1.25;text-align:center;letter-spacing:.12em;padding:18px 10px 30px;white-space:normal}
 </style>
-<style>
-/* HOST-only special markers; never injected into OBS board */
-.hostSpecialMark{display:inline-flex;align-items:center;justify-content:center;font-size:25px!important;line-height:1;vertical-align:middle;margin-left:7px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
-</style>
 </head><body><div id="netBadge" style="position:fixed;right:14px;bottom:14px;z-index:9999;padding:8px 12px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800">🟡 Підключення…</div><div class="wrap"><div class="top"><div><div class="brand">SMOKERLOL • HOST</div><h1>СВОЯ ГРА — КІНОХАРДКОР</h1></div><div id="roomBox"></div></div><div class="cueMixer" aria-label="Гучність звукових сигналів"><label for="gongVolume">🔔 Гонг <input id="gongVolume" type="range" min="0" max="100" step="1" value="35" aria-label="Гучність гонга"><output id="gongVolumeValue" for="gongVolume">35%</output></label><label for="buzzVolume">✨ Відкрити BUZZ <input id="buzzVolume" type="range" min="0" max="100" step="1" value="35" aria-label="Гучність відкриття BUZZ"><output id="buzzVolumeValue" for="buzzVolume">35%</output></label></div><div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div></div><script>
 const socket=io();
 let cueAudioCtx=null;
@@ -209,7 +205,7 @@ function hostBoardHTML(){
    const special=hostSpecialCells[key];
    const mark=q.type==='triplet'?'🔥':special==='cat'?'🐈':special==='va_bank'?'🎰':special==='duel'?'⚔️':q.cat?'🐈':'';
    const title=q.type==='triplet'?'ТРИПЛЕТ':special==='cat'?'Кіт у мішку':special==='va_bank'?'ВА-БАНК':special==='duel'?'ДУЕЛЬ':q.cat?'Кіт у мішку':'';
-   h+=`<button class="tile ${used?'used':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span class="hostSpecialMark">${mark}</span>`:''}</button>`;
+   h+=`<button class="tile ${used?'used':''}" data-ci="${ci}" data-qi="${qi}" ${used?'disabled':''} title="${title}"><span>${q.value}</span>${mark?` <span style="font-size:.55em;vertical-align:middle">${mark}</span>`:''}</button>`;
   });
  }
  return h+'</div>';
