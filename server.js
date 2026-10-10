@@ -532,9 +532,9 @@ io.on('connection', socket => {
     // Якщо коригування зроблено вже після фінального підрахунку —
     // одразу оновлюємо й фінальну таблицю.
     if (room.phase === 'final_result' && Array.isArray(room.finalResults)) {
-      room.finalResults = room.players
-        .map(p => ({ id:p.id, name:p.name, score:p.score }))
-        .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, 'uk'));
+      const entry = room.finalResults.find(r => r.id === player.id);
+      if (entry) entry.score = player.score;
+      room.finalResults.sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, 'uk'));
     }
 
     cb({ ok:true, playerId:player.id, score:player.score, delta });
@@ -1024,7 +1024,7 @@ io.on('connection', socket => {
 
   socket.on('judge', ({ code: c, correct, sponsorBonus }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room) || !room.current || !room.buzzer) return;
+    if (!isHost(socket, room) || room.phase !== 'answering' || !room.current || !room.buzzer) return;
     const p = room.players.find(x => x.id === room.buzzer);
     if (!p) return;
     const value = room.current.value;
@@ -1114,7 +1114,7 @@ io.on('connection', socket => {
     emitState(room);
 
   });
-  socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room)) return; finishTile(room); emitState(room); });
+  socket.on('nextFromResult', ({ code: c }) => { const room = getRoom(c); if (!isHost(socket, room) || room.phase !== 'result') return; finishTile(room); emitState(room); });
 
   socket.on('judgeTriplet', ({ code:c, correct }, cb=()=>{}) => {
     const room=getRoom(c);
@@ -1286,6 +1286,7 @@ io.on('connection', socket => {
   socket.on('testGrandFinal', ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ok:false,error:'Лише ведучий може запускати тест.'});
+    if (room.phase !== 'lobby') return cb({ok:false,error:'Тест доступний лише в лобі, до початку гри.'});
     if (!room.players.length) return cb({ok:false,error:'Додайте хоча б одного тестового гравця.'});
     clearInterval(room.finalTimer); room.finalTimer = null;
     const ordered = room.players.map((p,i)=>({
