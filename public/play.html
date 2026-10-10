@@ -20,7 +20,7 @@
 
 #playerCueMixer input[type="range"]{padding:0;border:0}
 </style>
-</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="playerVideoPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><video id="playerVideo" class="protectedMedia" controls controlsList="nodownload noremoteplayback" playsinline preload="metadata" oncontextmenu="return false" style="width:100%;max-height:50vh"></video></div><div id="playerAudioPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><div id="playerAudioInfo" class="muted" style="margin-bottom:8px"></div><audio id="playerAudio" class="protectedMedia" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio></div><div id="app" class="panel"></div></div><script>
+</head><body><div id="netBadge" style="position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:999px;background:#201833;border:1px solid #4d3d73;font-weight:800;font-size:13px">🟡 Підключення…</div><div class="wrap"><div class="brand">SMOKERLOL • PLAYER</div><details id="playerCueMixer" style="margin:8px 0 12px"><summary>🔊 Звуки гри — гучність і перевірка</summary><div style="padding:10px 0;display:grid;gap:10px"><label>🔔 Гонг <input id="cueVolume_question" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_question">35%</output></label><label>✨ Відкриття BUZZ <input id="cueVolume_buzz_open" type="range" min="0" max="100" value="35"> <output id="cueVolumeValue_buzz_open">35%</output></label><p id="cueAudioNotice" hidden>Браузер заблокував звук. Торкнися екрана, щоб увімкнути звуки гри.</p></div></details><div id="playerVideoPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><video id="playerVideo" class="protectedMedia" playsinline preload="metadata" oncontextmenu="return false" style="width:100%;max-height:50vh;pointer-events:none"></video></div><div id="playerAudioPanel" class="panel media-question" style="display:none;margin:12px auto;max-width:820px"><div id="playerAudioInfo" class="muted" style="margin-bottom:8px"></div><audio id="playerAudio" class="protectedMedia" controls controlsList="nodownload noremoteplayback" preload="metadata" oncontextmenu="return false" style="width:100%"></audio></div><div id="app" class="panel"></div></div><script>
 const socket=io(),app=document.getElementById('app'),playerVideoPanel=document.getElementById('playerVideoPanel'),playerVideo=document.getElementById('playerVideo'),playerAudioPanel=document.getElementById('playerAudioPanel'),playerAudio=document.getElementById('playerAudio'),playerAudioInfo=document.getElementById('playerAudioInfo');
 // Browser audio must be unlocked by a direct tap/click on the PLAYER device.
 const cueAudio={
@@ -487,4 +487,27 @@ function render(){
     socket.emit('submitFinalAnswer',{code,answer},r=>{if(r&&r.ok===false)alert('Не вдалося надіслати відповідь')});
   };
 }
+// VIDEO: PLAYER follows HOST play/pause/seek (the same videoControl command OBS gets). Players have no video controls.
+socket.on('videoControl',command=>{
+ const cur=state?.current;
+ if(cur?.questionType!=='video'||command?.code!==code||command.media!==cur.media||cur.media!==playerVideo.getAttribute('src'))return;
+ const seek=()=>{
+  if(playerVideo.getAttribute('src')!==command.media)return;
+  const t=Math.max(0,Number(command.time)||0);
+  if(command.action==='seek'||Math.abs(playerVideo.currentTime-t)>.5){try{playerVideo.currentTime=t}catch(e){}}
+ };
+ if(playerVideo.readyState>=1)seek();else playerVideo.addEventListener('loadedmetadata',seek,{once:true});
+ // play() must not wait for metadata: iPhones may not preload video until play() is called.
+ if(command.action==='play'){const p=playerVideo.play();if(p&&p.catch)p.catch(e=>console.warn('PLAYER video playback:',e));}
+ else if(command.action==='pause')playerVideo.pause();
+});
+// iPhone lets code start a video with sound only after a tap has played that same element once.
+// A tap while the video is paused does a silent play()+pause(), so the next HOST play can start it.
+function unlockPlayerVideo(){
+ if(!playerVideo.paused||playerVideo.ended)return; // play() on an ended video would rewind it
+ const p=playerVideo.play();playerVideo.pause();
+ if(p&&p.catch)p.catch(()=>{});
+}
+document.addEventListener('touchend',unlockPlayerVideo,{capture:true});
+document.addEventListener('click',unlockPlayerVideo,{capture:true});
 </script></body></html>
