@@ -49,7 +49,7 @@ function seasonNumber(season){const m=String(season?.name||'').match(/(?:сез�
 function isQualifierSeason(season){return seasonNumber(season)>=2}
 function qualifierSummary(games){
  const qualifiers=[],wildMap=new Map();
- const qualifiersGames=(games||[]).filter(g=>!g.isGrandFinal).slice().sort((a,b)=>String(a.playedAt).localeCompare(String(b.playedAt))).slice(0,3);
+ const qualifiersGames=(games||[]).filter(g=>!g.isGrandFinal).slice().sort((a,b)=>new Date(a.playedAt)-new Date(b.playedAt)).slice(0,3);
  for(const g of qualifiersGames){
   const rs=(g.results||[]).slice().sort((a,b)=>a.place-b.place);
   const winner=rs.find(r=>r.place===1);

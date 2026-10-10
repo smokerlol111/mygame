@@ -241,6 +241,7 @@ socket.on('serverRestarting',()=>{ /* Socket.IO сам перепідключи�
 
 function me(){return state?.players.find(p=>p.id===playerId)}
 function leaveRoom(){
+  if(state&&state.phase!=='lobby'&&!confirm('Вийти з гри? Ваші бали буде втрачено, і повернутися в цю гру вже не вийде.'))return;
   const oldCode=code;
   socket.emit('leavePlayer',{code:oldCode},()=>{
     clearSession(true); history.replaceState(null,'','/play'); login('');
