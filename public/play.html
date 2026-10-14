@@ -712,9 +712,6 @@
       function mediaQuestionHTML() {
         return "";
       }
-      function captureMediaPlayback() {
-        return null;
-      }
       function playerQuestionHTML(cur) {
         // PLAYER sees prompt text only when it is needed to understand a visual/emoji mechanic.
         // Ordinary text questions remain host/OBS-only.
@@ -958,8 +955,6 @@
           h += `<div class="center"><h2>Відповіді перевіряє ведучий</h2></div>`;
         else if (state.phase === "final_result")
           h += `<div class="center"><h2>🏆 Гру завершено</h2><div class="huge">${p.score}</div></div>`;
-        const mediaSnapshot = captureMediaPlayback();
-        stopDetachedMedia(mediaSnapshot);
         app.innerHTML = h;
         syncPersistentPlayerVideo();
         syncPersistentPlayerAudio();
