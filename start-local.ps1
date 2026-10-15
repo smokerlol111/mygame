@@ -1,6 +1,23 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $env:PORT = '3100'
+# Configure the public address before starting Node so local host/OBS pages share it.
+& tailscale funnel --bg 3100
+if ($LASTEXITCODE -ne 0) { throw 'Tailscale Funnel failed to start.' }
+$funnelJson = & tailscale funnel status --json
+if ($LASTEXITCODE -ne 0) { throw 'Cannot read Tailscale Funnel configuration.' }
+$funnel = $funnelJson | ConvertFrom-Json
+$publicUrl = $null
+foreach ($entry in $funnel.Web.PSObject.Properties) {
+    $target = $entry.Value.Handlers.'/'.Proxy
+    $allowed = $funnel.AllowFunnel.PSObject.Properties[$entry.Name]
+    if ($allowed -and $allowed.Value -and $target -match '^http://(127\.0\.0\.1|localhost):3100/?$') {
+        $publicUrl = 'https://' + ($entry.Name -replace ':443$', '')
+        break
+    }
+}
+if (-not $publicUrl) { throw 'No public Tailscale Funnel address routes to port 3100.' }
+[System.IO.File]::WriteAllText((Join-Path $PSScriptRoot '.funnel-url'), $publicUrl, (New-Object System.Text.UTF8Encoding $false))
 # Host key: created once in .env; only someone with it can host, manage seasons or read answers.
 $envFile = Join-Path $PSScriptRoot '.env'
 $hostKey = $env:HOST_KEY
@@ -34,5 +51,4 @@ if (-not $listener) {
 }
 Write-Host 'Game: http://localhost:3100'
 Write-Host "Host (open once in this browser): http://localhost:3100/host?key=$hostKey"
-& tailscale funnel --bg 3100
-if ($LASTEXITCODE -ne 0) { throw 'Game is running, but Tailscale Funnel failed to start.' }
+Write-Host "Public game (players and audience): $publicUrl"

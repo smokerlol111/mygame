@@ -18,10 +18,10 @@ function freePort() {
   });
 }
 
-async function startServer() {
+async function startServer(overrides = {}) {
   const port = await freePort();
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'smokerlol-repro-'));
-  const env = { ...process.env, PORT: String(port), DATA_DIR: dataDir, DOTENV_CONFIG_PATH: path.join(dataDir, '.env') };
+  const env = { ...process.env, PUBLIC_URL: '', FUNNEL_URL_FILE: path.join(dataDir, '.funnel-url'), ...overrides, PORT: String(port), DATA_DIR: dataDir, DOTENV_CONFIG_PATH: path.join(dataDir, '.env') };
   for (const key of ['DATABASE_URL', 'PGSSL', 'DISCORD_BOT_TOKEN', 'DISCORD_GUILD_ID', 'DISCORD_VOICE_CHANNEL_ID']) delete env[key];
   const child = spawn(process.execPath, ['server.js'], { cwd: REPO_ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';

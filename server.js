@@ -70,15 +70,33 @@ app.get("/host", (_, res) => res.sendFile(path.join(__dirname, "public", "host.h
 app.get("/play", (_, res) => res.sendFile(path.join(__dirname, "public", "play.html")));
 app.get("/audience", (_, res) => res.sendFile(path.join(__dirname, "public", "audience.html")));
 app.get("/audience/:code", (_, res) => res.sendFile(path.join(__dirname, "public", "audience.html")));
+function publicBaseUrl(req) {
+  // The launcher updates this file even when it reuses an already running server.
+  let configured = process.env.PUBLIC_URL;
+  if (!configured) {
+    try {
+      configured = fs.readFileSync(process.env.FUNNEL_URL_FILE || path.join(__dirname, ".funnel-url"), "utf8").trim();
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  if (configured) {
+    const url = new URL(configured);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password)
+      throw new Error("PUBLIC_URL must be an HTTP(S) address without credentials.");
+    return url.origin;
+  }
+  const forwardProto = String(req.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
+  return `${forwardProto === "https" ? "https" : req.protocol}://${req.get("host")}`;
+}
+app.get("/public-config.js", (req, res) => {
+  const base = JSON.stringify(publicBaseUrl(req)).replace(/</g, "\\u003c");
+  res.type("application/javascript").send(`window.PUBLIC_GAME_URL = ${base};`);
+});
 app.get("/audience-qr/:code", async (req, res) => {
   try {
     const c = String(req.params.code || "").toUpperCase();
-    const forwardProto = String(req.get("x-forwarded-proto") || "")
-      .split(",")[0]
-      .trim()
-      .toLowerCase();
-    const safeProto = forwardProto === "https" ? "https" : req.protocol;
-    const base = `${safeProto}://${req.get("host")}`;
+    const base = publicBaseUrl(req);
     const svg = await QRCode.toString(`${base}/audience/${encodeURIComponent(c)}`, {
       type: "svg",
       margin: 1,

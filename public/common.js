@@ -1,4 +1,7 @@
 window.GameUI = (() => {
+  function publicUrl(path) {
+    return new URL(path, window.PUBLIC_GAME_URL || location.origin).href;
+  }
   function esc(s) {
     return String(s ?? "").replace(/[&<>\"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   }
@@ -56,5 +59,5 @@ window.GameUI = (() => {
     }
     return h + "</div>";
   }
-  return { esc, playersHTML, boardHTML, answererId, reactionHTML, showBuzzReactions, wrongAnswerClass };
+  return { esc, playersHTML, boardHTML, answererId, reactionHTML, showBuzzReactions, wrongAnswerClass, publicUrl };
 })();

@@ -1,5 +1,6 @@
 node_modules/
 .env
+.funnel-url
 .DS_Store
 npm-debug.log*
 local-server.log

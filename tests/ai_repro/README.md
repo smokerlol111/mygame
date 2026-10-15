@@ -23,6 +23,7 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 
 | Command | Proves | Time |
 |---|---|---|
+| `node tests/ai_repro/audience_public_url.js` | Funnel/public URL used by the local host and QR; viewer joins and answers; direct/proxy fallbacks | ~2 s |
 | `node tests/ai_repro/server_repros.js` | 19 live repros: EASY-01, 02, 03, 06, 08 · WORK-02…05 · RULE-03 · PARK-01…07 | ~45 s |
 | `node tests/ai_repro/server_repros.js R01,R04` | only the listed repros (IDs from `found_bugs.md` appendix) | a few s |
 | `node tests/ai_repro/storage_repros.js` | PARK-08, RULE-01, RULE-02, PARK-09 (calls `storage.js` directly, JSON mode) | ~2 s |
