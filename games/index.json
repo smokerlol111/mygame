@@ -46,5 +46,13 @@
     "description": "Сезон 2 • Гра #2 • тест тільки категорії «Періодично цікаво»",
     "file": "season2_general_knowledge_2_0.json",
     "enabled": true
+  },
+  {
+    "id": "season2-memes-internet",
+    "title": "МЕМИ ТА ІНТЕРНЕТ (підготовка)",
+    "icon": "🌐",
+    "description": "SMOKERLOL QUIZ • затверджена «Склейка року», інші категорії та фото очікуються",
+    "file": "season2_memes_internet.json",
+    "enabled": true
   }
 ]
