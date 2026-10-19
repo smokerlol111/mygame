@@ -1,0 +1,82 @@
+{
+  "id": "season2-memes-internet",
+  "title": "МЕМИ ТА ІНТЕРНЕТ",
+  "menuTitle": "МЕМИ ТА ІНТЕРНЕТ (підготовка)",
+  "description": "SMOKERLOL QUIZ — у підготовці; затверджено лише «Склейка року»; медіафайли ще не завантажені.",
+  "status": "draft-content-incomplete",
+  "notes": "У цій збірці затверджено тільки Раунд 1, категорію №3 «Склейка року». Підготовлені назви парних JPG; не запускати повну гру, доки не додано інші категорії, медіа, раунди й фінал.",
+  "rounds": [
+    {
+      "name": "Раунд 1",
+      "categories": [
+        {
+          "name": "Зроблено в Укрнеті",
+          "questions": []
+        },
+        {
+          "name": "Планета на репості",
+          "questions": []
+        },
+        {
+          "name": "Склейка року",
+          "questions": [
+            {
+              "value": 100,
+              "type": "imageReveal",
+              "q": "Кого зашифровано цими двома зображеннями?",
+              "image": "/media/memes_skleyka_100_pair.jpg",
+              "revealValues": [
+                100
+              ],
+              "a": "Гарфілд"
+            },
+            {
+              "value": 200,
+              "type": "imageReveal",
+              "q": "Кого зашифровано цими двома зображеннями?",
+              "image": "/media/memes_skleyka_200_pair.jpg",
+              "revealValues": [
+                200
+              ],
+              "a": "Віталій Кличко"
+            },
+            {
+              "value": 300,
+              "type": "imageReveal",
+              "q": "Кого зашифровано цими двома зображеннями?",
+              "image": "/media/memes_skleyka_300_pair.jpg",
+              "revealValues": [
+                300
+              ],
+              "a": "Олександр Усик"
+            },
+            {
+              "value": 400,
+              "type": "imageReveal",
+              "q": "Кого зашифровано цими двома зображеннями?",
+              "image": "/media/memes_skleyka_400_pair.jpg",
+              "revealValues": [
+                400
+              ],
+              "a": "Джон Сіна"
+            },
+            {
+              "value": 500,
+              "type": "imageReveal",
+              "q": "Кого зашифровано цими двома зображеннями?",
+              "image": "/media/memes_skleyka_500_pair.jpg",
+              "revealValues": [
+                500
+              ],
+              "a": "Павло Зібров"
+            }
+          ]
+        },
+        {
+          "name": "Пропустити через 5…",
+          "questions": []
+        }
+      ]
+    }
+  ]
+}
