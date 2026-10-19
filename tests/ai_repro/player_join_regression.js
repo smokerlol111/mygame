@@ -53,9 +53,10 @@ async function loadPlayer(url, savedSession = {}) {
   try {
     server = await startServer();
     host = io(server.url, { transports: ['websocket'], reconnection: false });
-    let hostState;
+    let hostState, hostSecrets;
     let submittedPlayerIds = [];
     host.on('state', state => { hostState = state; });
+    host.on('hostSecrets', secrets => { hostSecrets = secrets; });
     host.on('firstTurnProgress', progress => { submittedPlayerIds = progress.submittedPlayerIds; });
     await waitFor(() => host.connected, 'host connection');
     const { code } = await emit(host, 'createRoom', { hostToken: 'player-join-regression', gameId: 'general-knowledge' });
@@ -96,6 +97,105 @@ async function loadPlayer(url, savedSession = {}) {
     await waitFor(() => submittedPlayerIds.includes(playerId), 'host receives answer');
     assert.equal(hostState.players.length, 1);
     console.log('PASS: reconnect restores the session and the host receives the answer');
+
+    await emit(host, 'skipFirstTurnQuiz', { code });
+    const game = require('../../games/general_knowledge.json');
+    const tiles = game.rounds[0].categories.flatMap((category, ci) =>
+      category.questions.map((question, qi) => ({ question, ci, qi })));
+    const tile = tiles.find(({ question, ci, qi }) => !question.type && !hostSecrets.specialCells[`0:${ci}:${qi}`]);
+    assert.ok(tile, 'ordinary text tile exists');
+    await emit(host, 'chooseTile', { code, ci: tile.ci, qi: tile.qi });
+    await waitFor(() => page.doc.querySelector('.question')?.textContent === tile.question.q, 'live question text on PLAYER', page.errors);
+    assert.equal(hostState.activeQuestion.q, tile.question.q);
+    assert.equal(hostState.activeQuestion.a, '');
+    assert.equal(hostState.current.a, '');
+    assert.equal(page.doc.querySelectorAll('.question').length, 1);
+    await emit(host, 'openBuzz', { code });
+    await waitFor(() => page.doc.getElementById('buzz'), 'BUZZ opens with question text', page.errors);
+    assert.equal(page.doc.querySelector('.question').textContent, tile.question.q);
+    console.log('PASS: live server sends the active prompt to PLAYER, keeps answers hidden and preserves the prompt during BUZZ');
+
+    // Render server-shaped snapshots through the real PLAYER page in jsdom.
+    // Disconnect first so live state updates cannot replace the UI fixtures.
+    page.dom.window.eval('socket.disconnect()');
+    const renderReaction = (phase, reactionMs, extra = {}) => {
+      const snapshot = {
+        ...hostState, phase, activeQuestion: null, current: { type: 'normal' },
+        players: [
+          { ...hostState.players[0], reactionMs, reactionWrong: false },
+          { id: 'other-player', name: 'Other Player', score: 0, reactionMs: 999 },
+        ],
+        ...extra,
+      };
+      page.dom.window.eval(`state = ${JSON.stringify(snapshot)}; render();`);
+      assert.equal(page.errors.length, 0, page.errors.join('; '));
+      return page.doc.querySelector('.top .player-reaction');
+    };
+    assert.equal(renderReaction('buzz', null).textContent, '-');
+    assert.equal(renderReaction('answering', 0).textContent, '0 мс');
+    assert.equal(renderReaction('answering', 123.4).textContent, '123 мс');
+    assert.match(page.doc.querySelector('.top').textContent, /Час реакції:/);
+    assert.equal(page.doc.querySelectorAll('.player-reaction').length, 1);
+    const wrongPlayers = [{ ...hostState.players[0], reactionMs: 234, reactionWrong: true }];
+    assert.equal(renderReaction('buzz', null, { players: wrongPlayers }).classList.contains('wrong'), true);
+    assert.equal(renderReaction('result', null, { players: wrongPlayers }).textContent, '234 мс');
+    assert.equal(renderReaction('question', null).textContent, '-');
+    assert.equal(renderReaction('buzz', 345, { current: { type: 'duel' }, duelPlayers: [playerId, 'other-player'] }).textContent, '345 мс');
+    assert.equal(renderReaction('buzz', 345, { current: { type: 'duel' }, duelPlayers: ['other-player'] }), null);
+    const delta = () => page.doc.querySelector('.top .player-reaction.late');
+    const answerer = { id: 'other-player', name: 'Answerer', score: 0, reactionMs: 100 };
+    const renderCompared = (reactionMs, extra = {}) => renderReaction('answering', reactionMs, {
+      buzzer: answerer.id,
+      players: [{ ...hostState.players[0], reactionMs, reactionWrong: false }, answerer],
+      ...extra,
+    });
+    assert.equal(renderCompared(150).textContent, '150 мс');
+    assert.equal(delta().textContent, '(+50 мс)');
+    // jsdom preserves CSS variables rather than resolving them to RGB values.
+    assert.equal(page.dom.window.getComputedStyle(delta()).color, 'var(--bad)');
+    assert.equal(renderCompared(null).textContent, '-');
+    assert.equal(delta(), null);
+    for (const reactionMs of [0, 100]) {
+      renderCompared(reactionMs);
+      assert.equal(delta(), null);
+    }
+    renderCompared(150, { buzzer: playerId });
+    assert.equal(delta(), null);
+    renderCompared(150, { players: [{ ...hostState.players[0], reactionMs: 150, reactionWrong: true }, answerer] });
+    assert.equal(delta(), null);
+    renderCompared(150, { players: [{ ...hostState.players[0], reactionMs: 150 }, { ...answerer, reactionMs: null }] });
+    assert.equal(delta(), null);
+    renderCompared(150, { phase: 'result' });
+    assert.equal(delta().textContent, '(+50 мс)');
+    renderCompared(150, { phase: 'buzz', buzzer: null });
+    assert.equal(delta(), null);
+    renderCompared(150, { current: { type: 'duel' }, duelPlayers: [playerId, answerer.id] });
+    assert.equal(delta().textContent, '(+50 мс)');
+    for (const phase of ['lobby', 'paused', 'final_ready', 'numeric_result']) {
+      assert.equal(renderReaction(phase, 123), null);
+      assert.doesNotMatch(page.doc.querySelector('.top').textContent, /Час реакції:/);
+    }
+    assert.equal(renderReaction('result', 123, { current: { type: 'cat' } }), null);
+    console.log('PASS: PLAYER shows its own reaction, red late-press difference, missing-time dash, resets and duel/phase visibility (simulated states)');
+
+    const prompt = 'Текст запитання <img src=x onerror="alert(1)"> & друга частина\nНовий рядок';
+    const activeQuestion = { q: prompt };
+    for (const phase of ['question', 'buzz', 'answering', 'duel_question', 'cat_question', 'va_bank_question', 'triplet_question', 'triplet_result', 'result', 'video_result', 'final_ready', 'final_question', 'final_review']) {
+      renderReaction(phase, null, { activeQuestion });
+      assert.equal(page.doc.querySelectorAll('.question').length, 1, phase);
+      assert.equal(page.doc.querySelector('.question').textContent, prompt, phase);
+      assert.equal(page.doc.querySelector('.question img'), null, 'prompt is escaped');
+    }
+    renderReaction('question', null, { activeQuestion: { q: prompt, questionType: 'emoji', emoji: '🎬' } });
+    assert.equal(page.doc.querySelectorAll('.question').length, 1);
+    assert.match(page.doc.getElementById('app').textContent, /🎬/);
+    for (const phase of ['lobby', 'board', 'paused', 'cat_choose', 'duel_choose', 'va_bank_bet', 'final_bets']) {
+      renderReaction(phase, null, { activeQuestion });
+      assert.equal(page.doc.querySelector('.question'), null, phase);
+    }
+    renderReaction('question', null, { activeQuestion: { q: '' } });
+    assert.equal(page.doc.querySelector('.question'), null);
+    console.log('PASS: prompt appears once across active question phases, escapes HTML and stays hidden during selection/bets (simulated states)');
   } finally {
     if (page) {
       page.dom.window.eval('socket.disconnect()');

@@ -521,7 +521,8 @@ body:before {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
-.player-reaction.wrong {
+.player-reaction.wrong,
+.player-reaction.late {
   color: var(--bad);
 }
 

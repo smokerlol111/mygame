@@ -22,11 +22,22 @@ window.GameUI = (() => {
       && state.current.questionType !== "numericClosest"
     );
   }
-  function reactionHTML(p, state) {
+  function reactionHTML(p, state, compareToAnswerer = false) {
     if (!showBuzzReactions(state)) return "";
     if (state.current.type === "duel" && !(state.duelPlayers || []).includes(p.id)) return "";
-    const value = Number.isFinite(p.reactionMs) ? `${Math.max(0, Math.round(p.reactionMs))} мс` : "—";
-    return `<span class="player-reaction ${p.reactionWrong ? "wrong" : ""}" aria-label="Час реакції${p.reactionWrong ? ", неправильна відповідь" : ""}">${value}</span>`;
+    const reactionMs = Number.isFinite(p.reactionMs) ? Math.max(0, Math.round(p.reactionMs)) : null;
+    const value = reactionMs !== null ? `${reactionMs} мс` : compareToAnswerer ? "-" : "—";
+    const answerer = compareToAnswerer && ["answering", "result", "video_result"].includes(state.phase)
+      ? state.players?.find(player => player.id === state.buzzer)
+      : null;
+    // Locked players retain a reaction from an earlier BUZZ attempt, so it cannot be compared.
+    const difference = reactionMs !== null && !p.reactionWrong && answerer?.id !== p.id && Number.isFinite(answerer?.reactionMs)
+      ? reactionMs - Math.max(0, Math.round(answerer.reactionMs))
+      : 0;
+    const delta = difference > 0
+      ? `<span class="player-reaction late" aria-label="На ${difference} мс пізніше за гравця, який відповідає">(+${difference} мс)</span>`
+      : "";
+    return `<span class="player-reaction ${p.reactionWrong ? "wrong" : ""}" aria-label="Час реакції${p.reactionWrong ? ", неправильна відповідь" : ""}">${value}</span>${delta}`;
   }
   function wrongAnswerClass(p, state) {
     if (!state?.current || state.current.triplet) return "";

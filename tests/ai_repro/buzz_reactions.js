@@ -96,6 +96,13 @@ async function main() {
     assert.match(ui.reactionHTML({ reactionMs: 0 }, buzzState), />0 мс<\/span>/);
     assert.match(ui.reactionHTML({ reactionMs: 123, reactionWrong: true }, buzzState), /player-reaction wrong/);
     assert.match(ui.playersHTML([{ name: 'A', reactionMs: 123 }], null, buzzState), />123 мс<\/span>/);
+    const comparedState = {
+      phase: 'answering', current: { type: 'normal' }, buzzer: 'A',
+      players: [{ id: 'A', reactionMs: 100 }, { id: 'B', reactionMs: 150 }],
+    };
+    assert.doesNotMatch(ui.reactionHTML(comparedState.players[1], comparedState), /late/);
+    assert.doesNotMatch(ui.playersHTML(comparedState.players, 'A', comparedState), /late/);
+    assert.match(ui.reactionHTML(comparedState.players[1], comparedState, true), /player-reaction late[^>]*>\(\+50 мс\)/);
     for (const phase of ['lobby','board','first_turn_quiz','first_turn_result','numeric_ready','numeric_question','numeric_result','final_ready','final_question','final_review','final_result','triplet_question','triplet_result']) {
       assert.equal(ui.reactionHTML({ reactionMs: 123 }, { ...buzzState, phase }), '');
     }
@@ -128,7 +135,7 @@ async function main() {
     // Exercise the actual special-question judging handlers without starting another game.
     const serverSource = fs.readFileSync('server.js', 'utf8');
     for (const event of ['judgeCat','judgeVaBank']) {
-      const start = serverSource.indexOf(`  socket.on('${event}'`);
+      const start = serverSource.search(new RegExp(`  socket\\.on\\(["']${event}["']`));
       const end = serverSource.indexOf('\n  });', start) + '\n  });'.length;
       assert.ok(start >= 0 && end > start);
       for (const correct of [false,true]) {

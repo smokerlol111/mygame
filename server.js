@@ -207,8 +207,7 @@ function publicState(room) {
     activeQuestion: room.current
       ? {
           value: room.current.value,
-          // PLAYER only needs prompt text for emoji questions. Ordinary text questions stay off the phone.
-          q: room.current.questionType === "emoji" ? room.current.q || "" : "",
+          q: room.current.q || "",
           questionType: room.current.questionType || null,
           emoji: room.current.emoji || "",
           image: room.current.image || "",
@@ -1453,7 +1452,7 @@ io.on("connection", socket => {
       return cb({ ok: false, error: "Спочатку відкрийте всі місця." });
     const key = `${room.round}:${room.current.ci}:${room.current.qi}`;
     room.used[key] = true;
-    room.turnPlayerId = room.numericResults?.[0]?.id || room.turnPlayerId;
+    advanceTurn(room);
     room.phase = "board";
     room.current = null;
     room.numericChallenge = null;
