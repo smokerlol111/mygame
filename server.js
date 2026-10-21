@@ -498,12 +498,20 @@ function randomSpecialCells(room) {
       && !q.numericAnswer
       && !q.answerImage
       && !q.answerVideo;
-    // Preserve approved fixed cells only if they are ordinary text questions.
+    // Only games that explicitly opt in may randomly assign special cells to emoji questions.
+    const emojiEligible = q =>
+      game.specialSetup.allowEmojiSpecials === true
+      && q?.type === "emoji"
+      && !q.cat
+      && !!String(q.emoji || "").trim()
+      && !q.media && !q.image && !q.audio && !q.video
+      && !q.numericAnswer && !q.answerImage && !q.answerVideo;
+    // Keep existing fixed emoji cats/VA-BANKs; a fixed emoji duel requires opt-in.
     for (const [key, kind] of Object.entries(game.specialSetup.fixed || {})) {
       const [ri, ci, qi] = key.split(":").map(Number);
       const q = game.rounds?.[ri]?.categories?.[ci]?.questions?.[qi];
       if (
-        (normal(q) || (q?.type === "emoji" && ["cat", "va_bank"].includes(kind)))
+        (normal(q) || (q?.type === "emoji" && (["cat", "va_bank"].includes(kind) || (kind === "duel" && emojiEligible(q)))))
         && ["cat", "duel", "va_bank"].includes(kind)
       )
         out[key] = kind;
@@ -513,7 +521,7 @@ function randomSpecialCells(room) {
       (game.rounds?.[ri]?.categories || []).forEach((cat, ci) =>
         (cat.questions || []).forEach((q, qi) => {
           const key = `${ri}:${ci}:${qi}`;
-          if (!out[key] && normal(q)) keys.push(key);
+          if (!out[key] && (normal(q) || emojiEligible(q))) keys.push(key);
         }),
       );
       for (let i = keys.length - 1; i > 0; i--) {
@@ -1230,7 +1238,8 @@ io.on("connection", socket => {
       // by a randomly assigned special cell. Otherwise their payload/mechanic disappears.
       const formatLocked =
         ["emoji", "triplet", "numericClosest", "audio", "audioReveal", "video", "imageReveal"].includes(q.type)
-        && !(q.type === "emoji" && ["cat", "va_bank"].includes(room.specialCells[key]));
+        && !(q.type === "emoji" && (["cat", "va_bank"].includes(room.specialCells[key])
+          || (game.specialSetup?.allowEmojiSpecials === true && room.specialCells[key] === "duel")));
       const special =
         room.gameId === "media-test" || formatLocked
           ? "normal"
@@ -1293,7 +1302,7 @@ io.on("connection", socket => {
           room.current.value = room.current.revealValues[0];
         }
       }
-      if (q.type === "emoji" && ["normal", "cat", "va_bank"].includes(special)) {
+      if (q.type === "emoji" && ["normal", "cat", "va_bank", "duel"].includes(special)) {
         room.current.questionType = "emoji";
         room.current.emoji = String(q.emoji || "").trim();
         if (!room.current.emoji) return cb({ ok: false, error: "Для emoji-питання потрібне поле emoji." });
