@@ -1649,7 +1649,7 @@
         else if (state.phase === "duel_choose")
           h += `<div class="obsGameLayout"><div class="obsSegment obsSegmentQuestion panel">${duelMatchupHTML()}<div class="question">Очікуємо вибір суперника…</div></div><div class="obsSegment obsSegmentMedia"></div><div class="obsSegment obsSegmentAnswer panel is-empty"></div><div class="obsSegment obsSegmentPlayers">${GameUI.playersHTML(state.players, null, state)}</div></div>`;
         else if (state.phase === "duel_question")
-          h += `<div class="obsGameLayout"><div class="obsSegment obsSegmentQuestion panel">${duelMatchupHTML()}<div class="question">${GameUI.esc(state.current?.q || "")}</div></div><div class="obsSegment obsSegmentMedia"></div><div class="obsSegment obsSegmentAnswer panel is-empty"></div><div class="obsSegment obsSegmentPlayers">${GameUI.playersHTML(state.players, null, state)}</div></div>`;
+          h += `<div class="obsGameLayout"><div class="obsSegment obsSegmentQuestion panel">${duelMatchupHTML()}<div class="question">${GameUI.esc(state.current?.q || "")}</div></div><div class="obsSegment obsSegmentMedia">${emojiQuestionHTML(state.current)}</div><div class="obsSegment obsSegmentAnswer panel is-empty"></div><div class="obsSegment obsSegmentPlayers">${GameUI.playersHTML(state.players, null, state)}</div></div>`;
         else if (state.phase === "cat_choose")
           h += `<div class="panel center"><div class="huge">🐈</div><h1>КІТ У МІШКУ</h1><p>Ведучий обирає гравця</p></div>${GameUI.playersHTML(state.players, null, state)}`;
         else if (state.phase === "final_bets")
