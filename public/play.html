@@ -608,6 +608,7 @@
         if (playerVideo.getAttribute("src") !== src) {
           playerVideo.pause();
           playerVideo.setAttribute("src", src);
+          playerVideo.volume = src === "/media/memes_nostalgia_800_stop11.mp4" ? 0.6 : 1;
           try {
             playerVideo.currentTime = 0;
           } catch (e) {}
