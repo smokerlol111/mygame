@@ -4,7 +4,7 @@
   "menuTitle": "МЕМИ ТА ІНТЕРНЕТ (підготовка)",
   "description": "SMOKERLOL QUIZ — Раунд 1: 25 питань (5 категорій); Раунд 2: 25 питань (5 категорій). Основний контент погоджено; гра ще у підготовці через медіа, глядацькі блоки та фінал.",
   "status": "draft-content-incomplete",
-  "notes": "Раунд 1: 25/25. Раунд 2: 25/25, 5/5 категорій («Впари мені ностальгію», «Укрнет: олди на зв'язку», «Мемозаври» (Disaster Girl за 400: revealValues 400/325/250/175/100, крок −75), «QTV: флешбеки дозволено», «Питання від підписників»). Підписники: 200 «Мєрзость» (текст), 400 Вася Харизма/голубці (audio), 600 пожежник «Два кредита» (video STOP 3 s), 800 «Добрий день, студія!» (emoji), 1000 Барт «Я так умію, але не хочу» (video STOP 3 s). Підготовлені назви медіа для власника: /media/memes_subscribers_400_golubtsi_vasya_kharyzma.mp3, /media/memes_subscribers_600_firefighter_two_loans.mp4, /media/memes_subscribers_1000_bart_ya_tak_umiyu.mp4; у GitHub public/media/ наразі ще відсутні. Також очікуються MP3/MP4 «Ностальгії», JPG/MP3 «Мемозаврів», MP3-трейлер «Футурами» QTV; цитати QTV 200/800 треба звірити за ефірною аудіодоріжкою. Глядацькі раунди, фінал і наскрізний тест не завершені; гра залишається draft-content-incomplete до підготовки медіа й перевірок.",
+  "notes": "Раунд 1: 25/25. Раунд 2: 25/25, 5/5 категорій («Впари мені ностальгію», «Укрнет: олди на зв'язку», «Мемозаври» (Disaster Girl за 400: revealValues 400/325/250/175/100, крок −75), «QTV: флешбеки дозволено», «Питання від підписників»). Підписники: 200 «Мєрзость» (текст), 400 Вася Харизма/голубці (audio), 600 пожежник «Два кредита» (video STOP 3 s), 800 «Добрий день, студія!» (emoji), 1000 Барт «Я так умію, але не хочу» (video STOP 3 s). Стан медіа на 21.10.2026: усі 23 шляхи до медіафайлів (image/media) з обох раундів існують у GitHub public/media/; 10 PNG-шляхів першого раунду виправлено на наявні JPG (включно з memes_skleyka_200_pair.jpg). Наявність у репозиторії не підтверджує коректності вмісту та відтворення: STOP, аудіофрагменти й цитати QTV 200/800 потребують перевірки в браузері та за українською доріжкою. Глядацькі раунди, фінал і наскрізний тест не завершені; гра залишається draft-content-incomplete до підготовки медіа й перевірок.",
   "rounds": [
     {
       "name": "Раунд 1",
@@ -94,7 +94,7 @@
               "value": 100,
               "type": "imageReveal",
               "q": "Кого зашифровано цими двома зображеннями?",
-              "image": "/media/memes_skleyka_100_pair.png",
+              "image": "/media/memes_skleyka_100_pair.jpg",
               "revealValues": [
                 100
               ],
@@ -104,7 +104,7 @@
               "value": 200,
               "type": "imageReveal",
               "q": "Кого зашифровано цими двома зображеннями?",
-              "image": "/media/memes_skleyka_200_pair..png",
+              "image": "/media/memes_skleyka_200_pair.jpg",
               "revealValues": [
                 200
               ],
@@ -114,7 +114,7 @@
               "value": 300,
               "type": "imageReveal",
               "q": "Кого зашифровано цими двома зображеннями?",
-              "image": "/media/memes_skleyka_300_pair.png",
+              "image": "/media/memes_skleyka_300_pair.jpg",
               "revealValues": [
                 300
               ],
@@ -124,7 +124,7 @@
               "value": 400,
               "type": "imageReveal",
               "q": "Кого зашифровано цими двома зображеннями?",
-              "image": "/media/memes_skleyka_400_pair.png",
+              "image": "/media/memes_skleyka_400_pair.jpg",
               "revealValues": [
                 400
               ],
@@ -134,7 +134,7 @@
               "value": 500,
               "type": "imageReveal",
               "q": "Кого зашифровано цими двома зображеннями?",
-              "image": "/media/memes_skleyka_500_pair.png",
+              "image": "/media/memes_skleyka_500_pair.jpg",
               "revealValues": [
                 500
               ],
@@ -191,7 +191,7 @@
               "value": 100,
               "type": "imageReveal",
               "q": "Яку знамениту мемну фразу з фільму зашифровано в цьому кадрі?",
-              "image": "/media/ochyma_geroya_100_this_is_sparta.png",
+              "image": "/media/ochyma_geroya_100_this_is_sparta.jpg",
               "revealValues": [
                 100
               ],
@@ -201,7 +201,7 @@
               "value": 200,
               "type": "imageReveal",
               "q": "Яку знамениту мемну фразу з фільму зашифровано в цьому кадрі?",
-              "image": "/media/ochyma_geroya_200_you_shall_not_pass.png",
+              "image": "/media/ochyma_geroya_200_you_shall_not_pass.jpg",
               "revealValues": [
                 200
               ],
@@ -211,7 +211,7 @@
               "value": 300,
               "type": "imageReveal",
               "q": "Яку знамениту мемну фразу з фільму зашифровано в цьому кадрі?",
-              "image": "/media/ochyma_geroya_300_look_im_in_the_picture.png",
+              "image": "/media/ochyma_geroya_300_look_im_in_the_picture.jpg",
               "revealValues": [
                 300
               ],
@@ -221,7 +221,7 @@
               "value": 400,
               "type": "imageReveal",
               "q": "Яку знамениту мемну фразу з фільму зашифровано в цьому кадрі?",
-              "image": "/media/ochyma_geroya_400_and_you.png",
+              "image": "/media/ochyma_geroya_400_and_you.jpg",
               "revealValues": [
                 400
               ],
@@ -231,7 +231,7 @@
               "value": 500,
               "type": "imageReveal",
               "q": "Яку знамениту мемну фразу з фільму зашифровано в цьому кадрі?",
-              "image": "/media/ochyma_geroya_500_do_you_understand.png",
+              "image": "/media/ochyma_geroya_500_do_you_understand.jpg",
               "revealValues": [
                 500
               ],
