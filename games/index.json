@@ -35,7 +35,7 @@
     "id": "season2-kinohardkor-2",
     "title": "КІНОХАРДКОР 2.0",
     "icon": "🎬",
-    "description": "Сезон 2 • Гра #1 • тест Раунду 1 і механіки ТРИПЛЕТ",
+    "description": "Сезон 2 • Гра #1 • Відбір до Grand Final",
     "file": "season2_kinohardkor_2_0.json",
     "enabled": true
   },
@@ -43,15 +43,15 @@
     "id": "season2-general-knowledge-2",
     "title": "ЗАГАЛЬНІ ЗНАННЯ 2.0",
     "icon": "🧠",
-    "description": "Сезон 2 • Гра #2 • тест тільки категорії «Періодично цікаво»",
+    "description": "Сезон 2 • Гра #2 • Шкільні знання, логіка, факти та пастки",
     "file": "season2_general_knowledge_2_0.json",
     "enabled": true
   },
   {
     "id": "season2-memes-internet",
-    "title": "МЕМИ ТА ІНТЕРНЕТ (підготовка)",
+    "title": "МЕМИ ТА ІНТЕРНЕТ",
     "icon": "🌐",
-    "description": "SMOKERLOL QUIZ • Раунд 1: 25/25, Раунд 2: 25/25; перший хід і фінал; 2 глядацькі раунди по 3 питання (30 с). Усі 23 медіашляхи є у GitHub. Потрібен наскрізний тест HOST / PLAYER / OBS та медіа.",
+    "description": "Сезон 2 • Гра #3 • Меми, ностальгія та інтернет-культура",
     "file": "season2_memes_internet.json",
     "enabled": true
   }
