@@ -54,5 +54,13 @@
     "description": "Сезон 2 • Гра #3 • Меми, ностальгія та інтернет-культура",
     "file": "season2_memes_internet.json",
     "enabled": true
+  },
+  {
+    "id": "season2-grand-final",
+    "title": "GRAND FINAL — СЕЗОН 2",
+    "icon": "🏆",
+    "description": "Грандфінал 29.10.2026 • підготовка; доступний після завершення 50 питань і медіа",
+    "file": "season2_grand_final.json",
+    "enabled": false
   }
 ]
