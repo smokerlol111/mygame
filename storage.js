@@ -25,6 +25,7 @@ async function init() {
     await pool.query(
       `CREATE TABLE IF NOT EXISTS quiz_games(id TEXT PRIMARY KEY,season_id TEXT NOT NULL REFERENCES quiz_seasons(id) ON DELETE CASCADE,room_code TEXT NOT NULL UNIQUE,game_id TEXT NOT NULL,title TEXT NOT NULL,played_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),is_grand_final BOOLEAN NOT NULL DEFAULT FALSE,results JSONB NOT NULL)`,
     );
+    await pool.query(`ALTER TABLE quiz_seasons ADD COLUMN IF NOT EXISTS wild_card_selection JSONB`);
     const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM quiz_seasons`);
     if (!rows[0].n) await createSeason("Сезон 1");
   } else {
@@ -69,7 +70,7 @@ async function createSeason(name) {
 async function listSeasons() {
   if (usePostgres) {
     const { rows } = await pool.query(
-      `SELECT id,name,status,created_at AS "createdAt",completed_at AS "completedAt" FROM quiz_seasons ORDER BY created_at DESC`,
+      `SELECT id,name,status,created_at AS "createdAt",completed_at AS "completedAt",wild_card_selection AS "wildCardSelection" FROM quiz_seasons ORDER BY created_at DESC`,
     );
     return rows;
   }
@@ -118,7 +119,7 @@ function seasonNumber(season) {
 function isQualifierSeason(season) {
   return seasonNumber(season) >= 2;
 }
-function qualifierSummary(games) {
+function qualifierSummary(games, selection) {
   const qualifiers = [],
     wildMap = new Map();
   const qualifiersGames = (games || [])
@@ -148,30 +149,53 @@ function qualifierSummary(games) {
         score: Number(r.score) || 0,
         gameId: g.id,
       };
-      if (
-        !prev
-        || candidate.seasonPoints > prev.seasonPoints
-        || (candidate.seasonPoints === prev.seasonPoints && candidate.score > prev.score)
-      )
-        wildMap.set(k, candidate);
+      if (!prev) wildMap.set(k, candidate);
     }
   }
   const qualifiedNames = new Set(qualifiers.map(x => String(x.name).trim().toLocaleLowerCase("uk")));
   const wildCardRanking = [...wildMap.values()]
     .filter(x => !qualifiedNames.has(String(x.name).trim().toLocaleLowerCase("uk")))
-    .sort((a, b) => b.seasonPoints - a.seasonPoints || b.score - a.score || a.name.localeCompare(b.name, "uk"));
+    .sort((a, b) => a.name.localeCompare(b.name, "uk"));
+  const selected = selection?.mode === "audience"
+    ? wildCardRanking.find(x => x.name === selection.name) || null
+    : null;
+  const wildCard = qualifiersGames.length >= 3 ? selected : null;
   return {
     qualifiers,
-    wildCard: qualifiersGames.length >= 3 ? wildCardRanking[0] || null : null,
-    wildCardLeader: wildCardRanking[0] || null,
+    wildCard,
+    wildCardMode: "audience",
+    wildCardLeader: null,
     wildCardRanking,
     qualifierGamesPlayed: qualifiersGames.length,
     qualifierGamesTotal: 3,
     grandFinalists: [
       ...qualifiers,
-      ...(qualifiersGames.length >= 3 && wildCardRanking[0] ? [{ ...wildCardRanking[0], wildCard: true }] : []),
+      ...(wildCard ? [{ ...wildCard, wildCard: true }] : []),
     ],
   };
+}
+async function setSeasonWildCard(seasonId, { mode, name = null } = {}) {
+  if (mode !== "audience") throw Error("Четвертого фіналіста визначають лише голосуванням глядачів.");
+  const season = await seasonDetails(seasonId);
+  if (!season) throw Error("Сезон не знайдено.");
+  if (season.status !== "active") throw Error("Змінювати Wild Card можна лише в активному сезоні.");
+  if (season.seasonFormat !== "qualifiers") throw Error("У цьому сезоні немає відбору Wild Card.");
+  if (season.games.some(g => g.isGrandFinal)) throw Error("Grand Final уже збережено. Wild Card змінити не можна.");
+  let candidate = null;
+  if (name !== null) {
+    if (season.qualification.qualifierGamesPlayed < 3)
+      throw Error("Обрати четвертого фіналіста можна після трьох відбіркових ігор.");
+    candidate = season.qualification.wildCardRanking.find(x => x.name === name);
+    if (!candidate) throw Error("Оберіть учасника відбору, який ще не переміг у жодній грі.");
+  }
+  const selection = { mode, name: candidate?.name || null, updatedAt: nowIso() };
+  if (usePostgres) {
+    await pool.query(`UPDATE quiz_seasons SET wild_card_selection=$2::jsonb WHERE id=$1`, [seasonId, JSON.stringify(selection)]);
+  } else {
+    fileData.seasons.find(s => s.id === seasonId).wildCardSelection = selection;
+    saveFile();
+  }
+  return seasonDetails(seasonId);
 }
 async function saveGame({ seasonId, roomCode, gameId, title, results, isGrandFinal = false }) {
   const normalized = normalizeResults(results, isGrandFinal ? 2 : 1);
@@ -273,7 +297,7 @@ async function seasonDetails(id) {
   const games = await gamesForSeason(id),
     leaderboard = leaderboardFromGames(games),
     qualifierMode = isQualifierSeason(season),
-    qualification = qualifierMode ? qualifierSummary(games) : null;
+    qualification = qualifierMode ? qualifierSummary(games, season.wildCardSelection) : null;
   const grandFinal = games.find(g => g.isGrandFinal),
     grandWinner = grandFinal?.results?.slice().sort((a, b) => a.place - b.place)[0] || null;
   return {
@@ -301,6 +325,7 @@ module.exports = {
   createSeason,
   listSeasons,
   setSeasonStatus,
+  setSeasonWildCard,
   saveGame,
   updateGameResults,
   deleteGame,

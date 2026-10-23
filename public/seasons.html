@@ -119,9 +119,12 @@
           )
           .join("");
         const q = s.qualification,
+          wildCardHtml = q?.wildCard
+            ? `<span>🗳️ Wild Card — вибір глядачів: <b>${esc(q.wildCard.name)}</b></span>`
+            : "<span>🗳️ Четвертий фіналіст: очікуємо результат голосування глядачів</span>",
           qBlock =
             s.seasonFormat === "qualifiers"
-              ? `<div class="panel"><h2>🎯 Шлях до Grand Final</h2><p><b>Відбіркові ігри: ${q?.qualifierGamesPlayed || 0}/3</b></p><div class="historyResults">${(q?.qualifiers || []).map((x, i) => `<span>🏆 Гра ${i + 1}: <b>${esc(x.name)}</b></span>`).join("") || "<span>Переможців ще немає.</span>"}${q?.qualifierGamesPlayed >= 3 && q?.wildCard ? `<span>🎟️ Wild Card: <b>${esc(q.wildCard.name)}</b> — ${q.wildCard.seasonPoints} ${pointsWord(q.wildCard.seasonPoints)}, ігровий рахунок ${q.wildCard.score}</span>` : q?.wildCardLeader ? `<span>🎟️ Поточний лідер Wild Card: <b>${esc(q.wildCardLeader.name)}</b></span>` : ""}</div></div>`
+              ? `<div class="panel"><h2>🎯 Шлях до Grand Final</h2><p><b>Відбіркові ігри: ${q?.qualifierGamesPlayed || 0}/3</b></p><div class="historyResults">${(q?.qualifiers || []).map((x, i) => `<span>🏆 Гра ${i + 1}: <b>${esc(x.name)}</b></span>`).join("") || "<span>Переможців ще немає.</span>"}${wildCardHtml}</div></div>`
               : "";
         app.innerHTML = `<div class="seasonTabs">${tabs}</div><div class="center"><div class="badge">${s.status === "completed" ? "📚 АРХІВ" : "🟢 АКТИВНИЙ СЕЗОН"}</div><h2>${esc(s.name)}</h2>${s.champion ? `<div class="panel" style="display:inline-block;padding:18px 28px;margin:8px auto 18px"><div class="huge">🏆 ${esc(s.champion.name)}</div><p class="muted" style="margin-bottom:0">Чемпіон сезону</p></div>` : ""}<p class="muted">${s.games.length} збережених ігор</p></div>${qBlock}<h2>Таблиця сезону</h2><div style="overflow:auto"><table class="lb"><thead><tr><th>#</th><th>Гравець</th><th>Ігри</th><th>Перемоги</th><th>Подіуми</th><th>Сезонні</th><th>Ігрові</th></tr></thead><tbody>${rows || '<tr><td colspan="7">Ще немає збережених ігор.</td></tr>'}</tbody></table></div><h2 style="margin-top:28px">Історія ігор</h2><div class="gameHistory">${games || '<p class="muted">Ігор ще немає.</p>'}</div>`;
         document.querySelectorAll(".seasonTab").forEach(

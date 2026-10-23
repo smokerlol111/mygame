@@ -2221,6 +2221,16 @@ io.on("connection", socket => {
   function isSeasonAdmin(token) {
     return !!token && token === socket.data.seasonAdminToken;
   }
+  socket.on("setSeasonWildCard", async ({ adminToken, code: c, seasonId, mode, name } = {}, cb = () => {}) => {
+    if (!isSeasonAdmin(adminToken) && !isHost(socket, getRoom(c)))
+      return cb({ ok: false, error: "Немає доступу." });
+    try {
+      const season = await storage.setSeasonWildCard(seasonId, { mode, name });
+      cb({ ok: true, qualification: season.qualification });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
   socket.on("seasonAdminCreate", async ({ adminToken, name } = {}, cb = () => {}) => {
     if (!isSeasonAdmin(adminToken)) return cb({ ok: false, error: "Немає доступу." });
     try {
