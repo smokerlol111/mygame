@@ -1359,9 +1359,10 @@ io.on("connection", socket => {
         room.numericTimer = null;
       } else if (
         room.current.questionType
-        && ["audio", "audioReveal", "video", "imageReveal"].includes(room.current.questionType)
+        && ["audio", "audioReveal", "video"].includes(room.current.questionType)
       ) {
-        // Media questions open the buzzer immediately; normal questions keep the host-controlled start.
+        // Audio and video preserve automatic BUZZ; photo + text questions stay in the question phase
+        // with their image already visible, until the HOST manually opens BUZZ.
         room.phase = "buzz";
         room.buzzer = null;
         room.buzzOpensAt = Date.now();
