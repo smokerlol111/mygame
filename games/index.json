@@ -57,10 +57,10 @@
   },
   {
     "id": "season2-grand-final",
-    "title": "GRAND FINAL — СЕЗОН 2",
+    "title": "GRAND FINAL — ТЕСТ (СЕЗОН 2)",
     "icon": "🏆",
-    "description": "Грандфінал 29.10.2026 • підготовка; доступний після завершення 50 питань і медіа",
+    "description": "Грандфінал 29.10.2026 • тестова незавершена версія: 30/50 питань, 2-й раунд не повний",
     "file": "season2_grand_final.json",
-    "enabled": false
+    "enabled": true
   }
 ]
