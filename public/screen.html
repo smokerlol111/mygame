@@ -1663,6 +1663,7 @@
         else if (state.phase === "final_result") {
           if (state.seasonCeremonyActive && state.seasonFinal?.leaderboard?.length) {
             const rs = state.seasonFinal.leaderboard,
+              decisive = state.seasonFinal.championshipRule === "grand_final",
               total = rs.length,
               shown = Math.min(state.seasonRevealCount || 0, total),
               revealed = [];
@@ -1675,13 +1676,13 @@
               latest?.place === 1
                 ? `<div class="seasonConfetti">${Array.from({ length: 46 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--h:${(i * 71) % 360};--d:${2.4 + (i % 7) * 0.22}s;--delay:${-(i % 11) * 0.23}s;--r:${i * 29}deg"></i>`).join("")}${Array.from({ length: 22 }, (_, i) => `<i class="pop" style="--x:${i % 2 ? 92 : 7}%;--h:${(i * 83) % 360};--delay:${-(i % 8) * 0.15}s;--dx:${i % 2 ? -1 : 1}${50 + (i % 6) * 18}px;--dy:-${80 + (i % 7) * 24}px"></i>`).join("")}</div><div class="seasonCannon left">🎉</div><div class="seasonCannon right">🎉</div>`
                 : "";
-            h += `<div class="panel center ${latest?.place === 1 ? "seasonChampionStage" : ""}">${championFX}<div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ${GameUI.esc(state.seasonFinal.name || "СЕЗОН")}</div>${!latest ? `<div class="huge" style="margin-top:34px">👑</div><h1 style="font-size:54px">СЕЗОННІ ПІДСУМКИ</h1><p class="muted" style="font-size:24px">Grand Final • подвійні сезонні очки</p>` : `<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place === 1 ? "👑 ЧЕМПІОН СЕЗОНУ" : latest.place + " МІСЦЕ СЕЗОНУ"}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${latest.p.seasonPoints}</div><div class="muted" style="font-size:22px">СЕЗОННИХ БАЛІВ</div><div style="font-size:22px;margin-top:12px;opacity:.8">${latest.p.wins} перемог • ${latest.p.podiums} подіумів</div>`}${
+            h += `<div class="panel center ${latest?.place === 1 ? "seasonChampionStage" : ""}">${championFX}<div style="font-size:24px;letter-spacing:.18em;font-weight:800;opacity:.8">SMOKERLOL • ${GameUI.esc(state.seasonFinal.name || "СЕЗОН")}</div>${!latest ? `<div class="huge" style="margin-top:34px">👑</div><h1 style="font-size:54px">СЕЗОННІ ПІДСУМКИ</h1><p class="muted" style="font-size:24px">${decisive ? "Grand Final • вирішальна гра сезону" : "Grand Final • подвійні сезонні очки"}</p>` : `<div style="margin-top:26px;font-size:34px;font-weight:900">${latest.place === 1 ? "👑 ЧЕМПІОН СЕЗОНУ" : latest.place + " МІСЦЕ СЕЗОНУ"}</div><div class="winner" style="font-size:clamp(52px,7vw,92px);line-height:1.05;margin:12px 0 20px">${GameUI.esc(latest.p.name)}</div><div class="huge" style="font-size:clamp(64px,8vw,110px);margin-top:4px">${decisive ? latest.p.score : latest.p.seasonPoints}</div><div class="muted" style="font-size:22px">${decisive ? "БАЛІВ У GRAND FINAL" : "СЕЗОННИХ БАЛІВ"}</div>${decisive ? "" : `<div style="font-size:22px;margin-top:12px;opacity:.8">${latest.p.wins} перемог • ${latest.p.podiums} подіумів</div>`}`}${
               revealed.length > 1
                 ? `<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px">${revealed
                     .slice(0, -1)
                     .map(
                       x =>
-                        `<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${x.p.seasonPoints}</b></div>`,
+                        `<div style="padding:10px 18px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.18);font-size:19px"><b>${x.place}.</b> ${GameUI.esc(x.p.name)} — <b>${decisive ? x.p.score : x.p.seasonPoints}</b></div>`,
                     )
                     .join("")}</div>`
                 : ""

@@ -148,6 +148,8 @@ function publicState(room) {
     code: room.code,
     title: getRoomGame(room).title,
     gameId: room.gameId,
+    isGrandFinal: getRoomGame(room).isGrandFinal === true,
+    isTestResult: !!room.isTestResult,
     gameMenuTitle: getRoomGame(room).menuTitle || getRoomGame(room).title,
     phase: room.phase,
     paused: !!room.paused,
@@ -441,10 +443,44 @@ function startFinalCountdown(room) {
     emitState(room);
   }, 1000);
 }
+function startNumericCountdown(room, ms) {
+  clearTimeout(room.numericTimer);
+  room.numericEndsAt = Date.now() + ms;
+  room.numericTimer = setTimeout(() => {
+    room.numericTimer = null;
+    if (rooms.get(room.code) === room && room.phase === "numeric_question") {
+      room.numericEndsAt = null;
+      emitState(room);
+    }
+  }, ms);
+}
+function startAudienceCountdown(room, ms) {
+  clearTimeout(room.audienceTimer);
+  room.audienceEndsAt = Date.now() + ms;
+  room.audienceTimer = setTimeout(() => {
+    room.audienceTimer = null;
+    if (rooms.get(room.code) === room && room.phase === "audience_question") {
+      room.audienceEndsAt = null;
+      room.phase = "audience_result";
+      emitState(room);
+    }
+  }, ms);
+}
 function pauseRoom(room) {
   if (room.paused) return;
   room.paused = true;
   room.pausedPhase = room.phase;
+  room.pauseStartedAt = Date.now();
+  room.pauseNumericRemaining = room.phase === "numeric_question" && room.numericEndsAt
+    ? Math.max(0, room.numericEndsAt - Date.now()) : null;
+  room.pauseAudienceRemaining = room.phase === "audience_question" && room.audienceEndsAt
+    ? Math.max(0, room.audienceEndsAt - Date.now()) : null;
+  clearTimeout(room.numericTimer);
+  clearTimeout(room.audienceTimer);
+  room.numericTimer = null;
+  room.audienceTimer = null;
+  if (room.pauseNumericRemaining !== null) room.numericEndsAt = null;
+  if (room.pauseAudienceRemaining !== null) room.audienceEndsAt = null;
 
   if (room.firstTurnTimerStatus === "running") {
     room.pauseFirstTurnRemaining = Math.max(0, Number(room.firstTurnEndsAt || 0) - Date.now());
@@ -468,6 +504,15 @@ function resumeRoom(room) {
   room.paused = false;
   room.pausedPhase = null;
   room.phase = previous;
+  if (previous === "numeric_question" && room.pauseNumericRemaining !== null)
+    startNumericCountdown(room, room.pauseNumericRemaining);
+  if (previous === "audience_question" && room.pauseAudienceRemaining !== null) {
+    room.audienceStartedAt += Math.max(0, Date.now() - room.pauseStartedAt);
+    startAudienceCountdown(room, room.pauseAudienceRemaining);
+  }
+  room.pauseNumericRemaining = null;
+  room.pauseAudienceRemaining = null;
+  room.pauseStartedAt = null;
 
   if (room.firstTurnTimerStatus === "paused") {
     const ms = Math.max(0, Number(room.pauseFirstTurnRemaining) || 0);
@@ -856,6 +901,8 @@ io.on("connection", socket => {
   socket.on("adjustScore", ({ code: c, playerId, amount } = {}, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу до цієї кімнати." });
+    if (room.savedSeasonGameId)
+      return cb({ ok: false, error: "Результат уже збережено в сезон. Спочатку видаліть його з сезону, потім скоригуйте бали й збережіть знову." });
     const player = room.players.find(p => p.id === playerId);
     if (!player) return cb({ ok: false, error: "Гравця не знайдено." });
 
@@ -991,7 +1038,7 @@ io.on("connection", socket => {
 
   socket.on("startGame", ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room)) return;
+    if (!isHost(socket, room) || room.phase !== "lobby") return cb({ ok: false, error: "Гру можна почати лише з лобі." });
     if (room.players.length < 1) return cb({ ok: false, error: "Потрібен хоча б один гравець." });
     clearTimeout(room.firstTurnTimer);
     room.firstTurnTimer = null;
@@ -1014,6 +1061,7 @@ io.on("connection", socket => {
       p.finalAnswer = "";
     });
     room.paused = false;
+    room.isTestResult = false;
     room.pausedPhase = null;
     room.pauseFirstTurnRemaining = null;
     room.pauseFinalRemaining = null;
@@ -1158,6 +1206,7 @@ io.on("connection", socket => {
     room.firstTurnTimer = null;
     room.firstTurnTimerStatus = "ready";
     room.firstTurnEndsAt = null;
+    room.isTestResult = false;
     room.firstTurnAnswers = {};
     room.firstTurnResults = null;
     room.firstTurnRevealCount = 0;
@@ -1382,15 +1431,8 @@ io.on("connection", socket => {
       return cb({ ok: false, error: "Числове питання не готове." });
     room.numericAnswers = {};
     room.numericSubmittedAt = {};
-    room.numericEndsAt = Date.now() + 30000;
     room.phase = "numeric_question";
-    clearTimeout(room.numericTimer);
-    room.numericTimer = setTimeout(() => {
-      if (room.phase === "numeric_question") {
-        room.numericEndsAt = null;
-        emitState(room);
-      }
-    }, 30000);
+    startNumericCountdown(room, 30000);
     cb({ ok: true });
     emitState(room);
   });
@@ -1943,16 +1985,8 @@ io.on("connection", socket => {
     const audienceDurationMs = getRoomGame(room).audienceQuestionSeconds === 30 ? 30000 : 15000;
     room.audienceAnswers = {};
     room.audienceStartedAt = Date.now();
-    room.audienceEndsAt = room.audienceStartedAt + audienceDurationMs;
     room.phase = "audience_question";
-    clearTimeout(room.audienceTimer);
-    room.audienceTimer = setTimeout(() => {
-      if (room.phase === "audience_question") {
-        room.audienceEndsAt = null;
-        room.phase = "audience_result";
-        emitState(room);
-      }
-    }, audienceDurationMs);
+    startAudienceCountdown(room, audienceDurationMs);
     cb({ ok: true });
     emitState(room);
   });
@@ -2065,7 +2099,8 @@ io.on("connection", socket => {
 
   socket.on("startFinalBets", ({ code: c }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room)) return;
+    if (!isHost(socket, room) || room.phase !== "board")
+      return cb({ ok: false, error: "Ставки можна почати лише з дошки питань." });
     if (room.selectedTile) return cb({ ok: false, error: "Спочатку дочекайтеся відкриття вибраного питання." });
     room.phase = "final_bets";
     room.current = null;
@@ -2092,11 +2127,15 @@ io.on("connection", socket => {
     emitState(room);
   });
 
-  socket.on("startFinalQuestion", ({ code: c }, cb = () => {}) => {
+  socket.on("startFinalQuestion", ({ code: c, fillMissingBets = false }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room) || room.phase !== "final_bets") return;
-    if (room.players.some(p => p.bet === null)) return cb({ ok: false, error: "Не всі гравці зробили ставки." });
+    if (!isHost(socket, room) || room.phase !== "final_bets") return cb({ ok: false, error: "Етап ставок уже завершено." });
+    const missing = room.players.filter(p => p.bet === null);
+    if (missing.length && fillMissingBets !== true)
+      return cb({ ok: false, error: "Не всі гравці зробили ставки.", missingBets: missing.map(p => p.name) });
     const game = getRoomGame(room);
+    if (!game.final?.q || !game.final?.a) return cb({ ok: false, error: "Фінальне питання не налаштовано." });
+    missing.forEach(p => { p.bet = 0; });
     room.current = { type: "final", q: game.final.q, a: game.final.a };
     room.phase = "final_ready";
     room.finalSeconds = 30;
@@ -2129,7 +2168,7 @@ io.on("connection", socket => {
 
   socket.on("finishFinalNow", ({ code: c }) => {
     const room = getRoom(c);
-    if (!isHost(socket, room)) return;
+    if (!isHost(socket, room) || room.phase !== "final_question") return;
     // WORK-01: if someone hasn't pressed Send, jump to 0 and keep the 2 s window for typed answers.
     if (room.phase === "final_question" && room.players.some(p => !p.finalAnswer)) {
       room.finalSeconds = 0;
@@ -2145,7 +2184,7 @@ io.on("connection", socket => {
 
   socket.on("scoreFinal", ({ code: c, results }, cb = () => {}) => {
     const room = getRoom(c);
-    if (!isHost(socket, room) || room.phase !== "final_review") return;
+    if (!isHost(socket, room) || room.phase !== "final_review") return cb({ ok: false, error: "Фінал зараз не очікує оцінювання." });
     const map = new Map((results || []).map(r => [r.playerId, !!r.correct]));
     const details = room.players.map(p => {
       const correct = map.get(p.id) || false;
@@ -2167,6 +2206,7 @@ io.on("connection", socket => {
     if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може запускати тест." });
     if (room.phase !== "lobby") return cb({ ok: false, error: "Тест доступний лише в лобі, до початку гри." });
     if (!room.players.length) return cb({ ok: false, error: "Додайте хоча б одного тестового гравця." });
+    room.isTestResult = true;
     clearInterval(room.finalTimer);
     room.finalTimer = null;
     const ordered = room.players
@@ -2283,9 +2323,11 @@ io.on("connection", socket => {
   socket.on("saveSeasonResult", async ({ code: c, seasonId, isGrandFinal = false } = {}, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    if (room.isTestResult) return cb({ ok: false, error: "Тестові результати не зберігаються в сезон. Проведіть справжню гру." });
     if (room.phase !== "final_result" || !room.finalResults)
       return cb({ ok: false, error: "Спочатку завершіть фінал." });
     try {
+      isGrandFinal = getRoomGame(room).isGrandFinal === true || isGrandFinal === true;
       const before = await storage.seasonDetails(seasonId);
       if (before?.seasonFormat === "qualifiers") {
         const qualifiersPlayed = before.qualification?.qualifierGamesPlayed || 0;
@@ -2309,7 +2351,13 @@ io.on("connection", socket => {
       if (isGrandFinal) {
         const season = await storage.seasonDetails(seasonId);
         room.seasonFinal = season
-          ? { seasonId: season.id, name: season.name, leaderboard: season.leaderboard || [], isGrandFinal: true }
+          ? {
+              seasonId: season.id,
+              name: season.name,
+              leaderboard: season.championshipRule === "grand_final" ? season.grandFinalResults : season.leaderboard,
+              championshipRule: season.championshipRule,
+              isGrandFinal: true,
+            }
           : null;
       } else room.seasonFinal = null;
       const season = await storage.seasonDetails(seasonId);
@@ -2326,9 +2374,31 @@ io.on("connection", socket => {
       cb({ ok: false, error: e.message });
     }
   });
-  socket.on("startSeasonCeremony", ({ code: c } = {}, cb = () => {}) => {
+  async function refreshSeasonFinal(room) {
+    if (!room.savedSeasonId || !room.savedSeasonGameId) return;
+    const season = await storage.seasonDetails(room.savedSeasonId);
+    const saved = season?.games.find(g => g.id === room.savedSeasonGameId && g.isGrandFinal);
+    if (!saved) {
+      room.seasonFinal = null;
+      room.seasonCeremonyActive = false;
+      return;
+    }
+    room.seasonFinal = {
+      seasonId: season.id,
+      name: season.name,
+      championshipRule: season.championshipRule,
+      leaderboard: season.championshipRule === "grand_final" ? season.grandFinalResults : season.leaderboard,
+      isGrandFinal: true,
+    };
+  }
+  socket.on("startSeasonCeremony", async ({ code: c } = {}, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      await refreshSeasonFinal(room);
+    } catch (e) {
+      return cb({ ok: false, error: e.message });
+    }
     if (room.phase !== "final_result" || !room.seasonFinal?.leaderboard?.length)
       return cb({ ok: false, error: "Спочатку збережіть Grand Final у сезон." });
     room.seasonCeremonyActive = true;
@@ -2336,10 +2406,19 @@ io.on("connection", socket => {
     cb({ ok: true });
     emitState(room);
   });
-  socket.on("revealNextSeasonResult", ({ code: c } = {}, cb = () => {}) => {
+  socket.on("revealNextSeasonResult", async ({ code: c } = {}, cb = () => {}) => {
     const room = getRoom(c);
     if (!isHost(socket, room) || !room.seasonCeremonyActive)
       return cb({ ok: false, error: "Сезонна церемонія не запущена." });
+    try {
+      await refreshSeasonFinal(room);
+    } catch (e) {
+      return cb({ ok: false, error: e.message });
+    }
+    if (!room.seasonCeremonyActive) {
+      emitState(room);
+      return cb({ ok: false, error: "Grand Final видалено із сезону." });
+    }
     const total = room.seasonFinal?.leaderboard?.length || 0;
     if (room.seasonRevealCount < total) room.seasonRevealCount++;
     cb({ ok: true, revealCount: room.seasonRevealCount, total });
@@ -2376,6 +2455,8 @@ io.on("connection", socket => {
     if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
     try {
       await storage.updateGameResults(gameId, results);
+      await refreshSeasonFinal(room);
+      emitState(room);
       cb({ ok: true });
     } catch (e) {
       cb({ ok: false, error: e.message });
@@ -2390,6 +2471,7 @@ io.on("connection", socket => {
     clearTimeout(room.firstTurnTimer);
     room.firstTurnTimer = null;
     room.phase = "lobby";
+    room.isTestResult = false;
     room.paused = false;
     room.pausedPhase = null;
     room.pauseFirstTurnRemaining = null;

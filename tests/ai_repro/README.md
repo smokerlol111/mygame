@@ -23,6 +23,10 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 
 | Command | Proves | Time |
 |---|---|---|
+| `node tests/ai_repro/game_safety_regression.js` | Конкурентні записи фіналів/сезонів, пауза числового/глядацького таймерів, повторні кнопки, нульові пропущені ставки, повернення PLAYER, заборона збереження фіктивних результатів | ~2 s |
+| `node tests/ai_repro/grand_final_smoke.js` | Усі 50 клітинок Grand Final, спецклітинки, 27 медіафайлів/HTTP, стартове, 6 глядацьких питань і справжній фінал; без перевірки декодування медіа | ~60 s |
+| `node tests/ai_repro/season_grand_final.js` | Окрема гра визначає чемпіона: відбори, автоматична позначка фіналу, HOST/public/OBS у jsdom, нічия, виправлення/видалення, сумісність історії | ~3 s |
+| `node tests/ai_repro/season_wild_card.js` | Ручний Wild Card за голосуванням глядачів, доступ HOST, збереження й публічна сторінка | ~3 s |
 | `node tests/ai_repro/audience_public_url.js` | Funnel/public URL used by the local host and QR; viewer joins and answers; direct/proxy fallbacks | ~2 s |
 | `node tests/ai_repro/numeric_turn_regression.js` | RULE-03: turn rotation with/without a winner, wraparound, finish guards; isolated server checks the real 30-second timer and winner points | ~33 s |
 | `node tests/ai_repro/server_repros.js` | 19 live repros: EASY-01, 02, 03, 06, 08 · WORK-02…05 · RULE-03 · PARK-01…07 | ~45 s |
@@ -35,6 +39,8 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 | `node tests/ai_repro/check_doc_refs.js` | **the docs**, not the code: 98 `file:line` references still point at the described code | instant |
 
 **Slow ones:** R11 and R21 wait 31 s, because the numeric-question timer is hard-coded to 30 s.
+
+**24.10.2026:** `server_repros.js` and `storage_repros.js` are historical diagnostics, not an all-green acceptance suite. Some recipes predate secret player keys, the final answer grace window, mandatory Grand Final and the ban on saving test results. Their output needs interpretation against current code; use the season/safety/Grand Final regression scripts above for the current rules. `validate_games.js` still flags the known `type: "numeric"` in `back_to_2000s_test.json` at `1:4:1`; Grand Final has no validator findings.
 
 ## 📖 Reading the output
 

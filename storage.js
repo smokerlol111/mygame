@@ -4,6 +4,16 @@ const POINTS = [10, 7, 5, 3],
   usePostgres = !!process.env.DATABASE_URL;
 let pool = null,
   fileData = { seasons: [], games: [] };
+// The app runs one game server. Keep validation and mutation together when two
+// tabs send requests at once (including saves racing with archive/Wild Card).
+let mutationQueue = Promise.resolve();
+function serializeMutation(fn) {
+  return (...args) => {
+    const result = mutationQueue.then(() => fn(...args));
+    mutationQueue = result.catch(() => {});
+    return result;
+  };
+}
 const dataDir = process.env.DATA_DIR || path.join(__dirname, "data"),
   jsonPath = path.join(dataDir, "seasons.json");
 const nowIso = () => new Date().toISOString();
@@ -26,6 +36,7 @@ async function init() {
       `CREATE TABLE IF NOT EXISTS quiz_games(id TEXT PRIMARY KEY,season_id TEXT NOT NULL REFERENCES quiz_seasons(id) ON DELETE CASCADE,room_code TEXT NOT NULL UNIQUE,game_id TEXT NOT NULL,title TEXT NOT NULL,played_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),is_grand_final BOOLEAN NOT NULL DEFAULT FALSE,results JSONB NOT NULL)`,
     );
     await pool.query(`ALTER TABLE quiz_seasons ADD COLUMN IF NOT EXISTS wild_card_selection JSONB`);
+    await pool.query(`ALTER TABLE quiz_seasons ADD COLUMN IF NOT EXISTS championship_rule TEXT`);
     const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM quiz_seasons`);
     if (!rows[0].n) await createSeason("Сезон 1");
   } else {
@@ -46,6 +57,7 @@ async function init() {
         status: "active",
         createdAt: nowIso(),
         completedAt: null,
+        championshipRule: "grand_final",
       });
       saveFile();
     }
@@ -60,9 +72,10 @@ async function createSeason(name) {
   const seasons = await listSeasons();
   if (seasons.some(s => s.status === "active")) throw Error("Спочатку завершіть активний сезон.");
   const id = slugId("season");
-  if (usePostgres) await pool.query(`INSERT INTO quiz_seasons(id,name,status) VALUES($1,$2,'active')`, [id, clean]);
+  if (usePostgres)
+    await pool.query(`INSERT INTO quiz_seasons(id,name,status,championship_rule) VALUES($1,$2,'active','grand_final')`, [id, clean]);
   else {
-    fileData.seasons.push({ id, name: clean, status: "active", createdAt: nowIso(), completedAt: null });
+    fileData.seasons.push({ id, name: clean, status: "active", createdAt: nowIso(), completedAt: null, championshipRule: "grand_final" });
     saveFile();
   }
   return id;
@@ -70,7 +83,7 @@ async function createSeason(name) {
 async function listSeasons() {
   if (usePostgres) {
     const { rows } = await pool.query(
-      `SELECT id,name,status,created_at AS "createdAt",completed_at AS "completedAt",wild_card_selection AS "wildCardSelection" FROM quiz_seasons ORDER BY created_at DESC`,
+      `SELECT id,name,status,created_at AS "createdAt",completed_at AS "completedAt",wild_card_selection AS "wildCardSelection",championship_rule AS "championshipRule" FROM quiz_seasons ORDER BY created_at DESC`,
     );
     return rows;
   }
@@ -84,6 +97,8 @@ async function setSeasonStatus(id, status) {
   if (status === "completed") {
     const games = await gamesForSeason(id);
     if (!games.length) throw Error("Не можна завершити сезон без збережених ігор.");
+    if (championshipRule(season) === "grand_final" && !games.some(g => g.isGrandFinal))
+      throw Error("Спочатку збережіть окрему гру Grand Final, яка визначає чемпіона сезону.");
   }
   if (status === "active" && seasons.some(s => s.id !== id && s.status === "active"))
     throw Error("Уже є інший активний сезон. Спочатку завершіть його.");
@@ -100,7 +115,7 @@ async function setSeasonStatus(id, status) {
   }
 }
 function normalizeResults(results, multiplier = 1) {
-  const m = Math.max(1, Number(multiplier) || 1);
+  const m = Math.max(0, Number(multiplier) || 0);
   return (results || [])
     .slice()
     .sort((a, b) => b.score - a.score || String(a.name).localeCompare(String(b.name), "uk"))
@@ -118,6 +133,13 @@ function seasonNumber(season) {
 }
 function isQualifierSeason(season) {
   return seasonNumber(season) >= 2;
+}
+function championshipRule(season) {
+  return season.championshipRule || (isQualifierSeason(season) ? "grand_final" : "points");
+}
+function assertGrandFinalWinner(results) {
+  if (results.length > 1 && results[0].score === results[1].score)
+    throw Error("У Grand Final нічия за перше місце. Визначте переможця переграванням і внесіть підсумкові бали.");
 }
 function qualifierSummary(games, selection) {
   const qualifiers = [],
@@ -198,9 +220,20 @@ async function setSeasonWildCard(seasonId, { mode, name = null } = {}) {
   return seasonDetails(seasonId);
 }
 async function saveGame({ seasonId, roomCode, gameId, title, results, isGrandFinal = false }) {
-  const normalized = normalizeResults(results, isGrandFinal ? 2 : 1);
   if (!seasonId) throw Error("Оберіть сезон.");
+  const season = await seasonDetails(seasonId);
+  if (!season) throw Error("Сезон не знайдено.");
+  if (season.status !== "active") throw Error("Зберігати результати можна лише в активний сезон.");
+  if (season.games.some(g => g.isGrandFinal)) throw Error("Grand Final уже збережено. Сезон очікує завершення.");
+  const decisiveFinal = season.championshipRule === "grand_final";
+  if (season.seasonFormat === "qualifiers") {
+    const played = season.qualification.qualifierGamesPlayed;
+    if (!isGrandFinal && played >= 3) throw Error("Три відбіркові гри вже зіграно. Наступна гра має бути Grand Final.");
+    if (isGrandFinal && played < 3) throw Error("Grand Final можна зберегти лише після трьох відбіркових ігор.");
+  }
+  const normalized = normalizeResults(results, isGrandFinal ? (decisiveFinal ? 0 : 2) : 1);
   if (!normalized.length) throw Error("Немає результатів.");
+  if (isGrandFinal && decisiveFinal) assertGrandFinalWinner(normalized);
   const id = slugId("game");
   if (usePostgres) {
     try {
@@ -231,14 +264,23 @@ async function saveGame({ seasonId, roomCode, gameId, title, results, isGrandFin
 }
 async function updateGameResults(gameId, results) {
   if (usePostgres) {
-    const q = await pool.query(`SELECT is_grand_final AS "isGrandFinal" FROM quiz_games WHERE id=$1`, [gameId]);
+    const q = await pool.query(`SELECT season_id AS "seasonId",is_grand_final AS "isGrandFinal" FROM quiz_games WHERE id=$1`, [gameId]);
     if (!q.rowCount) throw Error("Гру не знайдено.");
-    const normalized = normalizeResults(results, q.rows[0].isGrandFinal ? 2 : 1);
+    const season = await seasonDetails(q.rows[0].seasonId);
+    const decisiveFinal = q.rows[0].isGrandFinal && season.championshipRule === "grand_final";
+    const normalized = normalizeResults(results, q.rows[0].isGrandFinal ? (decisiveFinal ? 0 : 2) : 1);
+    if (!normalized.length) throw Error("Немає результатів.");
+    if (decisiveFinal) assertGrandFinalWinner(normalized);
     await pool.query(`UPDATE quiz_games SET results=$2::jsonb WHERE id=$1`, [gameId, JSON.stringify(normalized)]);
   } else {
     const g = fileData.games.find(x => x.id === gameId);
     if (!g) throw Error("Гру не знайдено.");
-    g.results = normalizeResults(results, g.isGrandFinal ? 2 : 1);
+    const season = await seasonDetails(g.seasonId);
+    const decisiveFinal = g.isGrandFinal && season.championshipRule === "grand_final";
+    const normalized = normalizeResults(results, g.isGrandFinal ? (decisiveFinal ? 0 : 2) : 1);
+    if (!normalized.length) throw Error("Немає результатів.");
+    if (decisiveFinal) assertGrandFinalWinner(normalized);
+    g.results = normalized;
     saveFile();
   }
 }
@@ -297,18 +339,22 @@ async function seasonDetails(id) {
   const games = await gamesForSeason(id),
     leaderboard = leaderboardFromGames(games),
     qualifierMode = isQualifierSeason(season),
-    qualification = qualifierMode ? qualifierSummary(games, season.wildCardSelection) : null;
+    qualification = qualifierMode ? qualifierSummary(games, season.wildCardSelection) : null,
+    rule = championshipRule(season);
   const grandFinal = games.find(g => g.isGrandFinal),
-    grandWinner = grandFinal?.results?.slice().sort((a, b) => a.place - b.place)[0] || null;
+    grandFinalResults = grandFinal?.results?.slice().sort((a, b) => a.place - b.place) || [],
+    grandWinner = grandFinalResults[0] || null;
   return {
     ...season,
     games,
     leaderboard,
     seasonFormat: qualifierMode ? "qualifiers" : "points",
+    championshipRule: rule,
+    grandFinalResults,
     qualification,
     champion:
       season.status === "completed" && games.length
-        ? qualifierMode
+        ? rule === "grand_final"
           ? grandWinner || null
           : leaderboard[0] || null
         : null,
@@ -322,13 +368,13 @@ async function publicData() {
 }
 module.exports = {
   init,
-  createSeason,
+  createSeason: serializeMutation(createSeason),
   listSeasons,
-  setSeasonStatus,
-  setSeasonWildCard,
-  saveGame,
-  updateGameResults,
-  deleteGame,
+  setSeasonStatus: serializeMutation(setSeasonStatus),
+  setSeasonWildCard: serializeMutation(setSeasonWildCard),
+  saveGame: serializeMutation(saveGame),
+  updateGameResults: serializeMutation(updateGameResults),
+  deleteGame: serializeMutation(deleteGame),
   seasonDetails,
   publicData,
   POINTS,

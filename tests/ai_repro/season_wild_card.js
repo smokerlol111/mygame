@@ -56,8 +56,23 @@ async function main() {
   const play = async (seasonId, names, isGrandFinal = false) => {
     const host = await connect();
     const { code } = await ok(host, 'createRoom', { hostKey: KEY, hostToken: `wc-${Date.now()}`, gameId: 'general-knowledge' });
-    for (const name of names) await ok(await connect(), 'joinPlayer', { code, name });
-    await ok(host, 'testGrandFinal', { code });
+    const players = [];
+    for (const name of names) {
+      const player = await connect();
+      const joined = await ok(player, 'joinPlayer', { code, name });
+      players.push({ player, id: joined.playerId });
+    }
+    await ok(host, 'skipFirstTurnQuiz', { code });
+    for (let i = 0; i < players.length; i++)
+      await ok(host, 'adjustScore', { code, playerId: players[i].id, amount: 4500 - i * 700 });
+    await ok(host, 'startFinalBets', { code });
+    for (const { player } of players) await ok(player, 'submitBet', { code, bet: 0 });
+    await ok(host, 'startFinalQuestion', { code });
+    await ok(host, 'startFinalTimer', { code });
+    for (const { player } of players) await ok(player, 'submitFinalAnswer', { code, answer: 'Answer' });
+    host.emit('finishFinalNow', { code });
+    await waitFor(() => host.state.phase === 'final_review', 'final review');
+    await ok(host, 'scoreFinal', { code, results: [] });
     await ok(host, 'saveSeasonResult', { code, seasonId, isGrandFinal });
     currentHost = host;
     currentCode = code;
@@ -67,7 +82,7 @@ async function main() {
     const admin = await connect();
     assert.equal((await emit(admin, 'seasonAdminInit', { hostKey: 'wrong' })).ok, false);
     const { adminToken, seasons } = await ok(admin, 'seasonAdminInit', { hostKey: KEY });
-    await play(seasons[0].id, ['Перший сезон']);
+    await play(seasons[0].id, ['Перший сезон'], true);
     assert.equal((await emit(admin, 'setSeasonWildCard', { adminToken, seasonId: seasons[0].id, mode: 'audience' })).ok, false);
     await ok(admin, 'seasonAdminSetStatus', { adminToken, seasonId: seasons[0].id, status: 'completed' });
     const { id: seasonId } = await ok(admin, 'seasonAdminCreate', { adminToken, name: 'Сезон 2' });

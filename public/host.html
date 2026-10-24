@@ -423,7 +423,7 @@ function setNetBadge(ok){
                 active = detailed.find(s => s.status === "active"),
                 completed = detailed.filter(s => s.status === "completed");
               const activeHtml = active
-                ? `<div style="padding:14px;border:1px solid #6e53a8;border-radius:14px"><div class="top"><div><h3 style="margin:0">🟢 ${GameUI.esc(active.name)}</h3><div class="muted">${active.games.length} ігор • ${active.leaderboard.length} гравців</div></div><button class="btn bad startFinishSeason" data-id="${active.id}" data-name="${GameUI.esc(active.name)}">🏁 Завершити сезон</button></div>${active.leaderboard.length ? `<div class="muted" style="margin-top:10px">Лідер: <b>${GameUI.esc(active.leaderboard[0].name)}</b> — ${active.leaderboard[0].seasonPoints} ${seasonPointsWordStart(active.leaderboard[0].seasonPoints)}</div>` : ""}</div>`
+                ? `<div style="padding:14px;border:1px solid #6e53a8;border-radius:14px"><div class="top"><div><h3 style="margin:0">🟢 ${GameUI.esc(active.name)}</h3><div class="muted">${active.games.length} ігор • ${active.leaderboard.length} гравців</div></div><button class="btn bad startFinishSeason" data-id="${active.id}" data-name="${GameUI.esc(active.name)}">🏁 Завершити сезон</button></div>${active.championshipRule !== "grand_final" && active.leaderboard.length ? `<div class="muted" style="margin-top:10px">Лідер: <b>${GameUI.esc(active.leaderboard[0].name)}</b> — ${active.leaderboard[0].seasonPoints} ${seasonPointsWordStart(active.leaderboard[0].seasonPoints)}</div>` : ""}</div>`
                 : `<div class="center"><h3>Немає активного сезону</h3><p class="muted">Створіть наступний сезон для нових ігор.</p></div>`;
               const archiveHtml = completed.length
                 ? `<div style="margin-top:16px"><h3>📚 Архів сезонів</h3>${completed.map(s => `<div class="finalItem"><span><b>${GameUI.esc(s.name)}</b>${s.champion ? ` • 🏆 ${GameUI.esc(s.champion.name)}` : ""}<div class="muted">${s.games.length} ігор</div></span><button class="btn secondary startReopenSeason" data-id="${s.id}">↩ Відновити</button></div>`).join("")}</div>`
@@ -433,13 +433,13 @@ function setNetBadge(ok){
                 : "";
               area.innerHTML = activeHtml + createHtml + archiveHtml;
               if (active) {
-                area.firstElementChild.insertAdjacentHTML("beforeend", seasonQualificationHTML(active));
+                area.firstElementChild.insertAdjacentHTML("beforeend", seasonRuleHTML(active) + seasonQualificationHTML(active));
                 bindSeasonWildCard(area, (payload, cb) => socket.emit("setSeasonWildCard", { ...payload, adminToken: seasonAdminToken }, cb), loadStartSeasonAdmin);
               }
               area.querySelectorAll(".startFinishSeason").forEach(
                 b =>
                   (b.onclick = () => {
-                    if (!confirm(`Завершити «${b.dataset.name}»? Сезон перейде в архів, а лідер стане чемпіоном.`))
+                    if (!confirm(`Завершити «${b.dataset.name}» та перенести сезон із підсумковим чемпіоном в архів?`))
                       return;
                     socket.emit(
                       "seasonAdminSetStatus",
@@ -667,14 +667,16 @@ function setNetBadge(ok){
 
       function seasonSaveHTML() {
         if (state?.phase !== "final_result") return "";
-        return `<div class="panel" style="margin-top:20px;border:1px solid #8d70d8"><h2>🏆 Зберегти результат у сезон</h2>${state.savedSeasonGameId ? `<p><b>✅ Результат уже збережено.</b>${state.seasonFinal?.isGrandFinal ? " 👑 Grand Final: сезонні очки ×2." : ""}</p><a class="btn gold" href="/seasons" target="_blank">Відкрити таблицю сезону</a>` : `<div id="seasonSaveArea"><p class="muted">Завантажуємо список сезонів…</p></div>`}</div>`;
+        if (state.isTestResult) return '<div class="panel" style="margin-top:20px"><p>🧪 Це тестові результати. Для збереження в сезон проведіть справжню гру.</p></div>';
+        return `<div class="panel" style="margin-top:20px;border:1px solid #8d70d8"><h2>🏆 Зберегти результат у сезон</h2>${state.savedSeasonGameId ? `<p><b>✅ Результат уже збережено.</b>${state.seasonFinal?.isGrandFinal ? (state.seasonFinal.championshipRule === "grand_final" ? " 👑 Переможець Grand Final — чемпіон сезону." : " 👑 Grand Final: сезонні очки ×2.") : ""}</p><a class="btn gold" href="/seasons" target="_blank">Відкрити таблицю сезону</a>` : `<div id="seasonSaveArea"><p class="muted">Завантажуємо список сезонів…</p></div>`}</div>`;
       }
       function seasonCeremonyHTML() {
         if (state?.phase !== "final_result" || !state.seasonFinal?.leaderboard?.length) return "";
         const rs = state.seasonFinal.leaderboard,
           shown = Math.min(state.seasonRevealCount || 0, rs.length),
-          nextPlace = rs.length - shown;
-        return `<div class="panel" style="margin-top:20px;border:1px solid #d8ad42"><h2>👑 Сезонні підсумки • ${GameUI.esc(state.seasonFinal.name || "Сезон")}</h2><p class="muted">Grand Final нараховано з подвійними очками. Окрема церемонія виводиться на OBS від останнього місця до чемпіона.</p><div class="finalList">${rs.map((p, i) => `<div class="finalItem" style="${state.seasonCeremonyActive && i < rs.length - shown ? "opacity:.35" : ""}"><span><b>${i + 1}. ${GameUI.esc(p.name)}</b></span><span><b>${p.seasonPoints}</b> сезонних балів • ${p.wins} перемог • ${p.podiums} подіумів</span></div>`).join("")}</div><div class="row" style="justify-content:center;margin-top:14px">${!state.seasonCeremonyActive ? '<button class="btn gold" id="startSeasonCeremony">🎬 ПОКАЗАТИ СЕЗОННІ ПІДСУМКИ В OBS</button>' : shown < rs.length ? `<button class="btn gold" id="revealNextSeason">🎬 ВІДКРИТИ ${nextPlace} МІСЦЕ</button>` : '<div class="winner" style="font-size:24px">🏆 Чемпіон сезону відкритий</div>'}${state.seasonCeremonyActive ? '<button class="btn secondary" id="closeSeasonCeremony">Закрити сезонну церемонію</button>' : ""}</div></div>`;
+          nextPlace = rs.length - shown,
+          decisive = state.seasonFinal.championshipRule === "grand_final";
+        return `<div class="panel" style="margin-top:20px;border:1px solid #d8ad42"><h2>👑 Сезонні підсумки • ${GameUI.esc(state.seasonFinal.name || "Сезон")}</h2><p class="muted">${decisive ? "Чемпіона та місця фіналістів визначає окрема гра Grand Final." : "Grand Final нараховано з подвійними очками."} Окрема церемонія виводиться на OBS від останнього місця до чемпіона.</p><div class="finalList">${rs.map((p, i) => `<div class="finalItem" style="${state.seasonCeremonyActive && i < rs.length - shown ? "opacity:.35" : ""}"><span><b>${i + 1}. ${GameUI.esc(p.name)}</b></span><span>${decisive ? `<b>${p.score}</b> балів у Grand Final` : `<b>${p.seasonPoints}</b> сезонних балів • ${p.wins} перемог • ${p.podiums} подіумів`}</span></div>`).join("")}</div><div class="row" style="justify-content:center;margin-top:14px">${!state.seasonCeremonyActive ? '<button class="btn gold" id="startSeasonCeremony">🎬 ПОКАЗАТИ СЕЗОННІ ПІДСУМКИ В OBS</button>' : shown < rs.length ? `<button class="btn gold" id="revealNextSeason">🎬 ВІДКРИТИ ${nextPlace} МІСЦЕ</button>` : '<div class="winner" style="font-size:24px">🏆 Чемпіон сезону відкритий</div>'}${state.seasonCeremonyActive ? '<button class="btn secondary" id="closeSeasonCeremony">Закрити сезонну церемонію</button>' : ""}</div></div>`;
       }
       function loadSeasonSaveArea() {
         const area = document.getElementById("seasonSaveArea");
@@ -686,7 +688,7 @@ function setNetBadge(ok){
           }
           const active = (r.seasons || []).filter(s => s.status === "active");
           area.innerHTML = active.length
-            ? `<div class="row"><select id="seasonSelect" style="min-width:220px">${active.map(s => `<option value="${s.id}">${GameUI.esc(s.name)}</option>`).join("")}</select><label style="display:flex;gap:8px;align-items:center"><input id="grandFinal" type="checkbox" style="width:auto"> 👑 Grand Final (сезонні очки ×2)</label><button class="btn gold" id="saveSeasonResult">💾 Зберегти результат у сезон</button></div>`
+            ? `<div class="row"><select id="seasonSelect" style="min-width:220px">${active.map(s => `<option value="${s.id}">${GameUI.esc(s.name)}</option>`).join("")}</select><label style="display:flex;gap:8px;align-items:center"><input id="grandFinal" type="checkbox" style="width:auto"${state.isGrandFinal ? " checked disabled" : ""}> 👑 Grand Final</label><button class="btn gold" id="saveSeasonResult">💾 Зберегти результат у сезон</button></div>`
             : `<p class="muted">Немає активного сезону. Створіть його в блоці «🏆 Керування сезонами» нижче.</p>`;
           const save = document.getElementById("saveSeasonResult");
           if (save)
@@ -732,6 +734,11 @@ function setNetBadge(ok){
         ];
         return `<div class="seasonQualification" style="margin-top:12px;padding:12px;border:1px solid #514176;border-radius:12px"><b>🎯 Відбір: ${q?.qualifierGamesPlayed || 0}/3</b><div style="margin-top:8px">🏆 У Grand Final: ${(q?.qualifiers || []).map(x => GameUI.esc(x.name)).join(", ") || "ще ніхто"}</div><div style="margin-top:6px">${status}</div>${locked ? "" : `<div class="row" style="margin-top:12px"><label>Четвертий фіналіст <select class="seasonWildCardChoice">${options.map(o => `<option value="${GameUI.esc(o.value)}"${o.value === value ? " selected" : ""}>${GameUI.esc(o.label)}</option>`).join("")}</select></label><button class="btn gold saveSeasonWildCard" data-season-id="${GameUI.esc(season.id)}">💾 Зберегти вибір</button></div><p class="muted">Проведіть голосування у своєму чаті або опитуванні, потім оберіть його переможця тут. ${ready ? "У списку — учасники відбору, які ще не виграли жодної гри." : "Вибір учасника з’явиться після збереження третьої відбіркової гри."}</p>`}</div>`;
       }
+      function seasonRuleHTML(season) {
+        if (season.championshipRule !== "grand_final") return "";
+        const winner = season.grandFinalResults?.[0];
+        return `<p class="muted">Чемпіона сезону визначає окрема гра Grand Final.${winner ? ` Переможець: <b>${GameUI.esc(winner.name)}</b>.` : ""}</p>`;
+      }
       function bindSeasonWildCard(area, send, reload) {
         area.querySelectorAll(".saveSeasonWildCard").forEach(button => {
           button.onclick = () => {
@@ -754,9 +761,9 @@ function setNetBadge(ok){
           if (!r.ok) throw Error(payload.error || "Не вдалося завантажити сезони.");
           const seasons = payload.seasons || [],
             active = seasons.find(s => s.status === "active");
-          const qHtml = active ? seasonQualificationHTML(active) : "";
+          const qHtml = active ? seasonRuleHTML(active) + seasonQualificationHTML(active) : "";
           const activeHtml = active
-            ? `<div style="padding:14px;border:1px solid #6e53a8;border-radius:14px"><div class="top"><div><h3 style="margin:0">🟢 ${GameUI.esc(active.name)}</h3><div class="muted">${active.games.length} ігор • ${active.leaderboard.length} гравців</div></div><button class="btn bad finishSeason" data-id="${active.id}" data-name="${GameUI.esc(active.name)}">🏁 Завершити сезон</button></div>${qHtml}${active.seasonFormat !== "qualifiers" && active.leaderboard.length ? `<div class="muted" style="margin-top:10px">Лідер зараз: <b>${GameUI.esc(active.leaderboard[0].name)}</b> — ${active.leaderboard[0].seasonPoints} ${seasonPointsWord(active.leaderboard[0].seasonPoints)}</div>` : ""}${active.games.length ? `<div style="margin-top:14px"><h4 style="margin:0 0 8px">Збережені ігри</h4>${active.games.map(g => `<div class="finalItem"><span><b>${GameUI.esc(g.title || g.gameId || "Гра")}</b>${g.isGrandFinal ? " • 👑 Grand Final" : ""}<div class="muted">${GameUI.esc(g.roomCode || "")} • ${(g.results || []).map(x => GameUI.esc(x.name)).join(", ")}</div></span><button class="btn bad deleteSeasonGame" data-id="${g.id}" data-title="${GameUI.esc(g.title || "цю гру")}">🗑 Видалити</button></div>`).join("")}</div>` : ""}</div>`
+            ? `<div style="padding:14px;border:1px solid #6e53a8;border-radius:14px"><div class="top"><div><h3 style="margin:0">🟢 ${GameUI.esc(active.name)}</h3><div class="muted">${active.games.length} ігор • ${active.leaderboard.length} гравців</div></div><button class="btn bad finishSeason" data-id="${active.id}" data-name="${GameUI.esc(active.name)}">🏁 Завершити сезон</button></div>${qHtml}${active.championshipRule !== "grand_final" && active.leaderboard.length ? `<div class="muted" style="margin-top:10px">Лідер зараз: <b>${GameUI.esc(active.leaderboard[0].name)}</b> — ${active.leaderboard[0].seasonPoints} ${seasonPointsWord(active.leaderboard[0].seasonPoints)}</div>` : ""}${active.games.length ? `<div style="margin-top:14px"><h4 style="margin:0 0 8px">Збережені ігри</h4>${active.games.map(g => `<div class="finalItem"><span><b>${GameUI.esc(g.title || g.gameId || "Гра")}</b>${g.isGrandFinal ? " • 👑 Grand Final" : ""}<div class="muted">${GameUI.esc(g.roomCode || "")} • ${(g.results || []).map(x => GameUI.esc(x.name)).join(", ")}</div></span><button class="btn bad deleteSeasonGame" data-id="${g.id}" data-title="${GameUI.esc(g.title || "цю гру")}">🗑 Видалити</button></div>`).join("")}</div>` : ""}</div>`
             : `<div class="center"><h3>Немає активного сезону</h3><p class="muted">Створіть наступний сезон для нових ігор.</p></div>`;
           const completed = seasons.filter(s => s.status === "completed");
           const archiveHtml = completed.length
@@ -1501,7 +1508,12 @@ function setNetBadge(ok){
         if ($("startFinal"))
           $("startFinal").onclick = () =>
             emit("startFinalQuestion", {}, r => {
-              if (!r.ok) alert(r.error);
+              if (!r.ok && r.missingBets?.length) {
+                if (confirm(`Без ставки: ${r.missingBets.join(", ")}. Продовжити з нульовими ставками для цих гравців?`))
+                  emit("startFinalQuestion", { fillMissingBets: true }, next => {
+                    if (!next.ok) alert(next.error);
+                  });
+              } else if (!r.ok) alert(r.error);
             });
         if ($("startFinalTimer"))
           $("startFinalTimer").onclick = () =>
