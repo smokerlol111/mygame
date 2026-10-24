@@ -940,7 +940,7 @@
         else if (state.phase === "video_result") {
           h += `${mediaQuestionHTML(state.current)}<p class="center">✅ Продовження відео</p><div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a ?? ""))}</h2>${answerMediaHTML(state.current)}</div>`;
         } else if (state.phase === "result")
-          h += `${state.current?.questionType === "video" ? mediaQuestionHTML(state.current) : ""}<div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a ?? ""))}</h2>${answerMediaHTML(state.current)}</div>`;
+          h += `${playerImageRevealHTML(activeQuestion)}${state.current?.questionType === "video" ? mediaQuestionHTML(state.current) : ""}<div class="center"><h2>Правильна відповідь: ${GameUI.esc(String(state.current?.a ?? ""))}</h2>${answerMediaHTML(state.current)}</div>`;
         else if (state.phase === "final_bets") {
           let max = Math.max(0, p.score);
           h += p.hasBet
