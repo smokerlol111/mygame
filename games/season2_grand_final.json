@@ -218,7 +218,7 @@
               "value": 400,
               "type": "imageReveal",
               "q": "На фото — справжній «Кривавий водоспад» в Антарктиді: солона вода забарвлює лід у червоно-іржавий колір. Який хімічний елемент спричиняє таке забарвлення?",
-              "image": "/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+              "image": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
               "revealValues": [
                 400
               ],
@@ -457,7 +457,7 @@
               "value": 1000,
               "type": "imageReveal",
               "q": "Перед вами авторський персонаж. Як його правильно назвати?",
-              "image": "/media/GrandFinal_Author_Kobrauzer_1000.jpg",
+              "image": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
               "revealValues": [
                 1000
               ],

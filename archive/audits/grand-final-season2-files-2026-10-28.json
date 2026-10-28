@@ -1,0 +1,874 @@
+{
+  "date": "2026-10-28",
+  "scope": "Grand Final Season 2 only",
+  "sourceCommit": "604dc2b97b9a75da94f13cd2355d2616531410dd",
+  "remoteCommit": "604dc2b97b9a75da94f13cd2355d2616531410dd",
+  "game": "games/season2_grand_final.json",
+  "summary": {
+    "rounds": 2,
+    "categories": 10,
+    "mainQuestions": 50,
+    "firstTurn": true,
+    "final": true,
+    "audienceQuestions": 6,
+    "mediaReferences": 29,
+    "workingLinks": 27,
+    "brokenLinks": 2,
+    "uploadedRequiredMedia": 29,
+    "verifiedMediaTypes": {
+      "image": 18,
+      "video": 6,
+      "audio": 5
+    },
+    "mediaErrors": 0,
+    "contentErrors": [],
+    "stopChecks": 6,
+    "tripletParts": 3
+  },
+  "files": [
+    {
+      "round": "Раунд 1",
+      "category": "Кадр має значення",
+      "value": 300,
+      "field": "$.rounds[0].categories[0].questions[2].image",
+      "url": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+      "candidate": false,
+      "bytes": 285274,
+      "sha256": "cb64b6c6ccbd87c9fffa83df185b009ea074fbaf639e42ac846c2c9a3ff6eb74",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 285274,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Кадр має значення",
+      "value": 500,
+      "field": "$.rounds[0].categories[0].questions[4].media",
+      "url": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "candidate": false,
+      "bytes": 3135114,
+      "sha256": "f8072f43318f909e9f27df9f211076f9a710b75f838df0d1b10df07a302aa169",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 3135114,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+        "kind": "video",
+        "duration": 24.065986,
+        "width": 1280,
+        "height": 720,
+        "samples": [
+          0.1,
+          12.032993,
+          23.865986
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Логіка вийшла з чату",
+      "value": 300,
+      "field": "$.rounds[0].categories[1].questions[2].image",
+      "url": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+      "candidate": false,
+      "bytes": 285762,
+      "sha256": "be38b74d5f3b9bad465244c66f617afa7e75b3e5d863d4612822613c11af7184",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 285762,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Укрнет не забуде",
+      "value": 300,
+      "field": "$.rounds[0].categories[2].questions[2].image",
+      "url": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+      "candidate": false,
+      "bytes": 214890,
+      "sha256": "ec429c1a2c0626c7d32f04992d98d839802ac998bc42b32c88e3df8cceed957a",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 214890,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Укрнет не забуде",
+      "value": 400,
+      "field": "$.rounds[0].categories[2].questions[3].media",
+      "url": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "candidate": false,
+      "bytes": 486014,
+      "sha256": "8de7580a7e871ccabd7d715369fac8c15ed81121d8f82a1d2821055b8a8c792e",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "length": 486014,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+        "kind": "audio",
+        "duration": 12.08,
+        "channels": 2,
+        "sampleRate": 48000,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Укрнет не забуде",
+      "value": 500,
+      "field": "$.rounds[0].categories[2].questions[4].media",
+      "url": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "candidate": false,
+      "bytes": 2918418,
+      "sha256": "5f5bd12c7ee3957448558d59b93477dc74ec1240566a8d9370185ed7c3c52c61",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 2918418,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+        "kind": "video",
+        "duration": 14.9,
+        "width": 1280,
+        "height": 718,
+        "samples": [
+          0.1,
+          7.45,
+          14.7
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "По той бік камери",
+      "value": 200,
+      "field": "$.rounds[0].categories[3].questions[1].media",
+      "url": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "candidate": false,
+      "bytes": 22279,
+      "sha256": "15e66cdefd659df2663a1cf61c8b9675e88f37d7340a91a0d9e0002632c8e3a8",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "length": 22279,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+        "kind": "audio",
+        "duration": 1.3844791666666667,
+        "channels": 1,
+        "sampleRate": 48000,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "По той бік камери",
+      "value": 300,
+      "field": "$.rounds[0].categories[3].questions[2].image",
+      "url": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+      "candidate": false,
+      "bytes": 233990,
+      "sha256": "63d65ee433e87413340884da780bb9386007764f5cd3375f73838714a449df4c",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 233990,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "По той бік камери",
+      "value": 400,
+      "field": "$.rounds[0].categories[3].questions[3].image",
+      "url": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+      "candidate": false,
+      "bytes": 563192,
+      "sha256": "d24133c2f2dbdfbe8d452c09f2d5606af10e51bf8d379b83ead99d127f68ca45",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 563192,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+        "kind": "image",
+        "width": 2100,
+        "height": 1400,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "По той бік камери",
+      "value": 500,
+      "field": "$.rounds[0].categories[3].questions[4].media",
+      "url": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "candidate": false,
+      "bytes": 6195911,
+      "sha256": "543b66d8a653c21f4cc8dd6f6336723f3cd29a4c484e0ead480811cd578012b9",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 6195911,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+        "kind": "video",
+        "duration": 22.772993,
+        "width": 1280,
+        "height": 720,
+        "samples": [
+          0.1,
+          11.386496,
+          22.572993
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Наука, ти серйозно?",
+      "value": 300,
+      "field": "$.rounds[0].categories[4].questions[2].image",
+      "url": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+      "linked": true,
+      "file": "public/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+      "candidate": false,
+      "bytes": 99787,
+      "sha256": "2d32d3039172531c2d26e3494da22d945bcb51b51602408c53a0700dc6616cc3",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 99787,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 1",
+      "category": "Наука, ти серйозно?",
+      "value": 400,
+      "field": "$.rounds[0].categories[4].questions[3].image",
+      "url": "/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+      "linked": false,
+      "file": "public/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+      "candidate": true,
+      "bytes": 450316,
+      "sha256": "43d056e2aab3a87efa7ae20958119747171848ba375f14b04a04b70811379912",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 450316,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+        "kind": "image",
+        "width": 742,
+        "height": 435,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Легенди великого екрана",
+      "value": 200,
+      "field": "$.rounds[1].categories[0].questions[0].media",
+      "url": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "linked": true,
+      "file": "public/media/GrandFinal_Cinema_Bond_200.mp3",
+      "candidate": false,
+      "bytes": 402422,
+      "sha256": "78ef33e0394aed04442cd956971a1419a89e160634df00953690eb8fcfd0bfdc",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "length": 402422,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Cinema_Bond_200.mp3",
+        "kind": "audio",
+        "duration": 10,
+        "channels": 2,
+        "sampleRate": 48000,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Легенди великого екрана",
+      "value": 400,
+      "field": "$.rounds[1].categories[0].questions[1].image",
+      "url": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_Cinema_Chocolate_400.jpg",
+      "candidate": false,
+      "bytes": 51498,
+      "sha256": "ea4d342acae28c6dad704bc363ea49d8b463b891749ea0b4c10d5a46b6f95ad8",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 51498,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Cinema_Chocolate_400.jpg",
+        "kind": "image",
+        "width": 730,
+        "height": 462,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Легенди великого екрана",
+      "value": 800,
+      "field": "$.rounds[1].categories[0].questions[3].media",
+      "url": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "linked": true,
+      "file": "public/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "candidate": false,
+      "bytes": 8332589,
+      "sha256": "b1b8a534eef32f3cc776d1995ae056bd2f0e6c31ee3211c24b3afd3492948f63",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 8332589,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+        "kind": "video",
+        "duration": 37.5375,
+        "width": 1280,
+        "height": 720,
+        "samples": [
+          0.1,
+          18.76875,
+          37.3375
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Історія під іншим кутом",
+      "value": 400,
+      "field": "$.rounds[1].categories[1].questions[1].image",
+      "url": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+      "linked": true,
+      "file": "public/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+      "candidate": false,
+      "bytes": 76772,
+      "sha256": "d2377ec43faa5c1c9164629ed4406decf0ffe77983861ff870ddb9272d9e9b46",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 76772,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+        "kind": "image",
+        "width": 1190,
+        "height": 860,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зламали алгоритм",
+      "value": 400,
+      "field": "$.rounds[1].categories[2].questions[1].media",
+      "url": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "linked": true,
+      "file": "public/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "candidate": false,
+      "bytes": 321129,
+      "sha256": "fe502fb27b10c44fbf69e620142528f3a2a1e092df30da1943505b8f1c273a01",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "length": 321129,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+        "kind": "audio",
+        "duration": 20,
+        "channels": 2,
+        "sampleRate": 48000,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зламали алгоритм",
+      "value": 600,
+      "field": "$.rounds[1].categories[2].questions[2].image",
+      "url": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+      "candidate": false,
+      "bytes": 187547,
+      "sha256": "ccb3a575b5124f2ca215807d140049c14b386e4a5d6d14826fe941a6f66cc987",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 187547,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+        "kind": "image",
+        "width": 1710,
+        "height": 1180,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зламали алгоритм",
+      "value": 1000,
+      "field": "$.rounds[1].categories[2].questions[4].media",
+      "url": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "linked": true,
+      "file": "public/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "candidate": false,
+      "bytes": 1034673,
+      "sha256": "5b9393e9ed466c3fc9f93aad3da4bcc61acdce034206b69a177ba43b5beef7d6",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 1034673,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+        "kind": "video",
+        "duration": 18.227664,
+        "width": 600,
+        "height": 480,
+        "samples": [
+          0.1,
+          9.113832,
+          18.027664
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Мемна криміналістика",
+      "value": 200,
+      "field": "$.rounds[1].categories[3].questions[0].image",
+      "url": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_MemeForensics_Harold_200.jpg",
+      "candidate": false,
+      "bytes": 78057,
+      "sha256": "55a67dc31b4b7ba5b5c080ed908b45c1fd689c2bc6597ce0b6449f957b443470",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 78057,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_MemeForensics_Harold_200.jpg",
+        "kind": "image",
+        "width": 1000,
+        "height": 892,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Мемна криміналістика",
+      "value": 400,
+      "field": "$.rounds[1].categories[3].questions[1].media",
+      "url": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "linked": true,
+      "file": "public/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "candidate": false,
+      "bytes": 450488,
+      "sha256": "b29a25a3e5c5b49ed736ea0a78acf51eddbc2647563b7edba1f5b6b8d23f882a",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "audio/mpeg",
+        "length": 450488,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+        "kind": "audio",
+        "duration": 11.19,
+        "channels": 2,
+        "sampleRate": 48000,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Мемна криміналістика",
+      "value": 600,
+      "field": "$.rounds[1].categories[3].questions[2].image",
+      "url": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+      "candidate": false,
+      "bytes": 75737,
+      "sha256": "d8fe6055703a5b4babc1058a07ca01282b3151c4bdf8614b8c8b0c3b3e16f70f",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 75737,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 567,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Мемна криміналістика",
+      "value": 800,
+      "field": "$.rounds[1].categories[3].questions[3].media",
+      "url": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "linked": true,
+      "file": "public/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "candidate": false,
+      "bytes": 2285602,
+      "sha256": "3a332a2a56c3867e5caf42ac61f034a469909aac5bdda64561c6adefc92b6a6c",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "video/mp4",
+        "length": 2285602,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+        "kind": "video",
+        "duration": 10.166667,
+        "width": 1280,
+        "height": 720,
+        "samples": [
+          0.1,
+          5.083333,
+          9.966667
+        ],
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Мемна криміналістика",
+      "value": 1000,
+      "field": "$.rounds[1].categories[3].questions[4].image",
+      "url": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+      "candidate": false,
+      "bytes": 50454,
+      "sha256": "787c75966d7094862f789426332e00dc6bb79dd42ea6e1f3bca93587cc7b2485",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 50454,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+        "kind": "image",
+        "width": 1728,
+        "height": 1034,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зоотрополіс",
+      "value": 200,
+      "field": "$.rounds[1].categories[4].questions[0].image",
+      "url": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+      "candidate": false,
+      "bytes": 623540,
+      "sha256": "e3aa79470e8a8a7ccc39a78eb8a80670ad72b2e6f0d4a54caf2664686b5f817f",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 623540,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+        "kind": "image",
+        "width": 1448,
+        "height": 1086,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зоотрополіс",
+      "value": 400,
+      "field": "$.rounds[1].categories[4].questions[1].image",
+      "url": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+      "linked": true,
+      "file": "public/media/GrandFinal_Author_Krokodyler_400.jpg",
+      "candidate": false,
+      "bytes": 629107,
+      "sha256": "c8dadbe0ab347520d9f1a8fdf9d9ab7d0d95b5e9ccd59e60c6ff4b234c2c7459",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 629107,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Author_Krokodyler_400.jpg",
+        "kind": "image",
+        "width": 1448,
+        "height": 1086,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зоотрополіс",
+      "value": 600,
+      "field": "$.rounds[1].categories[4].questions[2].image",
+      "url": "/media/Zootropolis_Kengurumba_800x600.jpg",
+      "linked": true,
+      "file": "public/media/Zootropolis_Kengurumba_800x600.jpg",
+      "candidate": false,
+      "bytes": 275461,
+      "sha256": "9b16fb0e478a91cddabd505f485caf5f8b2bbf13a40ef18eb004e7b7d3c347a5",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 275461,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/Zootropolis_Kengurumba_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зоотрополіс",
+      "value": 800,
+      "field": "$.rounds[1].categories[4].questions[3].image",
+      "url": "/media/Zootropolis_Sovampir_800x600.jpg",
+      "linked": true,
+      "file": "public/media/Zootropolis_Sovampir_800x600.jpg",
+      "candidate": false,
+      "bytes": 245666,
+      "sha256": "68c6596c736bfde8f83601b8da9a5b9d27ba2b6c36f95d85443c81b1b12e05dd",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 245666,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/Zootropolis_Sovampir_800x600.jpg",
+        "kind": "image",
+        "width": 800,
+        "height": 600,
+        "ok": true
+      }
+    },
+    {
+      "round": "Раунд 2",
+      "category": "Зоотрополіс",
+      "value": 1000,
+      "field": "$.rounds[1].categories[4].questions[4].image",
+      "url": "/media/GrandFinal_Author_Kobrauzer_1000.jpg",
+      "linked": false,
+      "file": "public/media/GrandFinal_Author_Kobrauzer_800.jpg",
+      "candidate": true,
+      "bytes": 553138,
+      "sha256": "0a28dcad35a4047af7fbeb4daa7256207bb081e851d9740af054f8695df7fec5",
+      "remoteMatch": true,
+      "http": {
+        "status": 200,
+        "contentType": "image/jpeg",
+        "length": 553138,
+        "hashMatches": true
+      },
+      "browser": {
+        "file": "public/media/GrandFinal_Author_Kobrauzer_800.jpg",
+        "kind": "image",
+        "width": 1448,
+        "height": 1086,
+        "ok": true
+      }
+    }
+  ],
+  "stopChecks": [
+    {
+      "url": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "at": 6,
+      "duration": 24.065986,
+      "valid": true
+    },
+    {
+      "url": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "at": 8,
+      "duration": 14.9,
+      "valid": true
+    },
+    {
+      "url": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "at": 14,
+      "duration": 22.772993,
+      "valid": true
+    },
+    {
+      "url": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "at": 16,
+      "duration": 37.5375,
+      "valid": true
+    },
+    {
+      "url": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "at": 11,
+      "duration": 18.227664,
+      "valid": true
+    },
+    {
+      "url": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "at": 5,
+      "duration": 10.166667,
+      "valid": true
+    }
+  ],
+  "fullSmoke": {
+    "command": "node tests/ai_repro/grand_final_smoke.js",
+    "status": "FAIL",
+    "reason": "ENOENT public/media/GrandFinal_Author_Kobrauzer_1000.jpg; full gameplay traversal not completed"
+  },
+  "limits": [
+    "Local isolated server only; production deploy was not inspected.",
+    "Images decoded and drawn to canvas; MP3 fully decoded with AudioContext; videos checked at metadata and three seek positions, not full playback.",
+    "STOP times are inside video duration; exact STOP frame on real phones/OBS not verified."
+  ],
+  "changes": "Audit only; no game, media, HOST, PLAYER, OBS, server or season data edits."
+}
