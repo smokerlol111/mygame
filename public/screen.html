@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="/style.css?v=1617" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="/common.js?v=1613"></script>
+    <script src="/themes/theme.js"></script>
+    <script src="/themes/halloween/preview.js"></script>
     <style>
       /* v1.5.10 — larger question text for the stream/OBS view */
       #app .question {
@@ -818,6 +820,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="/themes/halloween/theme.css" />
   </head>
   <body class="screen">
     <div class="cameraSafe"></div>
@@ -827,7 +830,7 @@
       </div>
     </div>
     <script>
-      const socket = io(),
+      const socket = window.QuizPreview?.socket || io(),
         app = document.getElementById("app");
       const cueAudio = {
         question: new Audio("/sounds/question.mp3"),
@@ -912,6 +915,11 @@
         location.pathname.split("/").filter(Boolean)[1] || new URLSearchParams(location.search).get("code") || "";
       async function ensureGameData(gameId) {
         if (!gameId || gameId === loadedGameId) return;
+        if (window.QuizPreview) {
+          data = window.QuizPreview.data;
+          loadedGameId = gameId;
+          return;
+        }
         const r = await fetch(`/games/${encodeURIComponent(gameId)}.json`, { cache: "no-store" });
         if (!r.ok) throw new Error("Game HTTP " + r.status);
         data = await r.json();
@@ -930,17 +938,25 @@
           if (!r?.ok) app.innerHTML = `<div class="panel center"><h2>${r?.error || "Кімнату не знайдено."}</h2></div>`;
         });
       }
-      if (!code)
+      if (!code && !window.QuizPreview)
         app.innerHTML = `<div class="panel center"><h2>Вкажіть кімнату</h2><p>Використайте адресу <b>/screen/КОД</b></p></div>`;
       socket.on("connect", () => {
         setObsNet(true);
         if (code) joinObs();
       });
       socket.on("disconnect", () => setObsNet(false));
+      socket.on("playerPresence", x => {
+        if (!state || x.code !== code || state.uiTheme !== "halloween") return;
+        const player = state.players?.find(p => p.id === x.playerId);
+        if (!player) return;
+        player.connected = !!x.connected;
+        QuizTheme.renderOBS(state, app);
+      });
       socket.on("roomClosed", ({ code: closedCode }) => {
         if (closedCode !== code) return;
         const last = state;
         state = null;
+        QuizTheme.renderOBS(last ? { ...last, phase: "closed", current: null, paused: false } : null, app);
         const rs = last?.finalResults || [];
         const w = rs[0];
         app.innerHTML = `<div class="panel center" style="margin-top:3vh"><div class="huge">🏁</div><h1 style="font-size:52px">ГРУ ЗАВЕРШЕНО</h1>${w ? `<h2>🏆 ПЕРЕМОЖЕЦЬ</h2><div class="winner" style="font-size:72px">${GameUI.esc(w.name)}</div><div class="huge">${w.score}</div><div class="finalList">${rs.map((x, i) => `<div class="finalItem"><span><b>${i + 1}. ${GameUI.esc(x.name)}</b></span><b>${x.score}</b></div>`).join("")}</div>` : ""}</div>`;
@@ -995,6 +1011,7 @@
         if (!state || x.code !== code) return;
         state.voice = { ...(state.voice || {}), speakingPlayerIds: x.playerIds || [] };
         applyVoiceHighlight();
+        if (state.uiTheme === "halloween") QuizTheme.renderOBS(state, app);
       });
       socket.on("firstTurnProgress", x => {
         if (!state || x.code !== code || state.phase !== "first_turn_quiz") return;
@@ -1322,6 +1339,7 @@
         numericClockHandle = setInterval(tick, 200);
       }
       function fitQuestionToOBS() {
+        if (state?.uiTheme === "halloween") return; // The theme reserves a separate camera row.
         if (
           ![
             "question",
@@ -1513,9 +1531,11 @@
       }
       function render() {
         if (!state || !data) return;
+        QuizTheme.apply(state);
         let h = ``;
         if (state.phase === "paused") {
           app.innerHTML = `<div class="panel center" style="margin-top:8vh;padding:56px"><div class="huge">⏸</div><h1 style="font-size:54px">ТЕХНІЧНА ПАУЗА</h1><p class="muted" style="font-size:24px">Скоро продовжимо</p></div>`;
+          QuizTheme.renderOBS(state, app);
           return;
         }
 
@@ -1712,6 +1732,7 @@
         const mediaSnapshot = captureMediaPlayback();
         stopDetachedMedia(mediaSnapshot);
         app.innerHTML = h;
+        QuizTheme.renderOBS(state, app);
         restoreMediaPlayback(mediaSnapshot);
         limitMediaPreview();
         syncObsMediaFromState();

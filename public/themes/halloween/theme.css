@@ -1,0 +1,250 @@
+/* All overrides are scoped; the default game and Grand Final keep their styles. */
+@font-face {
+  font-family: "Halloween Creepster";
+  src: url("fonts/Creepster-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+body[data-ui-theme="halloween"] {
+  --accent: #f59b36;
+  --accent2: #ffca77;
+  --gold: #ffc165;
+  --muted: #c3abc9;
+  --panel: #191123;
+  color: #fff3dd;
+  background: radial-gradient(ellipse at 12% 0%, #3c2046, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, #3a2118, transparent 50%), #0c0912;
+}
+body[data-ui-theme="halloween"] .panel,
+body[data-ui-theme="halloween"] .mobileCategory {
+  background: linear-gradient(135deg, #23172e, #140f1e);
+  border-color: #715077;
+}
+body[data-ui-theme="halloween"] .tile,
+body[data-ui-theme="halloween"] .phoneTile,
+body[data-ui-theme="halloween"] .cat {
+  background: linear-gradient(145deg, #30203d, #17101f);
+  color: #ffc165;
+  border-color: #795178;
+  text-shadow: none;
+}
+body[data-ui-theme="halloween"] .buzz.ready {
+  background: linear-gradient(145deg, #bb5b12, #6e2c15);
+  border-color: #ffcf86;
+  box-shadow: 0 0 24px #f5923445;
+}
+
+body.screen[data-ui-theme="halloween"] {
+  --halloween-gutter: 2.2vw;
+  --halloween-gap: 0.8vw;
+  --halloween-sidebar-width: clamp(260px, 21vw, 440px);
+  --halloween-main-right: calc(var(--halloween-gutter) + var(--halloween-sidebar-width) + var(--halloween-gap));
+  --halloween-main-width: calc(100vw - var(--halloween-gutter) - var(--halloween-main-right));
+  /* Four 16:9 camera windows plus captions, scaled from viewport width. */
+  --halloween-camera-width: calc((var(--halloween-main-width) - 3 * var(--halloween-gap)) / 4);
+  --halloween-caption: clamp(34px, 3.8vh, 46px);
+  --halloween-cameras-height: calc(var(--halloween-camera-width) * 9 / 16 + var(--halloween-caption) + 4px);
+  --halloween-top: clamp(100px, 13vh, 154px);
+  font-family: Georgia, "Times New Roman", serif;
+  background: #08060e url("assets/haunted-night.png") center / cover no-repeat;
+  overflow: hidden;
+}
+body.screen[data-ui-theme="halloween"] .cameraSafe { display: none; }
+body.screen[data-ui-theme="halloween"] > .wrap {
+  left: var(--halloween-gutter);
+  right: var(--halloween-main-right);
+  top: var(--halloween-top);
+  bottom: calc(var(--halloween-cameras-height) + 2.5vh);
+  padding: 0 !important;
+}
+body.screen[data-ui-theme="halloween"] #app {
+  overflow: auto;
+  scrollbar-width: thin;
+}
+#halloweenHeader {
+  position: fixed;
+  inset: .7vh var(--halloween-gutter) auto;
+  height: calc(var(--halloween-top) - 2.4vh);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 0;
+}
+.halloween-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.halloween-emblem { width: clamp(70px, 6.1vw, 118px); height: auto; filter: drop-shadow(0 0 13px #ff791c55); }
+.halloween-wordmark { display: flex; align-items: baseline; gap: 20px; }
+.halloween-wordmark b,
+.halloween-wordmark strong { font-family: "Halloween Creepster", Impact, fantasy; font-weight: 400; }
+.halloween-wordmark b { display: block; font-size: clamp(30px, 3vw, 58px); letter-spacing: .025em; color: #f8ebcf; text-shadow: 0 2px 2px #000, 0 0 12px #1d0715; }
+.halloween-wordmark strong { font-size: clamp(27px, 2.6vw, 50px); color: #ff7d18; text-shadow: 0 3px 2px #210808, 0 0 18px #fc5f1b55; }
+.halloween-brand small { display: block; margin-top: 5px; color: #d9ba8b; font-size: clamp(11px, .85vw, 16px); letter-spacing: .13em; text-shadow: 0 2px 4px #000; }
+.halloween-room { display: flex; gap: 24px; align-items: center; color: #ffe3b4; font-weight: 800; font-size: clamp(16px, 1.3vw, 26px); white-space: nowrap; border: 1px solid #9b684d; border-radius: 100px; padding: 12px 25px; background: linear-gradient(#15101de8, #08070df5); box-shadow: inset 0 0 0 3px #302236, 0 0 15px #000; }
+.halloween-room span { color: #ffb654; border-left: 1px solid #78506b; padding-left: 24px; }
+
+#halloweenCameras {
+  position: fixed;
+  inset: auto var(--halloween-main-right) 1.2vh var(--halloween-gutter);
+  height: var(--halloween-cameras-height);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--halloween-gap);
+}
+#halloweenBroadcast {
+  position: fixed;
+  top: var(--halloween-top);
+  right: var(--halloween-gutter);
+  bottom: 1.2vh;
+  width: var(--halloween-sidebar-width);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) clamp(140px, 18vh, 220px);
+  gap: 1.4vh;
+}
+.halloween-broadcast-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #97729d;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #170f21f0, #09080ff5);
+  box-shadow: inset 0 0 0 3px #44324e80, inset 0 0 28px #0009, 0 0 0 2px #130e1b, 0 5px 18px #0009;
+}
+.halloween-broadcast-slot::after { content: ""; position: absolute; top: 0; right: 0; width: 76px; height: 76px; background: url("assets/cobweb.svg") center / contain no-repeat; transform: scaleX(-1); opacity: .6; pointer-events: none; }
+.halloween-broadcast-slot h2 {
+  flex: none;
+  margin: 0;
+  padding: 11px 12px;
+  border-bottom: 1px solid #846047;
+  font-size: clamp(13px, 1vw, 19px);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-align: center;
+  color: #f4d8a5;
+  background: linear-gradient(90deg, #35213c40, #3a1c1a65, #35213c40);
+  text-shadow: 0 0 12px #e67a2544;
+}
+.halloween-broadcast-slot .broadcast-window {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 70%, #31203970, #08070ed9);
+}
+.halloween-host-camera .broadcast-window { flex: none; aspect-ratio: 16 / 9; }
+.halloween-broadcast-slot .broadcast-window > span {
+  padding: 12px;
+  text-align: center;
+  color: #a38aaf;
+  font-size: clamp(12px, .85vw, 16px);
+  letter-spacing: .12em;
+}
+.halloween-camera {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+  border: 1px solid #99729f;
+  border-radius: 10px;
+  background: #100b17;
+  box-shadow: 0 0 0 2px #26182e, 0 5px 20px #000c;
+}
+.halloween-camera:first-child::after,
+.halloween-camera:last-child::after { content: ""; position: absolute; width: clamp(44px, 4.5vw, 86px); height: clamp(44px, 4.5vw, 86px); bottom: -12px; background: url("assets/pumpkin-candles.png") center / contain no-repeat; pointer-events: none; z-index: 2; }
+.halloween-camera:first-child::after { left: -34px; }
+.halloween-camera:last-child::after { right: -34px; transform: scaleX(-1); }
+.halloween-camera:first-child .camera-caption { padding-left: 60px; }
+.halloween-camera:last-child .camera-caption { padding-right: 60px; }
+.halloween-camera .camera-window {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px 9px 0 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 45% 85%, #4b2b5260, #0b0912d9), url("assets/haunted-night.png") center 85% / 200% auto;
+}
+.halloween-camera .camera-placeholder { font-size: clamp(12px, 1vw, 18px); color: #967c9e; letter-spacing: .17em; }
+.halloween-camera .camera-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: clamp(11px, .85vw, 16px);
+  color: #ffe0a5;
+  background: #170c16;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.halloween-camera .camera-status:empty { display: none; }
+.halloween-camera .camera-caption {
+  flex: 0 0 var(--halloween-caption);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border-top: 1px solid #8e654a;
+  border-radius: 0 0 9px 9px;
+  background: linear-gradient(180deg, #25142ae8, #09070ef5);
+}
+.halloween-camera .camera-caption b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(14px, 1.15vw, 23px); color: #f8e5bb; }
+.halloween-camera .camera-caption > span { font-size: clamp(18px, 1.5vw, 30px); font-weight: 900; color: #ffb654; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px #ff891355; }
+.halloween-camera.is-speaking { border-color: #c7a1df; }
+.halloween-camera.is-answering { border-color: #ffb34c; box-shadow: 0 0 0 2px #ff7c25, 0 0 23px #ff7c2580, inset 0 0 10px #e8782830; }
+.halloween-camera.answer-wrong { border-color: #e68a96; }
+.halloween-camera.is-empty { border-style: dashed; }
+
+body.screen[data-ui-theme="halloween"] #app .scorebar,
+body.screen[data-ui-theme="halloween"] .obsSegmentPlayers { display: none; }
+body.screen[data-ui-theme="halloween"] #app > .panel { margin-top: 0 !important; }
+body.screen[data-ui-theme="halloween"] #app > .center { margin: 0 0 1vh !important; font-size: clamp(18px, 1.5vw, 28px) !important; }
+body.screen[data-ui-theme="halloween"] #app > .center b { font-size: inherit !important; }
+body.screen[data-ui-theme="halloween"] #app .grid {
+  height: calc(100% - 5vh);
+  grid-template-rows: minmax(40px, .8fr) repeat(5, minmax(0, 1fr));
+  gap: .7vh .65vw;
+  padding: 8px;
+  border: 1px solid #9b7ba5;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #170f21eb, #09070ff0);
+  box-shadow: 0 0 0 3px #49315390, inset 0 0 0 3px #35203c, 0 8px 24px #000b;
+}
+body.screen[data-ui-theme="halloween"] #app .cat { font-family: Georgia, "Times New Roman", serif; font-size: clamp(14px, 1.1vw, 23px); padding: 6px; display: grid; place-items: center; border-radius: 4px; color: #f6e7c7; font-weight: 700; background: linear-gradient(145deg, #21142d, #0d0a15 85%); border-color: #73547e; text-shadow: 0 2px 4px #000; }
+body.screen[data-ui-theme="halloween"] #app .tile { min-height: 0; padding: 3px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 2.7vw, 54px); font-weight: 700; border-radius: 5px; border: 1px solid #65466e; background: linear-gradient(145deg, #2b1c36, #100c18 80%); box-shadow: inset 0 1px 1px #b389bd30, inset 0 -6px 18px #0007, 0 2px 4px #0009; color: #ffb039; text-shadow: 0 2px 1px #5d2909, 0 0 16px #ff8b163d; }
+body.screen[data-ui-theme="halloween"] #app .tile.used { opacity: .38; color: #6e6576; text-shadow: none; }
+body.screen[data-ui-theme="halloween"] #app .tile.tile-selecting { border-color: #ffd280 !important; background: linear-gradient(145deg, #542814, #271124) !important; color: #ffcd68 !important; box-shadow: 0 0 0 2px #ff7b20, 0 0 23px #ff7b20c0, inset 0 0 16px #ff8b2040 !important; text-shadow: 0 0 14px #ff8a18 !important; }
+body.screen[data-ui-theme="halloween"] .obsGameLayout {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 1vh;
+}
+body.screen[data-ui-theme="halloween"] .obsGameLayout.halloween-has-media {
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+body.screen[data-ui-theme="halloween"] .obsSegmentQuestion { grid-column: 1; grid-row: 1; padding: 1.5vw; margin: 0; overflow: auto; background: linear-gradient(135deg, #201329eb, #0b0913f2); border: 1px solid #94709e; box-shadow: inset 0 0 0 3px #44304d70, inset 0 0 35px #0009; }
+body.screen[data-ui-theme="halloween"] .halloween-has-media .obsSegmentQuestion { grid-column: 2; }
+body.screen[data-ui-theme="halloween"] .obsSegmentMedia { grid-column: 1; grid-row: 1; max-height: 100%; overflow: hidden; }
+body.screen[data-ui-theme="halloween"] .obsSegmentAnswer { grid-column: 1 / -1; grid-row: 2; margin: 0; max-height: 12vh; overflow: auto; }
+body.screen[data-ui-theme="halloween"] .obsSegmentAnswer.is-empty { display: none; }
+body.screen[data-ui-theme="halloween"] #app .question { font-size: clamp(24px, 2.6vw, 49px); max-width: 100%; line-height: 1.2; overflow-wrap: anywhere; }
+body.screen[data-ui-theme="halloween"] #app .answer { font-size: clamp(18px, 1.6vw, 30px); }
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia .imageRevealWrap,
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia .media-question { height: 100% !important; max-height: 100%; margin: 0 !important; padding: 8px; }
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia .imageRevealFrame { flex: 1; min-height: 0; height: auto !important; max-height: 100%; }
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia img,
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia video { width: 100% !important; height: 100% !important; max-height: 100% !important; object-fit: contain !important; }
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia .media-question { display: flex; flex-direction: column; justify-content: center; }
+body.screen[data-ui-theme="halloween"] #app .obsSegmentMedia .emojiQuestion { font-size: clamp(40px, 6vw, 100px); overflow-wrap: anywhere; }
+
+@media (max-aspect-ratio: 4/3) {
+  body.screen[data-ui-theme="halloween"] .obsGameLayout.halloween-has-media { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  body.screen[data-ui-theme="halloween"] .halloween-has-media .obsSegmentQuestion { grid-column: 1; grid-row: 2; }
+  body.screen[data-ui-theme="halloween"] .halloween-has-media .obsSegmentAnswer { grid-row: 3; }
+}

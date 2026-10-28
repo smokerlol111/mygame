@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="/style.css?v=307" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="/common.js?v=307"></script>
+    <script src="/themes/theme.js"></script>
+    <link rel="stylesheet" href="/themes/halloween/theme.css" />
     <style>
       .mobileBoard {
         display: flex;
@@ -377,6 +379,7 @@
         }
       }
       function login(prefill = urlCode || "") {
+        QuizTheme.apply(null);
         state = null;
         joined = false;
         const shownCode = prefill || code || "";
@@ -798,6 +801,7 @@
         numericClockHandle = setInterval(tick, 200);
       }
       function render() {
+        QuizTheme.apply(state);
         if (!state) return;
         const activeQuestion = state.activeQuestion || state.current || null;
         const p = me();

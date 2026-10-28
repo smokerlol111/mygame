@@ -8,6 +8,8 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/public-config.js"></script>
     <script src="/common.js?v=308"></script>
+    <script src="/themes/theme.js"></script>
+    <link rel="stylesheet" href="/themes/halloween/theme.css" />
     <style>
       .menuHero {
         display: flex;
@@ -384,6 +386,7 @@ function setNetBadge(ok){
       const app = document.getElementById("app"),
         roomBox = document.getElementById("roomBox");
       function renderStart() {
+        QuizTheme.apply(null);
         roomBox.innerHTML = "";
         const cards = gamesList
           .map(
@@ -856,7 +859,7 @@ function setNetBadge(ok){
                   + rtt
                   + " ms"
                   + (jitter == null ? "" : " • jitter " + jitter + " ms");
-            return `<div class="player ${GameUI.wrongAnswerClass(p, state)} ${p.id === answerer ? "active" : ""} ${state?.voice?.speakingPlayerIds?.includes(p.id) ? "voice-speaking" : ""}" data-player-id="${GameUI.esc(p.id)}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected ? "🟢" : "⚫"} ${GameUI.reactionHTML(p, state)}</div><div class="muted player-network" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
+            return `<div class="player ${GameUI.wrongAnswerClass(p, state)} ${p.id === answerer ? "active" : ""} ${state?.voice?.speakingPlayerIds?.includes(p.id) ? "voice-speaking" : ""}" data-player-id="${GameUI.esc(p.id)}"><div><b>${GameUI.esc(p.name)}</b> ${p.connected ? "🟢" : "⚫"} ${GameUI.reactionHTML(p, state)}</div>${state?.uiTheme === "halloween" && Number.isInteger(p.cameraSlot) ? `<div class="muted">📷 Камера ${p.cameraSlot + 1}</div>` : ""}<div class="muted player-network" style="font-size:12px;margin-top:4px">${ready} • ${net}</div><div class="score">${p.score}</div></div>`;
           })
           .join("")}</div>`;
       }
@@ -1153,6 +1156,7 @@ function setNetBadge(ok){
         audienceClockHandle = setInterval(tick, 100);
       }
       function render() {
+        QuizTheme.apply(state);
         if (!state || !data) return;
         let h = "";
         if (state.phase === "paused") {

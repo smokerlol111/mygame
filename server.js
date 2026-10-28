@@ -148,6 +148,7 @@ function publicState(room) {
     code: room.code,
     title: getRoomGame(room).title,
     gameId: room.gameId,
+    uiTheme: getRoomGame(room).uiTheme === "halloween" ? "halloween" : null,
     isGrandFinal: getRoomGame(room).isGrandFinal === true,
     isTestResult: !!room.isTestResult,
     gameMenuTitle: getRoomGame(room).menuTitle || getRoomGame(room).title,
@@ -241,6 +242,7 @@ function publicState(room) {
     },
     players: room.players.map(p => ({
       id: p.id,
+      cameraSlot: p.cameraSlot,
       name: p.name,
       score: p.score,
       connected: p.connected,
@@ -359,8 +361,11 @@ function emitState(room) {
     });
 }
 function emitPlayerPresence(room, player) {
-  if (!room?.hostSocket || !player) return;
-  io.to(room.hostSocket).emit("playerPresence", {
+  if (!room || !player) return;
+  // The themed camera row needs presence updates without rebuilding active media.
+  const target = getRoomGame(room).uiTheme === "halloween" ? room.code : room.hostSocket;
+  if (!target) return;
+  io.to(target).emit("playerPresence", {
     code: room.code,
     playerId: player.id,
     connected: !!player.connected,
@@ -747,6 +752,7 @@ io.on("connection", socket => {
       const clean =
         String(name || "").trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
       p = { id: crypto.randomUUID(), key: crypto.randomBytes(16).toString('hex'), name: clean,
+        cameraSlot: [0, 1, 2, 3].find(slot => !room.players.some(player => player.cameraSlot === slot)),
         score: 0,
         socketId: socket.id,
         connected: true,

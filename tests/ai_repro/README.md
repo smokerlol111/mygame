@@ -23,6 +23,8 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 
 | Command | Proves | Time |
 |---|---|---|
+| `node tests/ai_repro/halloween_theme.js` | Halloween opt-in, fixed camera slots through first-turn sorting/reconnect/replacement, actual OBS rendering and video STOP guard in jsdom, default Grand Final unchanged | ~2 s |
+| `node tests/ai_repro/halloween_theme.js --screenshots` | The same checks plus optional 1920×1080 headless Edge screenshots into `themes/halloween/previews/`; Windows + Edge required, not a real OBS/media decode test | ~5 s |
 | `node tests/ai_repro/game_safety_regression.js` | Конкурентні записи фіналів/сезонів, пауза числового/глядацького таймерів, повторні кнопки, нульові пропущені ставки, повернення PLAYER, заборона збереження фіктивних результатів | ~2 s |
 | `node tests/ai_repro/grand_final_smoke.js` | Усі 50 клітинок Grand Final, спецклітинки, 27 медіафайлів/HTTP, стартове, 6 глядацьких питань і справжній фінал; без перевірки декодування медіа | ~60 s |
 | `node tests/ai_repro/season_grand_final.js` | Окрема гра визначає чемпіона: відбори, автоматична позначка фіналу, HOST/public/OBS у jsdom, нічия, виправлення/видалення, сумісність історії | ~3 s |

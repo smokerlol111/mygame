@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Halloween — перегляд теми</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #0c0912; color: #fff3dd; font-family: system-ui, sans-serif; }
+      nav { min-height: 54px; display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+      nav b { margin-right: 8px; }
+      a { color: #ffc165; }
+      small { color: #c3abc9; }
+      iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 0; }
+    </style>
+  </head>
+  <body>
+    <nav aria-label="Приклади екранів">
+      <b>🎃 Halloween · демонстрація</b>
+      <a href="?view=board">Поле</a>
+      <a href="?view=photo">Фото</a>
+      <a href="?view=text">Текст</a>
+      <a href="?view=result">Відповідь</a>
+      <a href="?view=paused">Пауза</a>
+      <small>Демо · справа: камера ведучого, чат і донати · джерела додаються в OBS</small>
+    </nav>
+    <iframe title="OBS-екран Halloween" id="preview"></iframe>
+    <script>
+      const view = new URLSearchParams(location.search).get("view") || "board";
+      document.getElementById("preview").src = `/screen?preview=halloween&view=${encodeURIComponent(view)}`;
+    </script>
+  </body>
+</html>
