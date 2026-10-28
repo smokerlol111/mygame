@@ -62,5 +62,13 @@
     "description": "Грандфінал 29.10.2026 • усі 50 основних, стартове, фінальне та 2 глядацькі раунди внесені • тестова версія",
     "file": "season2_grand_final.json",
     "enabled": true
+  },
+  {
+    "id": "halloween-special-2026",
+    "title": "HALLOWEEN SPECIAL — У РОЗРОБЦІ",
+    "icon": "🎃",
+    "description": "Чорний гумор без жорстокості • готова 1 із 10 категорій • чернетка",
+    "file": "halloween_special_2026.json",
+    "enabled": false
   }
 ]
