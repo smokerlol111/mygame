@@ -3,31 +3,59 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Halloween — перегляд теми</title>
+    <title>Halloween — перегляд трьох екранів</title>
     <style>
       * { box-sizing: border-box; }
-      body { margin: 0; background: #0c0912; color: #fff3dd; font-family: system-ui, sans-serif; }
-      nav { min-height: 54px; display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
-      nav b { margin-right: 8px; }
-      a { color: #ffc165; }
-      small { color: #c3abc9; }
-      iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 0; }
+      body { margin: 0; background: #0e0b15; color: #fff3dd; font-family: system-ui, sans-serif; }
+      header { padding: 24px clamp(16px, 4vw, 56px); border-bottom: 1px solid #43304f; background: linear-gradient(110deg, #2b1834, #15101e); }
+      .title { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+      .title img { width: 54px; height: 58px; object-fit: contain; }
+      h1 { margin: 0 0 4px; font-size: 22px; }
+      p { margin: 0; color: #c7b2cf; font-size: 13px; line-height: 1.6; }
+      nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      nav + nav { margin-top: 12px; }
+      a { display: inline-block; padding: 10px 16px; border: 1px solid #63476f; border-radius: 10px; color: #e1c9e8; text-decoration: none; font-size: 13px; font-weight: 650; }
+      a[aria-current="page"] { color: #2f1a0d; background: #ffc078; border-color: #ffd59e; }
+      a:focus-visible { outline: 3px solid #ffd59e; outline-offset: 3px; }
+      main { padding: 24px; }
+      iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 1px solid #5c4568; border-radius: 12px; background: #100c18; }
+      body[data-target="host"] iframe { aspect-ratio: 16/10; min-height: 780px; }
+      body[data-target="player"] iframe { width: min(100%, 390px); height: 844px; margin: auto; border-radius: 28px; box-shadow: 0 0 0 6px #281d33, 0 20px 60px #0008; }
+      @media (max-width: 500px) { main { padding: 16px 10px; } header { padding: 18px 14px; } a { padding: 9px 12px; } }
     </style>
   </head>
   <body>
-    <nav aria-label="Приклади екранів">
-      <b>🎃 Halloween · демонстрація</b>
-      <a href="?view=board">Поле</a>
-      <a href="?view=photo">Фото</a>
-      <a href="?view=text">Текст</a>
-      <a href="?view=result">Відповідь</a>
-      <a href="?view=paused">Пауза</a>
-      <small>Демо · справа: камера ведучого, чат і донати · джерела додаються в OBS</small>
-    </nav>
-    <iframe title="OBS-екран Halloween" id="preview"></iframe>
+    <header>
+      <div class="title"><img src="/themes/halloween/assets/pumpkin-candles.png" alt="" /><div><h1>Halloween · перегляд оформлення</h1><p>Тему перемикає кнопка на екрані HOST. Ігрові дії в демонстрації неактивні.</p><p id="themeStatus" aria-live="polite"></p></div></div>
+      <nav id="targets" aria-label="Вибір екрана"></nav>
+      <nav id="views" aria-label="Ігровий етап"></nav>
+    </header>
+    <main><iframe title="Перегляд Halloween" id="preview"></iframe></main>
     <script>
-      const view = new URLSearchParams(location.search).get("view") || "board";
-      document.getElementById("preview").src = `/screen?preview=halloween&view=${encodeURIComponent(view)}`;
+      const params = new URLSearchParams(location.search);
+      const targets = { obs: ["OBS · трансляція", "/screen"], host: ["HOST · ведучий", "/host"], player: ["PLAYER · телефон", "/play"] };
+      const target = Object.hasOwn(targets, params.get("target")) ? params.get("target") : "obs";
+      const views = { ...(target === "player" ? { login: "Вхід" } : {}), lobby: "Лобі", board: "Поле", photo: "Фото", text: "Текст", buzz: "BUZZ", result: "Відповідь", paused: "Пауза" };
+      const view = Object.hasOwn(views, params.get("view")) ? params.get("view") : "board";
+      let theme = params.get("theme") === "standard" ? "standard" : "halloween";
+      document.body.dataset.target = target;
+      function updateNavigation() {
+        document.getElementById("targets").innerHTML = Object.entries(targets).map(([key, [label]]) => `<a href="?target=${key}&view=${view}&theme=${theme}"${key === target ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+        document.getElementById("views").innerHTML = Object.entries(views).map(([key, label]) => `<a href="?target=${target}&view=${key}&theme=${theme}"${key === view ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+        document.getElementById("themeStatus").textContent = `Тема: ${theme === "halloween" ? "Halloween" : "Стандартна"}`;
+      }
+      updateNavigation();
+      const frame = document.getElementById("preview");
+      frame.title = `${targets[target][0]} — ${views[view]}`;
+      frame.src = `${targets[target][1]}?preview=halloween&view=${view}&theme=${theme}`;
+      window.addEventListener("message", event => {
+        if (target !== "host" || event.source !== frame.contentWindow || event.origin !== location.origin || event.data?.type !== "quiz-theme-preview" || !["standard", "halloween"].includes(event.data.theme)) return;
+        theme = event.data.theme;
+        const url = new URL(location.href);
+        url.searchParams.set("theme", theme);
+        history.replaceState(null, "", url);
+        updateNavigation();
+      });
     </script>
   </body>
 </html>

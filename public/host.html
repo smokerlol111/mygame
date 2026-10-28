@@ -9,7 +9,7 @@
     <script src="/public-config.js"></script>
     <script src="/common.js?v=308"></script>
     <script src="/themes/theme.js"></script>
-    <link rel="stylesheet" href="/themes/halloween/theme.css" />
+    <script src="/themes/halloween/preview.js"></script>
     <style>
       .menuHero {
         display: flex;
@@ -141,8 +141,9 @@
         white-space: normal;
       }
     </style>
+    <link rel="stylesheet" href="/themes/halloween/theme.css" />
   </head>
-  <body>
+  <body data-ui-view="host">
     <div
       id="netBadge"
       style="
@@ -195,7 +196,7 @@
       <div id="app" class="panel"><button id="create" class="btn">Створити онлайн-кімнату</button></div>
     </div>
     <script>
-      const socket = io();
+      const socket = window.QuizPreview?.socket || io();
       const cueAudio = {
         question: new Audio("/sounds/question.mp3"),
         buzz_open: new Audio("/sounds/buzz.mp3"),
@@ -219,7 +220,7 @@
             const v = Number(input.value);
             cueAudio[key].volume = v / 100;
             out.textContent = v + "%";
-            localStorage.setItem("sgCueVolume_" + key, String(v));
+            if (!window.QuizPreview) localStorage.setItem("sgCueVolume_" + key, String(v));
           };
           input.addEventListener("input", update);
           update();
@@ -248,7 +249,7 @@
       });
       function setHostFinalVolume(v) {
         const volume = Math.max(0, Math.min(100, Number(v) || 0));
-        localStorage.setItem("sgFinalMusicVolume", String(volume));
+        if (!window.QuizPreview) localStorage.setItem("sgFinalMusicVolume", String(volume));
         Object.values(hostFinalMusic).forEach(a => (a.volume = volume / 100));
         const out = document.getElementById("finalMusicVolumeValue");
         if (out) out.textContent = volume + "%";
@@ -293,6 +294,7 @@
         hostToken = localStorage.getItem("sgHostToken") || "",
         storedCode = localStorage.getItem("sgRoomCode") || "",
         hostAudienceWinner = null;
+      QuizTheme.bind(socket, () => state);
       // Host key: opened once as /host?key=..., then remembered in this browser and hidden from the address bar.
 const hostKey=(()=>{const u=new URL(location.href),k=u.searchParams.get('key');if(k){localStorage.setItem('sgHostKey',k);u.searchParams.delete('key');history.replaceState(null,'',u.pathname+u.search+u.hash)}return k||localStorage.getItem('sgHostKey')||''})();
 function setNetBadge(ok){
@@ -347,11 +349,16 @@ function setNetBadge(ok){
       }
 
       async function loadGameData(gameId) {
+        if (window.QuizPreview) {
+          data = window.QuizPreview.data;
+          return;
+        }
         const r = await fetch(`/games/${encodeURIComponent(gameId)}.json?key=${encodeURIComponent(hostKey)}`, { cache: "no-store" });
         if (!r.ok) throw new Error("Game HTTP " + r.status);
         data = await r.json();
       }
       async function init() {
+        if (window.QuizPreview) return;
         try {
           const gr = await fetch("/games", { cache: "no-store" });
           if (!gr.ok) throw new Error("Games HTTP " + gr.status);
@@ -504,7 +511,26 @@ function setNetBadge(ok){
         });
       }
       function renderRoom() {
-        roomBox.innerHTML = `<div class="badge">Кімната <b>${code}</b></div>`;
+        if (roomBox.dataset.roomCode === code && document.getElementById("toggleTheme")) {
+          QuizTheme.apply(state);
+          return;
+        }
+        roomBox.dataset.roomCode = code;
+        roomBox.innerHTML = `<div class="hostRoomControls"><div class="badge">Кімната <b>${code}</b></div><button type="button" class="btn secondary host-theme-toggle" id="toggleTheme">🎃 Halloween</button></div>`;
+        QuizTheme.apply(state);
+        document.getElementById("toggleTheme").onclick = () => {
+          const uiTheme = state?.uiTheme === "halloween" ? null : "halloween";
+          if (window.QuizPreview) {
+            window.QuizPreview.setTheme(uiTheme);
+            return;
+          }
+          const button = document.getElementById("toggleTheme");
+          button.disabled = true;
+          socket.timeout(5000).emit("setUiTheme", { code, uiTheme }, (error, result) => {
+            button.disabled = false;
+            if (error || !result?.ok) alert(result?.error || "Не вдалося змінити тему. Спробуйте ще раз.");
+          });
+        };
       }
       socket.on("state", async s => {
         if (code && s.code !== code) return;

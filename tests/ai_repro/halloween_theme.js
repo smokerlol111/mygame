@@ -3,9 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const vm = require('node:vm');
-const { spawn } = require('node:child_process');
 const { io } = require('socket.io-client');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { startServer, REPO_ROOT } = require('./lib/server');
@@ -33,6 +31,12 @@ async function main() {
   assert.equal(context.publicState(room).uiTheme, null);
   game.uiTheme = 'halloween';
   assert.equal(context.publicState(room).uiTheme, 'halloween');
+  room.uiTheme = null;
+  assert.equal(context.publicState(room).uiTheme, null, 'HOST can select standard over a Halloween game default');
+  room.uiTheme = 'halloween';
+  game.uiTheme = undefined;
+  assert.equal(context.publicState(room).uiTheme, 'halloween', 'HOST can select Halloween over a standard game default');
+  delete room.uiTheme;
   game.uiTheme = '../../untrusted';
   assert.equal(context.publicState(room).uiTheme, null);
   const presenceTargets = [];
@@ -60,12 +64,13 @@ async function main() {
     assert.equal(result.ok, true, `${event}: ${JSON.stringify(result)}`);
     return result;
   };
-  const loadPage = async route => {
+  const loadPage = async (route, savedSession = {}) => {
     const vc = new VirtualConsole();
     vc.on('jsdomError', error => errors.push(error.detail?.message || error.message));
     const page = await JSDOM.fromURL(server.url + route, {
       runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
       beforeParse(win) {
+        for (const [key, value] of Object.entries(savedSession)) win.localStorage.setItem(key, value);
         win.fetch = (url, options) => fetch(new URL(url, server.url), options);
         win.HTMLMediaElement.prototype.play = () => Promise.resolve();
         win.HTMLMediaElement.prototype.pause = () => {};
@@ -130,6 +135,12 @@ async function main() {
     assert.equal(doc.querySelector('.imageRevealImg').getAttribute('src'), '/media/surprise_tibetan_fox.jpg');
     assert.equal(doc.querySelector('.halloween-camera.is-answering').dataset.playerId, 'preview-2');
     assert.ok(!doc.querySelector('.obsSegmentAnswer').textContent.includes('Тибетська'), 'answer stays hidden');
+    const stableEmblem = doc.querySelector('#halloweenHeader img');
+    win.eval('state.players[0].score = 1337; state.round = 1; QuizTheme.renderOBS(state, app)');
+    assert.ok(doc.querySelector('[data-camera-slot="0"] .camera-caption').textContent.includes('1337'), 'cached camera row still updates scores');
+    assert.ok(doc.querySelector('.halloween-room').textContent.includes('РАУНД 2'), 'cached header still updates round label');
+    assert.equal(doc.querySelector('#halloweenHeader img'), stableEmblem, 'score/round updates preserve the same emblem');
+    win.eval('state.round = 0; QuizTheme.renderOBS(state, app)');
     win.eval('state.players.reverse(); render()');
     assert.deepEqual([...doc.querySelectorAll('.halloween-camera')].map(el => el.dataset.playerId), ['preview-0', 'preview-1', 'preview-2', 'preview-3']);
     win.eval('state.players = state.players.filter(p => p.id !== "preview-1"); render()');
@@ -164,6 +175,79 @@ async function main() {
     assert.equal(doc.getElementById('halloweenBroadcast'), null);
     console.log('PASS: actual OBS photo rendering, escaping, stable/empty slots, media preservation, 18 phases and theme cleanup');
 
+    const session = { sgRoomCode: 'SAVED', sgHostToken: 'saved-host', sgCode: 'SAVED', sgPlayerKey: 'saved-player-key', sgPlayerId: 'saved-id', sgPlayerName: 'Saved player' };
+    for (const [route, view, boardSelector] of [['/host', 'host', '.tile'], ['/play', 'player', '.phoneTile']]) {
+      const page = await loadPage(`${route}?preview=halloween&view=board`, session);
+      const win = page.window, doc = win.document;
+      await waitFor(() => doc.querySelectorAll(boardSelector).length === 25, `${view}: actual board preview`);
+      assert.ok(!doc.getElementById('app').textContent.includes('undefined'), 'fixture has the required display labels');
+      assert.equal(doc.body.dataset.uiView, view);
+      assert.equal(doc.body.dataset.uiTheme, 'halloween');
+      if (view === 'host') assert.ok(doc.querySelector('#halloweenIdentity strong').textContent.includes('HALLOWEEN'));
+      else {
+        assert.equal(doc.getElementById('halloweenIdentity'), null, 'PLAYER keeps the standard header geometry');
+        assert.ok(doc.querySelector('.wrap > .brand'), 'standard PLAYER brand is retained');
+      }
+      assert.equal(win.eval('socket === QuizPreview.socket'), true, 'preview never connects the real socket');
+      const identity = doc.getElementById('halloweenIdentity'), emblem = identity?.querySelector('img');
+      win.eval('render()');
+      if (identity) assert.equal(identity.querySelector('img'), emblem, 'routine rendering keeps the decorative image');
+      for (const phase of ['question', 'buzz', 'answering', 'result', 'paused']) {
+        win.eval(`state.current = JSON.parse(JSON.stringify(QuizPreview.state.current || { type: "normal", questionType: "text", q: "Довге питання ".repeat(50), a: "", value: 300 })); state.phase = ${JSON.stringify(phase)}; render()`);
+        assert.equal(doc.body.dataset.uiPhase, phase);
+        assert.equal(doc.getElementById('halloweenIdentity'), identity);
+        assert.equal(doc.querySelector('#halloweenCameras'), null, 'working screens have no OBS camera row');
+      }
+      if (view === 'player') {
+        doc.getElementById('leaveRoom').click();
+        assert.equal(win.eval('code'), 'DEMO', 'preview exit cannot change the saved session');
+        win.eval('state.phase = "buzz"; render()');
+        assert.ok(doc.querySelector('#buzz.ready'));
+        win.eval('state.phase = "question"; render()');
+        assert.ok(doc.querySelector('#buzz.waiting'));
+      }
+      for (const [key, value] of Object.entries(session)) assert.equal(win.localStorage.getItem(key), value, `${view}: ${key} unchanged`);
+      assert.deepEqual(Object.keys(win.localStorage).sort(), Object.keys(session).sort(), 'preview adds no persisted settings');
+      win.eval('state.uiTheme = null; render()');
+      assert.equal(doc.body.dataset.uiTheme, undefined);
+      assert.equal(doc.body.dataset.uiPhase, undefined);
+      assert.equal(doc.getElementById('halloweenIdentity'), null);
+      win.eval('state.uiTheme = "unknown"; render()');
+      assert.equal(doc.getElementById('halloweenIdentity'), null);
+    }
+    const playerMedia = await loadPage('/play?preview=halloween&view=video');
+    await waitFor(() => playerMedia.window.document.getElementById('playerVideo').getAttribute('src'), 'themed PLAYER video');
+    const persistentVideo = playerMedia.window.document.getElementById('playerVideo');
+    playerMedia.window.eval('state.phase = "buzz"; render()');
+    assert.equal(playerMedia.window.document.getElementById('playerVideo'), persistentVideo);
+    console.log('PASS: real HOST/PLAYER previews, 25 tiles, BUZZ states, theme reset, persistent PLAYER video and untouched saved sessions');
+
+    // Preview parameters cannot replace an actual room/key-based page.
+    const previewSource = fs.readFileSync(path.join(REPO_ROOT, 'public/themes/halloween/preview.js'), 'utf8');
+    for (const url of ['/host?preview=halloween&key=test', '/play?preview=halloween&room=REAL', '/screen?preview=halloween&code=REAL', '/screen/REAL?preview=halloween']) {
+      const location = new URL(url, 'http://example.test');
+      const sandbox = { location, URLSearchParams, window: {} };
+      vm.runInNewContext(previewSource, sandbox);
+      assert.equal(sandbox.window.QuizPreview, undefined, url);
+    }
+    // Check gallery navigation without loading its iframe into jsdom: child
+    // windows cannot inherit beforeParse's media stubs. Browsers render the frame normally.
+    const gallery = await JSDOM.fromURL(server.url + '/themes/halloween/preview.html?target=player&view=photo', { runScripts: 'dangerously' });
+    pages.push(gallery);
+    assert.equal(gallery.window.document.getElementById('preview').getAttribute('src'), '/play?preview=halloween&view=photo&theme=halloween');
+    assert.equal(gallery.window.document.body.dataset.target, 'player');
+    const hostGallery = await JSDOM.fromURL(server.url + '/themes/halloween/preview.html?target=host&view=board', { runScripts: 'dangerously' });
+    pages.push(hostGallery);
+    const galleryWindow = hostGallery.window;
+    const galleryFrame = galleryWindow.document.getElementById('preview');
+    const originalFrameSrc = galleryFrame.getAttribute('src');
+    galleryWindow.dispatchEvent(new galleryWindow.MessageEvent('message', { origin: server.url, source: galleryFrame.contentWindow, data: { type: 'quiz-theme-preview', theme: 'standard' } }));
+    assert.equal(new URL(galleryWindow.location.href).searchParams.get('theme'), 'standard');
+    assert.ok([...galleryWindow.document.querySelectorAll('#targets a, #views a')].every(a => a.href.includes('theme=standard')));
+    assert.equal(galleryFrame.getAttribute('src'), originalFrameSrc, 'preview theme switch does not reload the active frame');
+    galleryWindow.dispatchEvent(new galleryWindow.MessageEvent('message', { origin: 'https://untrusted.example', source: galleryFrame.contentWindow, data: { type: 'quiz-theme-preview', theme: 'halloween' } }));
+    assert.equal(new URL(galleryWindow.location.href).searchParams.get('theme'), 'standard', 'untrusted preview messages are ignored');
+
     const ordinary = await loadPage(`/screen/${code}?preview=halloween`);
     await waitFor(() => ordinary.window.document.querySelector('.finalList'), 'ordinary Grand Final OBS');
     assert.equal(ordinary.window.QuizPreview, undefined);
@@ -178,27 +262,135 @@ async function main() {
     assert.deepEqual(errors, [], 'no jsdom runtime errors');
     console.log('PASS: normal Grand Final OBS stays unthemed; static resources return HTTP 200');
 
-    if (process.argv.includes('--screenshots')) {
-      const browser = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-      assert.ok(fs.existsSync(browser), 'Microsoft Edge is required for optional screenshots');
+    // HOST alone switches the whole room. Exercise actual browser page handlers,
+    // authorization, isolation, reconnect and a focused answer input.
+    const switchHost = await connect();
+    const switchRoom = await ok(switchHost, 'createRoom', { hostKey: 'theme-regression', hostToken: 'theme-switch-host', gameId: 'general-knowledge' });
+    const switchPlayer = await connect();
+    const switchJoin = await ok(switchPlayer, 'joinPlayer', { code: switchRoom.code, name: 'Theme player' });
+    const otherHost = await connect();
+    const otherRoom = await ok(otherHost, 'createRoom', { hostKey: 'theme-regression', hostToken: 'other-theme-host', gameId: 'general-knowledge' });
+    const otherThemeEvents = [];
+    otherHost.on('uiThemeChanged', event => otherThemeEvents.push(event));
+    for (const forbidden of [switchPlayer, otherHost]) {
+      const result = await forbidden.timeout(3000).emitWithAck('setUiTheme', { code: switchRoom.code, uiTheme: 'halloween' });
+      assert.equal(result.ok, false, 'players and hosts of another room cannot switch this room');
+    }
+    for (const uiTheme of ['unknown', '../../untrusted', {}, undefined]) {
+      const result = await switchHost.timeout(3000).emitWithAck('setUiTheme', { code: switchRoom.code, uiTheme });
+      assert.equal(result.ok, false, 'only standard/null and Halloween are accepted');
+    }
+    const hostPage = await loadPage('/host', { sgHostKey: 'theme-regression', sgHostToken: switchRoom.hostToken, sgRoomCode: switchRoom.code });
+    const playerPage = await loadPage(`/play?room=${switchRoom.code}`, { sgCode: switchRoom.code, sgPlayerKey: switchJoin.playerKey, sgPlayerName: 'Theme player', sgPlayerId: switchJoin.playerId });
+    const obsPage = await loadPage(`/screen/${switchRoom.code}`);
+    await waitFor(() => hostPage.window.document.getElementById('toggleTheme') && playerPage.window.document.getElementById('leaveRoom'), 'real HOST and PLAYER joined');
+    await waitFor(() => obsPage.window.document.querySelector('.roomCode'), 'real OBS lobby');
+    for (const page of [playerPage, obsPage]) assert.equal(page.window.document.getElementById('toggleTheme'), null, 'no theme control on PLAYER/OBS');
+    const phaseBefore = switchHost.state.phase;
+    hostPage.window.document.getElementById('toggleTheme').click();
+    await waitFor(() => [hostPage, playerPage, obsPage].every(page => page.window.document.body.dataset.uiTheme === 'halloween'), 'HOST theme broadcasts to all three screens');
+    assert.equal(hostPage.window.document.getElementById('toggleTheme').getAttribute('aria-pressed'), 'true');
+    const returning = await connect();
+    const returnResult = await ok(returning, 'joinPlayer', { code: switchRoom.code, playerKey: switchJoin.playerKey });
+    assert.equal(returnResult.state.uiTheme, 'halloween', 'reconnecting devices inherit the room theme');
+    assert.equal(returnResult.state.phase, phaseBefore);
+    assert.ok(returnResult.state.players.every(p => p.score === 0));
+    const unrelated = await ok(otherHost, 'rejoinHost', { code: otherRoom.code, hostToken: otherRoom.hostToken });
+    assert.equal(unrelated.state.uiTheme, null);
+    assert.deepEqual(otherThemeEvents, [], 'theme events remain in the selected room');
+    hostPage.window.document.getElementById('toggleTheme').click();
+    await waitFor(() => [hostPage, playerPage, obsPage].every(page => !page.window.document.body.dataset.uiTheme), 'standard theme restored on all screens');
+    assert.equal(obsPage.window.document.getElementById('halloweenCameras'), null);
+    assert.equal(obsPage.window.document.getElementById('halloweenBroadcast'), null);
+    // The PLAYER page's socket still receives state even when another socket has
+    // rejoined its identity. Use it to enter the normal first-turn answer form.
+    await ok(switchHost, 'startGame', { code: switchRoom.code });
+    await ok(switchHost, 'startFirstTurnTimer', { code: switchRoom.code });
+    await waitFor(() => playerPage.window.document.getElementById('firstTurnAnswer'), 'first-turn input');
+    const input = playerPage.window.document.getElementById('firstTurnAnswer');
+    input.value = '12345'; input.focus();
+    hostPage.window.document.getElementById('toggleTheme').click();
+    await waitFor(() => playerPage.window.document.body.dataset.uiTheme === 'halloween', 'theme applied while typing');
+    assert.equal(playerPage.window.document.getElementById('firstTurnAnswer'), input);
+    assert.equal(input.value, '12345');
+    assert.equal(playerPage.window.document.activeElement, input);
+    const resumed = await ok(switchHost, 'rejoinHost', { code: switchRoom.code, hostToken: switchRoom.hostToken });
+    assert.equal(resumed.state.uiTheme, 'halloween', 'HOST reconnect retains selection');
+    assert.equal(resumed.state.firstTurnQuiz.timerStatus, 'running');
+    assert.ok(resumed.state.firstTurnQuiz.remainingMs > 0 && resumed.state.firstTurnQuiz.remainingMs <= 30000);
+
+    const previewHost = await loadPage('/host?preview=halloween&view=photo', session);
+    await waitFor(() => previewHost.window.document.getElementById('toggleTheme'), 'preview HOST toggle');
+    const previewImage = previewHost.window.document.querySelector('.imageRevealImg');
+    previewHost.window.document.getElementById('toggleTheme').click();
+    assert.equal(previewHost.window.document.body.dataset.uiTheme, undefined);
+    assert.equal(previewHost.window.document.querySelector('.imageRevealImg'), previewImage);
+    assert.equal(new URL(previewHost.window.location.href).searchParams.get('theme'), 'standard');
+    previewHost.window.document.getElementById('toggleTheme').click();
+    assert.equal(previewHost.window.document.body.dataset.uiTheme, 'halloween');
+    assert.deepEqual(Object.keys(previewHost.window.localStorage).sort(), Object.keys(session).sort());
+    // Dedicated theme events must preserve the PLAYER video node and its playhead.
+    playerMedia.window.eval('QuizTheme.bind({on: (_event, handler) => window.receiveTheme = handler}, () => state)');
+    persistentVideo.currentTime = 2;
+    for (const uiTheme of [null, 'halloween']) {
+      playerMedia.window.receiveTheme({ code: 'DEMO', uiTheme });
+      assert.equal(playerMedia.window.document.getElementById('playerVideo'), persistentVideo);
+      assert.equal(persistentVideo.currentTime, 2);
+    }
+    assert.deepEqual(errors, [], 'no runtime errors after room-wide theme switching');
+    console.log('PASS: HOST-only theme control, server authorization, room isolation, all three screens, reconnect, focused answers, running timer and media preservation');
+
+    if (process.argv.some(arg => ['--screenshots', '--traffic', '--traffic-baseline', '--player-layout'].includes(arg))) {
+      const { startEdge } = require('./lib/edge');
+      const browser = await startEdge();
       const directory = path.join(REPO_ROOT, 'themes/halloween/previews');
       fs.mkdirSync(directory, { recursive: true });
-      for (const view of ['board', 'photo']) {
-        const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'smokerlol-theme-edge-'));
-        const target = path.join(directory, `obs-${view}.png`);
-        const child = spawn(browser, ['--headless', '--disable-gpu', '--no-first-run', '--hide-scrollbars', `--user-data-dir=${profile}`, '--window-size=1920,1080', '--force-device-scale-factor=1', '--virtual-time-budget=2500', `--screenshot=${target}`, `${server.url}/screen?preview=halloween&view=${view}`], { windowsHide: true, stdio: 'ignore' });
-        await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => { child.kill(); reject(new Error('Screenshot timeout')); }, 30000);
-          child.on('error', error => { clearTimeout(timeout); reject(error); });
-          child.on('exit', result => { clearTimeout(timeout); result === 0 ? resolve() : reject(new Error(`Edge exit ${result}`)); });
-        });
-        assert.ok(fs.statSync(target).size > 10000, 'screenshot was written');
-        const resolvedProfile = path.resolve(profile);
-        if (!resolvedProfile.startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(resolvedProfile).startsWith('smokerlol-theme-edge-'))
-          throw new Error('Unexpected browser profile path');
-        try { fs.rmSync(resolvedProfile, { recursive: true, force: true }); } catch { /* Edge may still hold a helper process. */ }
-        console.log(`SCREENSHOT: ${target}`);
-      }
+      try {
+        if (process.argv.includes('--player-layout') || process.argv.includes('--screenshots')) {
+          const { checkPlayerThemeLayout } = require('./lib/player-theme-layout');
+          await checkPlayerThemeLayout(browser, server.url, process.argv.includes('--screenshots') ? directory : null);
+        }
+        if (process.argv.includes('--traffic') || process.argv.includes('--traffic-baseline')) {
+          const { checkThemeTraffic } = require('./lib/theme-traffic');
+          await checkThemeTraffic(browser, { url:server.url, host:switchHost, room:switchRoom, player:switchJoin, enforce:!process.argv.includes('--traffic-baseline') });
+        }
+        const cases = process.argv.includes('--screenshots') ? [
+          ['obs', '/screen', 'board', 1920, 1080], ['obs', '/screen', 'photo', 1920, 1080],
+          ['host', '/host', 'board', 1280, 1080], ['host', '/host', 'photo', 1280, 1080],
+          ['player', '/play', 'board', 390, 844], ['player', '/play', 'photo', 390, 844],
+          ['player', '/play', 'buzz', 390, 844], ['player', '/play', 'long', 320, 740],
+          ['player', '/play', 'photo', 320, 740],
+          ['player', '/play', 'paused', 390, 844],
+        ] : [];
+        for (const [role, route, view, width, height] of cases) {
+          const page = await browser.page(`${server.url}${route}?preview=halloween&view=${view}`, width, height);
+          try {
+            const layout = await page.evaluate(`(() => {
+              const identity = document.getElementById('halloweenIdentity');
+              const buzz = document.getElementById('buzz');
+              const rect = identity?.getBoundingClientRect();
+              return { overflow: document.documentElement.scrollWidth > innerWidth + 1,
+                identityFits: !rect || rect.left >= 0 && rect.right <= innerWidth + 1,
+                buzzFits: !buzz || buzz.getBoundingClientRect().width <= innerWidth && buzz.getBoundingClientRect().height >= 120,
+                role: document.body.dataset.uiView, theme: document.body.dataset.uiTheme };
+            })()`);
+            assert.equal(layout.role, role);
+            assert.equal(layout.theme, 'halloween');
+            assert.equal(await page.evaluate('!!document.getElementById("toggleTheme")'), role === 'host', 'theme control exists only on HOST');
+            if (role === 'host') {
+              assert.equal(await page.evaluate('document.getElementById("toggleTheme").click(); !document.body.dataset.uiTheme'), true);
+              assert.equal(await page.evaluate('document.getElementById("toggleTheme").click(); document.body.dataset.uiTheme'), 'halloween');
+            }
+            assert.equal(layout.overflow, false, `${role}/${view}: no horizontal page scrolling`);
+            assert.ok(layout.identityFits && layout.buzzFits, `${role}/${view}: header and BUZZ fit horizontally`);
+            assert.deepEqual(page.errors, [], `${role}/${view}: no browser exceptions`);
+            const target = path.join(directory, `${role}-${view}${view === 'photo' && width === 320 ? '-320' : ''}.png`);
+            await page.screenshot(target);
+            console.log(`SCREENSHOT: ${target}`);
+          } finally { await page.close(); }
+        }
+        if (cases.length) console.log('PASS: Edge layouts at 320/390/1280/1920 px; PLAYER uses standard theme geometry');
+      } finally { browser.stop(); }
     }
   } finally {
     pages.forEach(page => page.window.close());

@@ -8,7 +8,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/common.js?v=307"></script>
     <script src="/themes/theme.js"></script>
-    <link rel="stylesheet" href="/themes/halloween/theme.css" />
+    <script src="/themes/halloween/preview.js"></script>
     <style>
       .mobileBoard {
         display: flex;
@@ -101,8 +101,9 @@
         border: 0;
       }
     </style>
+    <link rel="stylesheet" href="/themes/halloween/theme.css" />
   </head>
-  <body>
+  <body data-ui-view="player">
     <div
       id="netBadge"
       style="
@@ -168,7 +169,7 @@
       <div id="app" class="panel"></div>
     </div>
     <script>
-      const socket = io(),
+      const socket = window.QuizPreview?.socket || io(),
         app = document.getElementById("app"),
         playerVideoPanel = document.getElementById("playerVideoPanel"),
         playerVideo = document.getElementById("playerVideo"),
@@ -190,7 +191,7 @@
         const a = cueAudio[key];
         if (!a) return;
         a.volume = Math.max(0, Math.min(1, Number(value) / 100));
-        localStorage.setItem("sgPlayerCueVolume_" + key, String(a.volume));
+        if (!window.QuizPreview) localStorage.setItem("sgPlayerCueVolume_" + key, String(a.volume));
         const label = document.getElementById("cueVolumeValue_" + key);
         if (label) label.textContent = Math.round(a.volume * 100) + "%";
       }
@@ -291,14 +292,16 @@
       const urlCode = (params.get("room") || "").trim().toUpperCase();
       const savedCode = (localStorage.getItem("sgCode") || "").trim().toUpperCase();
       let state = null,
-        code = urlCode || savedCode,
-        playerId = localStorage.getItem("sgPlayerId") || "", playerKey=localStorage.getItem('sgPlayerKey')||'', name = localStorage.getItem("sgPlayerName") || "";
-      let joined = false,
+        code = window.QuizPreview?.state.code || urlCode || savedCode,
+        playerId = window.QuizPreview?.playerId || localStorage.getItem("sgPlayerId") || "", playerKey=localStorage.getItem('sgPlayerKey')||'', name = window.QuizPreview?.login ? "АНДРІЙ" : localStorage.getItem("sgPlayerName") || "";
+      let joined = !!window.QuizPreview && !window.QuizPreview.login,
         reconnectTried = false;
+      let loginThemeCode = "", loginThemeRequest = 0;
       let serverClockOffsetMs = 0,
         syncSamples = [],
         syncTimer = null,
         buzzClock = null;
+      QuizTheme.bind(socket, () => state);
       function serverNow() {
         return Date.now() + serverClockOffsetMs;
       }
@@ -351,7 +354,7 @@
               setTimeout(syncClockSample, 60);
             }
           });
-        }
+        } else if (!reconnectTried) requestLoginTheme(true);
       });
       socket.on("disconnect", () => setNetBadge(false));
 
@@ -378,12 +381,33 @@
           e.classList.remove("hidden");
         }
       }
+      function requestLoginTheme(force = false) {
+        const field = document.getElementById("code");
+        if (joined || !field || window.QuizPreview) return;
+        const entered = field.value.trim().toUpperCase();
+        if (!force && entered === loginThemeCode) return;
+        const changedCode = entered !== loginThemeCode;
+        loginThemeCode = entered;
+        const request = ++loginThemeRequest;
+        if (changedCode || !/^[A-Z0-9]{4}$/.test(entered)) QuizTheme.apply(null);
+        if (!/^[A-Z0-9]{4}$/.test(entered) || !socket.connected) return;
+        socket.timeout(5000).emit("getRoomTheme", { code: entered }, (error, result) => {
+          if (joined || request !== loginThemeRequest || field !== document.getElementById("code") || field.value.trim().toUpperCase() !== entered) return;
+          if (error) loginThemeCode = ""; // A later user edit/reconnect can retry; no polling.
+          QuizTheme.apply(!error && result?.ok && result.code === entered ? { uiTheme: result.uiTheme, phase: "login" } : null);
+        });
+      }
       function login(prefill = urlCode || "") {
-        QuizTheme.apply(null);
+        QuizTheme.apply(window.QuizPreview?.login ? { uiTheme: window.QuizPreview.state.uiTheme, phase: "login" } : null);
         state = null;
         joined = false;
+        reconnectTried = false;
+        loginThemeCode = "";
+        ++loginThemeRequest;
         const shownCode = prefill || code || "";
         app.innerHTML = `<h1>Приєднатися до гри</h1><input id="code" maxlength="4" autocomplete="off" placeholder="Код кімнати" value="${GameUI.esc(shownCode)}"><br><br><input id="name" maxlength="20" autocomplete="name" placeholder="Ваше ім'я" value="${GameUI.esc(name)}"><br><br><button class="btn" id="join">Увійти</button><div id="err" class="notice hidden"></div>`;
+        document.getElementById("code").addEventListener("input", () => requestLoginTheme());
+        requestLoginTheme();
         document.getElementById("join").onclick = () => {
           unlockCueAudio();
           const newCode = document.getElementById("code").value.trim().toUpperCase();
@@ -408,8 +432,8 @@
       }
 
       // Автовідновлення виконуємо лише коли URL не просить іншу кімнату.
-      login(urlCode || savedCode);
-      if (playerKey && savedCode && name && (!urlCode || urlCode === savedCode)) {
+      if (!window.QuizPreview || window.QuizPreview.login) login(window.QuizPreview?.login ? "DEMO" : urlCode || savedCode);
+      if (!window.QuizPreview && playerKey && savedCode && name && (!urlCode || urlCode === savedCode)) {
         reconnectTried = true;
         socket.emit("joinPlayer", { code: savedCode, name, playerKey }, r => {
           if (!r.ok) {

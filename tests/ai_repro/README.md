@@ -23,8 +23,12 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 
 | Command | Proves | Time |
 |---|---|---|
-| `node tests/ai_repro/halloween_theme.js` | Halloween opt-in, fixed camera slots through first-turn sorting/reconnect/replacement, actual OBS rendering and video STOP guard in jsdom, default Grand Final unchanged | ~2 s |
-| `node tests/ai_repro/halloween_theme.js --screenshots` | The same checks plus optional 1920×1080 headless Edge screenshots into `themes/halloween/previews/`; Windows + Edge required, not a real OBS/media decode test | ~5 s |
+| `node tests/ai_repro/halloween_theme.js` | HOST-only room theme control and authorization, room isolation/reconnect, live HOST/PLAYER/OBS sync, focused answers/timers/media preserved; previews/BUZZ/camera slots and default Grand Final | ~4 s |
+| `node tests/ai_repro/halloween_theme.js --screenshots` | The same checks plus 50 PLAYER comparisons against standard geometry (including login), HOST/OBS layout checks and 16 screenshots in `themes/halloween/previews/`; Windows + Edge required, not real phones/OBS or a media decode test | ~20 s |
+| `node tests/ai_repro/halloween_theme.js --player-layout` | Every PLAYER element's dimensions, spacing, fonts and layout match standard across 10 states at 320/390/768/1280/1920 px, with touch and desktop input; `lib/player-theme-layout.js` | ~15 s |
+| `node tests/ai_repro/player_join_theme.js` | Theme lookup before joining via a link/manual code; response exposes only theme, no seat/subscription, no partial/duplicate lookups, preserved inputs, stale replies cannot override a different code/joined state | ~2 s |
+| `node tests/ai_repro/player_join_theme.js --browser` | The same checks plus actual Edge login, one lookup across polling/WebSocket transports, 3.5 s idle without repeats, `player-join-halloween.png` | ~6 s |
+| `node tests/ai_repro/halloween_theme.js --traffic` | Real Edge HOST/PLAYER/OBS tabs: 3.5 s idle without theme polling, 500 unchanged OBS updates and 500 photo-layout updates without DOM mutations/theme HTTP loads, duplicate selection suppressed, one small event per real change without a full-state broadcast; existing clock sync/heartbeats excluded | ~8 s |
 | `node tests/ai_repro/game_safety_regression.js` | Конкурентні записи фіналів/сезонів, пауза числового/глядацького таймерів, повторні кнопки, нульові пропущені ставки, повернення PLAYER, заборона збереження фіктивних результатів | ~2 s |
 | `node tests/ai_repro/grand_final_smoke.js` | Усі 50 клітинок Grand Final, спецклітинки, 27 медіафайлів/HTTP, стартове, 6 глядацьких питань і справжній фінал; без перевірки декодування медіа | ~60 s |
 | `node tests/ai_repro/season_grand_final.js` | Окрема гра визначає чемпіона: відбори, автоматична позначка фіналу, HOST/public/OBS у jsdom, нічия, виправлення/видалення, сумісність історії | ~3 s |

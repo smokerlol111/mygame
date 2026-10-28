@@ -1,4 +1,7 @@
-/* All overrides are scoped; the default game and Grand Final keep their styles. */
+/* Only HOST offers the room-wide theme control; no state change restyles other rooms. */
+.hostRoomControls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.hostRoomControls .host-theme-toggle { width: auto; min-height: 44px; font-size: 13px; padding: 10px 14px; }
+/* All decorative overrides are scoped to the selected theme. */
 @font-face {
   font-family: "Halloween Creepster";
   src: url("fonts/Creepster-Regular.ttf") format("truetype");
@@ -33,6 +36,85 @@ body[data-ui-theme="halloween"] .buzz.ready {
   background: linear-gradient(145deg, #bb5b12, #6e2c15);
   border-color: #ffcf86;
   box-shadow: 0 0 24px #f5923445;
+}
+
+/* Working screens: shared artwork, role-specific spacing and clear controls. */
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) {
+  --text: #fff3dd;
+  --panel2: #291c33;
+  --good: #7dd6a7;
+  --bad: #f09ba5;
+  background: linear-gradient(180deg, #100c18a6, #100c18f5 650px), url("assets/haunted-night.png") center top / cover fixed, #100c18;
+}
+body[data-ui-theme="halloween"][data-ui-view="host"] .wrap { position: relative; padding-bottom: 72px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .wrap > .top > div > :is(.brand, h1) { display: none; }
+.halloween-identity { display: flex; align-items: center; gap: 14px; padding: 8px 0 18px; min-width: 0; }
+.halloween-identity > img { width: 90px; height: 90px; object-fit: contain; filter: drop-shadow(0 4px 14px #ff8a2530); }
+.halloween-identity-title { min-width: 0; }
+.halloween-identity-title > span { display: block; font-size: 10px; font-weight: 750; color: #d0b4d5; letter-spacing: .16em; line-height: 1.6; }
+.halloween-identity-title > strong { display: block; font-family: "Halloween Creepster", Impact, fantasy; font-size: clamp(38px, 4vw, 58px); font-weight: 400; color: #ffb25b; line-height: 1.08; letter-spacing: .035em; }
+.halloween-stage { flex: none; align-self: center; border: 1px solid #b481595c; border-radius: 999px; padding: 7px 12px; color: #f5d7ad; background: #211524c9; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .panel { border-color: #78617d7a; background: linear-gradient(145deg, #251a2dee, #140f1ef5); box-shadow: inset 0 1px 0 #e8c9ef0a, 0 16px 40px #0004; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .btn { background: linear-gradient(160deg, #ed9c49, #cb7636); color: #261309; border-color: #ffc98573; box-shadow: inset 0 1px 0 #fff2; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .btn { min-height: 46px; border: 1px solid #ffc98573; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .btn.secondary { background: #312238; border-color: #765b7c; color: #f4e6f5; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .btn.good { background: #7dd6a7; color: #102e21; border-color: #a2e9c4; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .btn.bad { background: #f09ba5; color: #38131a; border-color: #ffc5cd; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .btn.gold { background: linear-gradient(160deg, #ffcf84, #f1ac58); color: #321c0d; }
+body[data-ui-theme="halloween"]:not([data-ui-view="player"]) :is(button, input, textarea, summary, a):focus-visible { outline: 3px solid #ffd79a; outline-offset: 4px; }
+body[data-ui-theme="halloween"][data-ui-view="player"] :is(button, input, textarea, summary, a):focus-visible { outline-color: #ffd79a; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) input:not([type="range"]):not([type="checkbox"]),
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) textarea { background: #130e1d; border-color: #806488; color: #fff3dd; }
+body[data-ui-theme="halloween"] :is(input, textarea) { accent-color: #f7ad59; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) :is(.notice, .finalItem, .player) { background: #1e1529; border-color: #634b6d; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .score { color: #ffc47b; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .score { font-variant-numeric: tabular-nums; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .answer { color: #bce9cc; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) .question { color: #fff3dd; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .question { overflow-wrap: anywhere; }
+body[data-ui-theme="halloween"]:is([data-ui-view="host"], [data-ui-view="player"]) #netBadge { background: #22192b !important; border-color: #72597b !important; color: #e7d5eb; }
+
+/* HOST: board, judging actions and player scores remain easy to scan. */
+body[data-ui-theme="halloween"][data-ui-view="host"] .wrap { max-width: 1280px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .wrap > .top { flex-wrap: nowrap; }
+body[data-ui-theme="halloween"][data-ui-view="host"] #roomBox .badge { border-color: #9b745c; background: #231829; color: #d4bdd8; white-space: nowrap; }
+body[data-ui-theme="halloween"][data-ui-view="host"] #roomBox b { color: #ffd294; letter-spacing: .1em; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .cueMixer { max-width: none; justify-content: flex-end; margin: 0 0 16px; padding: 10px 16px; border-color: #72557869; background: #1c1424df; font-size: 12px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .cueMixer input { accent-color: #efa85e; }
+body[data-ui-theme="halloween"][data-ui-view="host"] #app { margin-top: 0; padding: 24px; border-radius: 20px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] #app > .grid { gap: 9px; margin-top: 18px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .cat { min-height: 72px; padding: 12px 8px; background: #33213b; color: #eedcf1; font-size: 14px; line-height: 1.35; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .tile { min-height: 64px; font-size: 28px; font-variant-numeric: tabular-nums; box-shadow: inset 0 1px 0 #fff1; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .tile.used { color: #b1a1b6; opacity: .35; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .question { padding: 24px 16px; font-size: clamp(24px, 2.3vw, 34px); line-height: 1.4; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .scorebar .player { padding: 14px 16px; border-radius: 12px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .scorebar .player.active { outline: 2px solid #ffbe6b; background: #3a242d; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .scorebar .score { font-size: 26px; margin-top: 8px; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .imageRevealFrame { border-color: #9c7552; }
+body[data-ui-theme="halloween"][data-ui-view="host"] .imageRevealValue { font-size: 22px; color: #ffca7e; }
+
+/* PLAYER: paint only. All sizes, typography and layout come from the standard UI. */
+body[data-ui-theme="halloween"][data-ui-view="player"] { background-attachment: scroll; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .brand { color: #ffc47b; text-shadow: 0 0 18px #f5923445; background: url("assets/pumpkin-candles.png") right center / 22px 22px no-repeat; }
+body[data-ui-theme="halloween"][data-ui-view="player"] #playerCueMixer { color: #d2bbd7; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .mobileCategory { border-color: #75577e8a; background: #1b1325; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .mobileCategoryName { color: #ead6ef; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .phoneTile { border-color: #946848; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .playerImageRevealFrame { border-color: #a6754a; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .playerImageRevealValue { color: #ffd395; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .playerImageRevealStage { color: #d2bbd7; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .buzz.ready { background: linear-gradient(145deg, #ffd494, #ec9646); color: #2d170a; border-color: #ffdb9f; box-shadow: 0 0 28px #f29b3930, inset 0 2px 0 #fff4; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .buzz.waiting { background: #2c2037; color: #e1cbe9; border-color: #876b95; box-shadow: none; }
+body[data-ui-theme="halloween"][data-ui-view="player"] .buzz.penalty { background: #4b2530; color: #ffd4d9; border-color: #d58694; }
+body[data-ui-theme="halloween"][data-ui-view="player"][data-ui-phase="answering"] #app { border-color: #c38d53; }
+@media (max-width: 760px) {
+  body[data-ui-theme="halloween"][data-ui-view="host"] .wrap > .top { flex-wrap: wrap; }
+  body[data-ui-theme="halloween"][data-ui-view="host"] #app { padding: 16px; overflow-x: auto; }
+  body[data-ui-theme="halloween"][data-ui-view="host"] .halloween-identity > img { width: 64px; height: 64px; }
+  body[data-ui-theme="halloween"][data-ui-view="host"] .scorebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-ui-theme="halloween"] :is(.playerImageRevealImg, .imageRevealImg) { transition: none; }
 }
 
 body.screen[data-ui-theme="halloween"] {

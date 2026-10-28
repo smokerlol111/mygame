@@ -822,7 +822,7 @@
     </style>
     <link rel="stylesheet" href="/themes/halloween/theme.css" />
   </head>
-  <body class="screen">
+  <body class="screen" data-ui-view="obs">
     <div class="cameraSafe"></div>
     <div class="wrap">
       <div id="app">
@@ -889,6 +889,7 @@
       let data = null,
         state = null,
         loadedGameId = "";
+      QuizTheme.bind(socket, () => state, () => fitQuestionToOBS());
 
       let firstTurnClockHandle = null;
       function armFirstTurnClock() {
