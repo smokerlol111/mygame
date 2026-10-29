@@ -6,11 +6,13 @@ const { spawn } = require('node:child_process');
 const WebSocket = require('ws');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function startEdge() {
+async function startEdge(options = {}) {
   const executable = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
   if (!fs.existsSync(executable)) throw new Error('Microsoft Edge is required for --screenshots');
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'smokerlol-ui-edge-'));
-  const child = spawn(executable, ['--headless', '--disable-gpu', '--no-first-run', '--hide-scrollbars', '--disable-background-networking', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
+  const resolver = options.hostResolverRules ? [`--host-resolver-rules=${options.hostResolverRules}`] : [];
+  const audio = options.muteAudio ? ['--mute-audio'] : [];
+  const child = spawn(executable, ['--headless', '--disable-gpu', '--no-first-run', '--hide-scrollbars', '--disable-background-networking', '--remote-debugging-port=0', `--user-data-dir=${profile}`, ...resolver, ...audio, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
   let launchError;
   child.on('error', error => { launchError = error; });
   const portFile = path.join(profile, 'DevToolsActivePort');
@@ -38,10 +40,14 @@ async function startEdge() {
       const socket = new WebSocket(target.webSocketDebuggerUrl);
       await new Promise((resolve, reject) => { socket.once('open', resolve); socket.once('error', reject); });
       let nextId = 0;
-      const pending = new Map(), errors = [], requests = [], sentFrames = [], receivedFrames = [];
+      const pending = new Map(), errors = [], requests = [], responses = [], sentFrames = [], receivedFrames = [];
       socket.on('message', raw => {
         const packet = JSON.parse(raw.toString());
         if (packet.method === 'Network.requestWillBeSent') requests.push({ url: packet.params.request.url, type: packet.params.type, method: packet.params.request.method, postData: packet.params.request.postData });
+        if (packet.method === 'Network.responseReceived') {
+          const r = packet.params.response;
+          responses.push({ url:r.url, status:r.status, mimeType:r.mimeType, remoteIPAddress:r.remoteIPAddress, protocol:r.protocol, fromDiskCache:r.fromDiskCache });
+        }
         if (packet.method === 'Network.webSocketFrameSent') sentFrames.push(packet.params.response.payloadData);
         if (packet.method === 'Network.webSocketFrameReceived') receivedFrames.push(packet.params.response.payloadData);
         if (packet.method === 'Runtime.exceptionThrown') errors.push(packet.params.exceptionDetails.text);
@@ -56,8 +62,8 @@ async function startEdge() {
         pending.set(id, { resolve, reject, timer });
         socket.send(JSON.stringify({ id, method, params }));
       });
-      const evaluate = async expression => {
-        const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
+      const evaluate = async (expression, options = {}) => {
+        const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true, userGesture: !!options.userGesture });
         if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
         return result.result.value;
       };
@@ -70,8 +76,8 @@ async function startEdge() {
         if (options.touch !== undefined) await send('Emulation.setTouchEmulationEnabled', { enabled: options.touch });
         await send('Page.navigate', { url });
         const readyDeadline = Date.now() + 12000;
-        while (!await evaluate('document.readyState === "complete" && !!document.body.dataset.uiTheme')) {
-          if (Date.now() > readyDeadline) throw new Error(`Theme did not render: ${url}`);
+        while (!await evaluate(options.ready || 'document.readyState === "complete" && !!document.body.dataset.uiTheme')) {
+          if (Date.now() > readyDeadline) throw new Error(`Page did not become ready: ${url}`);
           await sleep(50);
         }
         await evaluate('(async () => { await document.fonts.ready; await Promise.allSettled([...document.images].map(img => img.decode())); return true; })()');
@@ -80,7 +86,8 @@ async function startEdge() {
         throw error;
       }
       return {
-        evaluate, errors, requests, sentFrames, receivedFrames,
+        evaluate, errors, requests, responses, sentFrames, receivedFrames,
+        async activate() { await send('Page.bringToFront'); },
         async screenshot(file) {
           const { data } = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
           fs.writeFileSync(file, Buffer.from(data, 'base64'));

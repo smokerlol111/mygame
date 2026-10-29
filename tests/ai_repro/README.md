@@ -7,7 +7,7 @@
 
 - **`REPRODUCED` = the bug is still there.** After a fix, the matching line should say `NOT REPRODUCED`.
 - **Exit code `1`** = at least one bug still reproduces. **`0`** = none do. (So they already work as regression checks.)
-- **They are safe:** every script that needs a server **starts its own** on a random port, with a throwaway data folder. `DATABASE_URL` and the Discord variables are removed, so real seasons and your database are never touched.
+- **Isolation:** server repro scripts **start their own** server on a random port, with a throwaway data folder; `DATABASE_URL` and Discord variables are removed. The explicit exception is `tailscale_media_preflight.js`: it checks the already running server/Funnel using only its own temporary room, closes that room, and never saves season results or restarts/configures services.
 
 ## 🛠️ Setup (once)
 
@@ -23,6 +23,9 @@ npm install --no-save socket.io-client@4 jsdom@24 css-tree@2  # extra deps used 
 
 | Command | Proves | Time |
 |---|---|---|
+| `node tests/ai_repro/tailscale_media_preflight.js --browser` | **Uses the existing server on 3100 and existing Funnel.** Forces public ingress DNS with valid TLS; checks 29 Grand Final files/SHA-256, 33 Range responses, 5 concurrent video ranges, own temporary room with public PLAYER/OBS/WebSocket/polling, real Edge decode and remote play/pause/seek. Never saves seasons or changes/restarts Funnel/server. Local HOST key and Windows/Edge required; writes `archive/audits/tailscale-media-2026-10-28/`. | ~2–4 min |
+| `node tests/ai_repro/tailscale_media_preflight.js --browser --control-only` | Public Funnel native-player checks for all 11 recordings: 6 PLAYER videos, 6 OBS videos, 5 OBS audio; skips the separate file/hash/range pass and writes `control-results.json`. | ~1 min |
+| `node tests/ai_repro/grand_final_standard_browser.js --screenshots` | Isolated actual Edge HOST/PLAYER/OBS: standard theme and Halloween CSS isolation, all Grand Final question formats and final screens (198 renders), 29 media decodes, muted playback, 6 actual HOST STOP guards; report/9 screenshots in `archive/audits/grand-final-standard-2026-10-28/`. Rendering fixtures complement the live `grand_final_smoke.js` command traversal. Windows + Edge required; not real phones/OBS/audio routing. | ~20 s |
 | `node tests/ai_repro/halloween_theme.js` | HOST-only room theme control and authorization, room isolation/reconnect, live HOST/PLAYER/OBS sync, focused answers/timers/media preserved; previews/BUZZ/camera slots and default Grand Final | ~4 s |
 | `node tests/ai_repro/halloween_theme.js --screenshots` | The same checks plus 50 PLAYER comparisons against standard geometry (including login), HOST/OBS layout checks and 16 screenshots in `themes/halloween/previews/`; Windows + Edge required, not real phones/OBS or a media decode test | ~20 s |
 | `node tests/ai_repro/halloween_theme.js --player-layout` | Every PLAYER element's dimensions, spacing, fonts and layout match standard across 10 states at 320/390/768/1280/1920 px, with touch and desktop input; `lib/player-theme-layout.js` | ~15 s |

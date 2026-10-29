@@ -1,0 +1,1753 @@
+{
+  "sourceCommit": "92f84401dbd618250e21c092253c1dad26cc5660",
+  "publicUrl": "https://desktop-eplgcdm.tail9b9c92.ts.net",
+  "files": [
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+      "bytes": 285274,
+      "sha256": "cb64b6c6ccbd87c9fffa83df185b009ea074fbaf639e42ac846c2c9a3ff6eb74",
+      "mime": "image/jpeg",
+      "ms": 235
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "bytes": 3135114,
+      "sha256": "f8072f43318f909e9f27df9f211076f9a710b75f838df0d1b10df07a302aa169",
+      "mime": "video/mp4",
+      "ms": 1182
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+      "bytes": 285762,
+      "sha256": "be38b74d5f3b9bad465244c66f617afa7e75b3e5d863d4612822613c11af7184",
+      "mime": "image/jpeg",
+      "ms": 154
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+      "bytes": 214890,
+      "sha256": "ec429c1a2c0626c7d32f04992d98d839802ac998bc42b32c88e3df8cceed957a",
+      "mime": "image/jpeg",
+      "ms": 158
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "bytes": 486014,
+      "sha256": "8de7580a7e871ccabd7d715369fac8c15ed81121d8f82a1d2821055b8a8c792e",
+      "mime": "audio/mpeg",
+      "ms": 373
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "bytes": 2918418,
+      "sha256": "5f5bd12c7ee3957448558d59b93477dc74ec1240566a8d9370185ed7c3c52c61",
+      "mime": "video/mp4",
+      "ms": 2483
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "bytes": 22279,
+      "sha256": "15e66cdefd659df2663a1cf61c8b9675e88f37d7340a91a0d9e0002632c8e3a8",
+      "mime": "audio/mpeg",
+      "ms": 74
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+      "bytes": 233990,
+      "sha256": "63d65ee433e87413340884da780bb9386007764f5cd3375f73838714a449df4c",
+      "mime": "image/jpeg",
+      "ms": 274
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+      "bytes": 563192,
+      "sha256": "d24133c2f2dbdfbe8d452c09f2d5606af10e51bf8d379b83ead99d127f68ca45",
+      "mime": "image/jpeg",
+      "ms": 603
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "bytes": 6195911,
+      "sha256": "543b66d8a653c21f4cc8dd6f6336723f3cd29a4c484e0ead480811cd578012b9",
+      "mime": "video/mp4",
+      "ms": 4259
+    },
+    {
+      "path": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+      "bytes": 99787,
+      "sha256": "2d32d3039172531c2d26e3494da22d945bcb51b51602408c53a0700dc6616cc3",
+      "mime": "image/jpeg",
+      "ms": 169
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+      "bytes": 450316,
+      "sha256": "43d056e2aab3a87efa7ae20958119747171848ba375f14b04a04b70811379912",
+      "mime": "image/jpeg",
+      "ms": 335
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "bytes": 402422,
+      "sha256": "78ef33e0394aed04442cd956971a1419a89e160634df00953690eb8fcfd0bfdc",
+      "mime": "audio/mpeg",
+      "ms": 291
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+      "bytes": 51498,
+      "sha256": "ea4d342acae28c6dad704bc363ea49d8b463b891749ea0b4c10d5a46b6f95ad8",
+      "mime": "image/jpeg",
+      "ms": 117
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "bytes": 8332589,
+      "sha256": "b1b8a534eef32f3cc776d1995ae056bd2f0e6c31ee3211c24b3afd3492948f63",
+      "mime": "video/mp4",
+      "ms": 4739
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+      "bytes": 76772,
+      "sha256": "d2377ec43faa5c1c9164629ed4406decf0ffe77983861ff870ddb9272d9e9b46",
+      "mime": "image/jpeg",
+      "ms": 134
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "bytes": 321129,
+      "sha256": "fe502fb27b10c44fbf69e620142528f3a2a1e092df30da1943505b8f1c273a01",
+      "mime": "audio/mpeg",
+      "ms": 291
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+      "bytes": 187547,
+      "sha256": "ccb3a575b5124f2ca215807d140049c14b386e4a5d6d14826fe941a6f66cc987",
+      "mime": "image/jpeg",
+      "ms": 262
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "bytes": 1034673,
+      "sha256": "5b9393e9ed466c3fc9f93aad3da4bcc61acdce034206b69a177ba43b5beef7d6",
+      "mime": "video/mp4",
+      "ms": 1620
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+      "bytes": 78057,
+      "sha256": "55a67dc31b4b7ba5b5c080ed908b45c1fd689c2bc6597ce0b6449f957b443470",
+      "mime": "image/jpeg",
+      "ms": 116
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "bytes": 450488,
+      "sha256": "b29a25a3e5c5b49ed736ea0a78acf51eddbc2647563b7edba1f5b6b8d23f882a",
+      "mime": "audio/mpeg",
+      "ms": 419
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+      "bytes": 75737,
+      "sha256": "d8fe6055703a5b4babc1058a07ca01282b3151c4bdf8614b8c8b0c3b3e16f70f",
+      "mime": "image/jpeg",
+      "ms": 231
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "bytes": 2285602,
+      "sha256": "3a332a2a56c3867e5caf42ac61f034a469909aac5bdda64561c6adefc92b6a6c",
+      "mime": "video/mp4",
+      "ms": 1919
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+      "bytes": 50454,
+      "sha256": "787c75966d7094862f789426332e00dc6bb79dd42ea6e1f3bca93587cc7b2485",
+      "mime": "image/jpeg",
+      "ms": 113
+    },
+    {
+      "path": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+      "bytes": 623540,
+      "sha256": "e3aa79470e8a8a7ccc39a78eb8a80670ad72b2e6f0d4a54caf2664686b5f817f",
+      "mime": "image/jpeg",
+      "ms": 590
+    },
+    {
+      "path": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+      "bytes": 629107,
+      "sha256": "c8dadbe0ab347520d9f1a8fdf9d9ab7d0d95b5e9ccd59e60c6ff4b234c2c7459",
+      "mime": "image/jpeg",
+      "ms": 474
+    },
+    {
+      "path": "/media/Zootropolis_Kengurumba_800x600.jpg",
+      "bytes": 275461,
+      "sha256": "9b16fb0e478a91cddabd505f485caf5f8b2bbf13a40ef18eb004e7b7d3c347a5",
+      "mime": "image/jpeg",
+      "ms": 221
+    },
+    {
+      "path": "/media/Zootropolis_Sovampir_800x600.jpg",
+      "bytes": 245666,
+      "sha256": "68c6596c736bfde8f83601b8da9a5b9d27ba2b6c36f95d85443c81b1b12e05dd",
+      "mime": "image/jpeg",
+      "ms": 208
+    },
+    {
+      "path": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
+      "bytes": 553138,
+      "sha256": "0a28dcad35a4047af7fbeb4daa7256207bb081e851d9740af054f8695df7fec5",
+      "mime": "image/jpeg",
+      "ms": 375
+    }
+  ],
+  "ranges": [
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 74
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "start": 1567557,
+      "end": 1633092,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 75
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "start": 3069578,
+      "end": 3135113,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 77
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "start": 243007,
+      "end": 308542,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 116
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "start": 420478,
+      "end": 486013,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 116
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "start": 1459209,
+      "end": 1524744,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "start": 2852882,
+      "end": 2918417,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 116
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "start": 0,
+      "end": 22278,
+      "status": 206,
+      "bytes": 22279,
+      "ms": 73
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "start": 11139,
+      "end": 22278,
+      "status": 206,
+      "bytes": 11140,
+      "ms": 74
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "start": 0,
+      "end": 22278,
+      "status": 206,
+      "bytes": 22279,
+      "ms": 73
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 80
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "start": 3097955,
+      "end": 3163490,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 78
+    },
+    {
+      "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "start": 6130375,
+      "end": 6195910,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 114
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 75
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "start": 201211,
+      "end": 266746,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 85
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "start": 336886,
+      "end": 402421,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 339
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 76
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "start": 4166294,
+      "end": 4231829,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 129
+    },
+    {
+      "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "start": 8267053,
+      "end": 8332588,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 74
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 117
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "start": 160564,
+      "end": 226099,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "start": 255593,
+      "end": 321128,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 117
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 118
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "start": 517336,
+      "end": 582871,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 119
+    },
+    {
+      "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "start": 969137,
+      "end": 1034672,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 126
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 117
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "start": 225244,
+      "end": 290779,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "start": 384952,
+      "end": 450487,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 115
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "start": 0,
+      "end": 65535,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 78
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "start": 1142801,
+      "end": 1208336,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 128
+    },
+    {
+      "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "start": 2220066,
+      "end": 2285601,
+      "status": 206,
+      "bytes": 65536,
+      "ms": 116
+    }
+  ],
+  "route": {
+    "systemDns": [
+      "100.101.9.49"
+    ],
+    "publicDns": [
+      "185.40.234.75",
+      "185.40.234.198",
+      "185.40.234.55"
+    ],
+    "connectedTo": "185.40.234.75",
+    "tls": {
+      "authorized": true,
+      "protocol": "TLSv1.3"
+    }
+  },
+  "healthBefore": {
+    "ok": true,
+    "version": "3.1.0-dev",
+    "rooms": 1
+  },
+  "concurrent": {
+    "clients": 5,
+    "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+    "bytes": 5242880,
+    "totalMs": 2623,
+    "clientMs": [
+      1800,
+      2098,
+      1527,
+      2619,
+      1900
+    ]
+  },
+  "signaling": {
+    "players": 4,
+    "obs": true,
+    "pollingFallback": true,
+    "questions": [
+      {
+        "round": 0,
+        "ci": 0,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 0,
+        "ci": 0,
+        "qi": 4,
+        "type": "video",
+        "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 24.065986,
+          "currentTime": 0.659755
+        },
+        "obs": {
+          "duration": 24.065986,
+          "currentTime": 0.660041
+        }
+      },
+      {
+        "round": 0,
+        "ci": 1,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 0,
+        "ci": 2,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 0,
+        "ci": 2,
+        "qi": 3,
+        "type": "audio",
+        "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 12.08,
+          "currentTime": 0.14995
+        },
+        "obs": {
+          "duration": 12.08,
+          "currentTime": 0.66004
+        }
+      },
+      {
+        "round": 0,
+        "ci": 2,
+        "qi": 4,
+        "type": "video",
+        "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 14.9,
+          "currentTime": 0.660033
+        },
+        "obs": {
+          "duration": 14.9,
+          "currentTime": 0.660033
+        }
+      },
+      {
+        "round": 0,
+        "ci": 3,
+        "qi": 1,
+        "type": "audio",
+        "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 1.392438,
+          "currentTime": 0.154152
+        },
+        "obs": {
+          "duration": 1.392438,
+          "currentTime": 0.661537
+        }
+      },
+      {
+        "round": 0,
+        "ci": 3,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 0,
+        "ci": 3,
+        "qi": 3,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+        "player": {
+          "width": 2100,
+          "height": 1400
+        },
+        "obs": {
+          "width": 2100,
+          "height": 1400
+        }
+      },
+      {
+        "round": 0,
+        "ci": 3,
+        "qi": 4,
+        "type": "video",
+        "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 22.772993,
+          "currentTime": 0.660042
+        },
+        "obs": {
+          "duration": 22.772993,
+          "currentTime": 0.659236
+        }
+      },
+      {
+        "round": 0,
+        "ci": 4,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 0,
+        "ci": 4,
+        "qi": 3,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+        "player": {
+          "width": 742,
+          "height": 435
+        },
+        "obs": {
+          "width": 742,
+          "height": 435
+        }
+      },
+      {
+        "round": 1,
+        "ci": 0,
+        "qi": 0,
+        "type": "audio",
+        "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 10,
+          "currentTime": 0.154416
+        },
+        "obs": {
+          "duration": 10,
+          "currentTime": 0.660054
+        }
+      },
+      {
+        "round": 1,
+        "ci": 0,
+        "qi": 1,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+        "player": {
+          "width": 730,
+          "height": 462
+        },
+        "obs": {
+          "width": 730,
+          "height": 462
+        }
+      },
+      {
+        "round": 1,
+        "ci": 0,
+        "qi": 3,
+        "type": "video",
+        "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 37.5375,
+          "currentTime": 0.660045
+        },
+        "obs": {
+          "duration": 37.5375,
+          "currentTime": 0.660019
+        }
+      },
+      {
+        "round": 1,
+        "ci": 1,
+        "qi": 1,
+        "type": "imageReveal",
+        "path": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+        "player": {
+          "width": 1190,
+          "height": 860
+        },
+        "obs": {
+          "width": 1190,
+          "height": 860
+        }
+      },
+      {
+        "round": 1,
+        "ci": 2,
+        "qi": 1,
+        "type": "audio",
+        "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 20,
+          "currentTime": 0.154592
+        },
+        "obs": {
+          "duration": 20,
+          "currentTime": 0.660039
+        }
+      },
+      {
+        "round": 1,
+        "ci": 2,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+        "player": {
+          "width": 1710,
+          "height": 1180
+        },
+        "obs": {
+          "width": 1710,
+          "height": 1180
+        }
+      },
+      {
+        "round": 1,
+        "ci": 2,
+        "qi": 4,
+        "type": "video",
+        "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 18.227664,
+          "currentTime": 0.660036
+        },
+        "obs": {
+          "duration": 18.227664,
+          "currentTime": 0.660029
+        }
+      },
+      {
+        "round": 1,
+        "ci": 3,
+        "qi": 0,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+        "player": {
+          "width": 1000,
+          "height": 892
+        },
+        "obs": {
+          "width": 1000,
+          "height": 892
+        }
+      },
+      {
+        "round": 1,
+        "ci": 3,
+        "qi": 1,
+        "type": "audio",
+        "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 11.19,
+          "currentTime": 0.154783
+        },
+        "obs": {
+          "duration": 11.19,
+          "currentTime": 0.660034
+        }
+      },
+      {
+        "round": 1,
+        "ci": 3,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+        "player": {
+          "width": 800,
+          "height": 567
+        },
+        "obs": {
+          "width": 800,
+          "height": 567
+        }
+      },
+      {
+        "round": 1,
+        "ci": 3,
+        "qi": 3,
+        "type": "video",
+        "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+        "controls": [
+          "play",
+          "seek",
+          "pause"
+        ],
+        "player": {
+          "duration": 10.166667,
+          "currentTime": 0.660031
+        },
+        "obs": {
+          "duration": 10.166667,
+          "currentTime": 0.660037
+        }
+      },
+      {
+        "round": 1,
+        "ci": 3,
+        "qi": 4,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+        "player": {
+          "width": 1728,
+          "height": 1034
+        },
+        "obs": {
+          "width": 1728,
+          "height": 1034
+        }
+      },
+      {
+        "round": 1,
+        "ci": 4,
+        "qi": 0,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+        "player": {
+          "width": 1448,
+          "height": 1086
+        },
+        "obs": {
+          "width": 1448,
+          "height": 1086
+        }
+      },
+      {
+        "round": 1,
+        "ci": 4,
+        "qi": 1,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+        "player": {
+          "width": 1448,
+          "height": 1086
+        },
+        "obs": {
+          "width": 1448,
+          "height": 1086
+        }
+      },
+      {
+        "round": 1,
+        "ci": 4,
+        "qi": 2,
+        "type": "imageReveal",
+        "path": "/media/Zootropolis_Kengurumba_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 1,
+        "ci": 4,
+        "qi": 3,
+        "type": "imageReveal",
+        "path": "/media/Zootropolis_Sovampir_800x600.jpg",
+        "player": {
+          "width": 800,
+          "height": 600
+        },
+        "obs": {
+          "width": 800,
+          "height": 600
+        }
+      },
+      {
+        "round": 1,
+        "ci": 4,
+        "qi": 4,
+        "type": "imageReveal",
+        "path": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
+        "player": {
+          "width": 1448,
+          "height": 1086
+        },
+        "obs": {
+          "width": 1448,
+          "height": 1086
+        }
+      }
+    ]
+  },
+  "browser": [
+    {
+      "role": "player",
+      "errors": [],
+      "responses": [
+        {
+          "path": "/play",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/style.css",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/css",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/halloween/theme.css",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/css",
+          "protocol": "h2"
+        },
+        {
+          "path": "/common.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/halloween/preview.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/theme.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/socket.io.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/sounds/buzz.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/sounds/question.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/favicon.ico",
+          "status": 404,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/Zootropolis_Kengurumba_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/Zootropolis_Sovampir_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        }
+      ]
+    },
+    {
+      "role": "obs",
+      "errors": [],
+      "responses": [
+        {
+          "path": "/screen/PDP2",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/socket.io.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/halloween/theme.css",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/css",
+          "protocol": "h2"
+        },
+        {
+          "path": "/style.css",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/css",
+          "protocol": "h2"
+        },
+        {
+          "path": "/common.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/halloween/preview.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/themes/theme.js",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/javascript",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/sounds/buzz.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/results_theme.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/winner_theme.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/sounds/question.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/murloc.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/socket.io/",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/plain",
+          "protocol": "h2"
+        },
+        {
+          "path": "/games/season2-grand-final.json",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/json",
+          "protocol": "h2"
+        },
+        {
+          "path": "/games/season2-grand-final.json",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "application/json",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/favicon.ico",
+          "status": 404,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "text/html",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Bond_200.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "audio/mpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+          "status": 206,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "video/mp4",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/Zootropolis_Kengurumba_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/Zootropolis_Sovampir_800x600.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        },
+        {
+          "path": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
+          "status": 200,
+          "remoteIPAddress": "185.40.234.75",
+          "mime": "image/jpeg",
+          "protocol": "h2"
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "healthAfter": {
+    "ok": true,
+    "version": "3.1.0-dev",
+    "rooms": 1
+  }
+}

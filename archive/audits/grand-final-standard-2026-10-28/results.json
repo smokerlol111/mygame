@@ -1,0 +1,212 @@
+{
+  "sourceCommit": "92f84401dbd618250e21c092253c1dad26cc5660",
+  "renders": 198,
+  "imageRenders": 54,
+  "decoded": [
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Paddington_300_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "duration": 24.065986,
+      "time": 0.080037,
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Logic_Archimedes_300_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ukrnet_Petro_Shchur_300_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "duration": 12.08,
+      "time": 0.079807,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "duration": 14.9,
+      "time": 0.080057,
+      "width": 1280,
+      "height": 718
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "duration": 1.392438,
+      "time": 0.081541,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_BehindScenes_Peter_Jackson_300_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_BehindScenes_Interstellar_400.jpg",
+      "width": 2100,
+      "height": 1400
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "duration": 22.772993,
+      "time": 0.080026,
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "src": "/SMOKERLOL_GrandFinal_Science_Newton_300_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Science_Blood_Falls_400.jpg",
+      "width": 742,
+      "height": 435
+    },
+    {
+      "src": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "duration": 10,
+      "time": 0.084132,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "src": "/media/GrandFinal_Cinema_Chocolate_400.jpg",
+      "width": 730,
+      "height": 462
+    },
+    {
+      "src": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "duration": 37.5375,
+      "time": 0.079907,
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_History_Wright_400.jpg",
+      "width": 1190,
+      "height": 860
+    },
+    {
+      "src": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "duration": 20,
+      "time": 0.080035,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "src": "/media/GrandFinal_Algorithm_Rozetka_600.jpg",
+      "width": 1710,
+      "height": 1180
+    },
+    {
+      "src": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "duration": 18.227664,
+      "time": 0.079824,
+      "width": 600,
+      "height": 480
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_Harold_200.jpg",
+      "width": 1000,
+      "height": 892
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "duration": 11.19,
+      "time": 0.080022,
+      "width": 0,
+      "height": 0
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_Narcos_600.jpg",
+      "width": 800,
+      "height": 567
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "duration": 10.166667,
+      "time": 0.080033,
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_SadAffleck_1000.jpg",
+      "width": 1728,
+      "height": 1034
+    },
+    {
+      "src": "/media/GrandFinal_Author_Mavpaparatsi_200.jpg",
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "src": "/media/GrandFinal_Author_Krokodyler_400.jpg",
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "src": "/media/Zootropolis_Kengurumba_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/Zootropolis_Sovampir_800x600.jpg",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "src": "/media/GrandFinal_Author_Kobrauzer_800.jpg",
+      "width": 1448,
+      "height": 1086
+    }
+  ],
+  "stops": [
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "expected": 6,
+      "actual": 6,
+      "paused": true
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "expected": 8,
+      "actual": 8,
+      "paused": true
+    },
+    {
+      "src": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "expected": 14,
+      "actual": 14,
+      "paused": true
+    },
+    {
+      "src": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "expected": 16,
+      "actual": 16,
+      "paused": true
+    },
+    {
+      "src": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "expected": 11,
+      "actual": 11,
+      "paused": true
+    },
+    {
+      "src": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "expected": 5,
+      "actual": 5,
+      "paused": true
+    }
+  ]
+}
