@@ -277,9 +277,28 @@ body.screen[data-ui-theme="halloween"] #app {
 }
 .halloween-camera .camera-caption b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(14px, 1.15vw, 23px); color: #f8e5bb; }
 .halloween-camera .camera-caption > span { font-size: clamp(18px, 1.5vw, 30px); font-weight: 900; color: #ffb654; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px #ff891355; }
-.halloween-camera.is-speaking { border-color: #c7a1df; }
+.halloween-camera.is-speaking {
+  /* Paint outside the video window: separate OBS camera sources cover its inside. */
+  border-color: #79ffad;
+  outline: 4px solid #79ffad;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px #123426, 0 0 30px #59ff9bbf;
+}
+.halloween-camera.is-speaking .camera-caption {
+  border-top-color: #79ffad;
+  background: linear-gradient(180deg, #215b3d, #102c20);
+}
+.halloween-camera.is-speaking .camera-caption :is(b, span) { color: #edfff2; }
 .halloween-camera.is-answering { border-color: #ffb34c; box-shadow: 0 0 0 2px #ff7c25, 0 0 23px #ff7c2580, inset 0 0 10px #e8782830; }
+.halloween-camera.is-speaking.is-answering {
+  /* Keep the orange answer indicator and the green voice indicator together. */
+  box-shadow: 0 0 0 5px #123426, 0 0 30px #59ff9bbf;
+}
 .halloween-camera.answer-wrong { border-color: #e68a96; }
+.halloween-camera.is-speaking.answer-wrong .camera-caption {
+  border-top-color: #e68a96;
+  background: linear-gradient(180deg, #593039, #381f2c);
+}
 .halloween-camera.is-empty { border-style: dashed; }
 
 body.screen[data-ui-theme="halloween"] #app .scorebar,

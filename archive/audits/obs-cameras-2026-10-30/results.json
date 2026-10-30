@@ -1,0 +1,5561 @@
+{
+  "sourceCommit": "143d28fbac02e545d2be406fe97a463024aa5683",
+  "fixtures": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "lobby",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "first_turn_quiz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "first_turn_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "board",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "buzz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "answering",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "paused",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "numeric_ready",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "numeric_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "numeric_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "audience_lobby",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "audience_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "audience_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "audience_podium",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "cat_choose",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "cat_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "va_bank_bet",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "va_bank_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "duel_choose",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "duel_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "final_bets",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "final_ready",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "final_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "final_review",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "final_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "long-question-and-answer",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "photo-0",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "photo-1",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "photo-2",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "video-question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "video-buzz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "video-answering",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "video-video_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "audio",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "emoji",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "triplet_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "triplet_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "round-2-board",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "reordered-players",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "changed-names-scores",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "speaking",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "label": "season-champion",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 1475.578125,
+          "y": 187.1875,
+          "width": 401.1875,
+          "height": 225.65625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 1475.578125,
+          "y": 475.75,
+          "width": 401.1875,
+          "height": 380.796875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 1475.578125,
+          "y": 919.453125,
+          "width": 401.1875,
+          "height": 146.59375,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 43.234375,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 401.3125,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 759.390625,
+          "y": 830.234375,
+          "width": 340.71875,
+          "height": 194.78125,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 1117.46875,
+          "y": 830.234375,
+          "width": 340.734375,
+          "height": 194.78125,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "lobby",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "first_turn_quiz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "first_turn_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "board",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "buzz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "answering",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "paused",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "numeric_ready",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "numeric_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "numeric_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "audience_lobby",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "audience_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "audience_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "audience_podium",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "cat_choose",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "cat_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "va_bank_bet",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "va_bank_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "duel_choose",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "duel_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "final_bets",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "final_ready",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "final_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "final_review",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "final_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "long-question-and-answer",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "photo-0",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "photo-1",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "photo-2",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "video-question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "video-buzz",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "video-answering",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "video-video_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "audio",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "emoji",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "triplet_question",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "triplet_result",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "round-2-board",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "reordered-players",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "changed-names-scores",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "speaking",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "label": "season-champion",
+      "regions": [
+        {
+          "key": "host-camera",
+          "x": 984.046875,
+          "y": 139.59375,
+          "width": 266.796875,
+          "height": 150.0625,
+          "visible": true
+        },
+        {
+          "key": "chat",
+          "x": 984.046875,
+          "y": 340.328125,
+          "width": 266.796875,
+          "height": 219.96875,
+          "visible": true
+        },
+        {
+          "key": "donations",
+          "x": 984.046875,
+          "y": 610.96875,
+          "width": 266.796875,
+          "height": 99.40625,
+          "visible": true
+        },
+        {
+          "key": "0",
+          "x": 29.15625,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "1",
+          "x": 267.875,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "2",
+          "x": 506.59375,
+          "y": 545.859375,
+          "width": 226.484375,
+          "height": 130.515625,
+          "visible": true
+        },
+        {
+          "key": "3",
+          "x": 745.3125,
+          "y": 545.859375,
+          "width": 226.5,
+          "height": 130.515625,
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "live": [
+    "live-start",
+    "live-pause",
+    "live-resume",
+    "live-player-offline",
+    "live-player-reconnect",
+    "live-screen-disconnect",
+    "live-screen-reconnect",
+    "live-room-closed"
+  ],
+  "passed": true,
+  "scope": "Isolated Edge layout and Socket.IO only; no OBS compositor, real webcams, VDO.Ninja streams, audio routing or independent networks."
+}
