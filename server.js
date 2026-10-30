@@ -188,6 +188,7 @@ function publicState(room) {
           a: room.revealAnswer ? room.current.a : "",
           answerImage: room.revealAnswer ? room.current.answerImage || "" : "",
           answerVideo: room.revealAnswer ? room.current.answerVideo || "" : "",
+          answerAudioFile: room.revealAnswer ? room.current.answerAudioFile || "" : "",
           triplet: room.current.triplet
             ? {
                 index: room.current.triplet.index,
@@ -279,6 +280,7 @@ function publicState(room) {
           results: room.phase === "numeric_result" ? room.numericResults : null,
           revealCount: room.numericRevealCount || 0,
           correctAnswer: room.phase === "numeric_result" ? room.numericChallenge.answer : null,
+          answerImage: room.phase === "numeric_result" ? room.numericChallenge.answerImage || "" : "",
         }
       : null,
     audience:
@@ -1263,9 +1265,17 @@ io.on("connection", socket => {
         || room.current?.answerAudio !== "/media/murloc.mp3"
       )
         return cb({ ok: false, error: "Звук доступний лише після відповіді на запитання про мурлока." });
+    } else if (type === "question_answer_audio") {
+      if (
+        room.phase !== "result"
+        || room.revealAnswer !== true
+        || !/^\/media\/[a-zA-Z0-9._-]+\.mp3$/.test(room.current?.answerAudioFile || "")
+      )
+        return cb({ ok: false, error: "Звук відповіді недоступний." });
     } else if (!["gong", "results_theme", "winner_theme", "final_music_stop"].includes(type))
       return cb({ ok: false, error: "Невідомий звук." });
     const cue = { type, at: Date.now() };
+    if (type === "question_answer_audio") cue.media = room.current.answerAudioFile;
     if (
       type === "gong"
       && room.current?.type === "duel"
@@ -1337,6 +1347,12 @@ io.on("connection", socket => {
         room.current.answerImage = q.answerImage;
       if (special === "normal" && typeof q.answerVideo === "string" && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerVideo))
         room.current.answerVideo = q.answerVideo;
+      // Optional answer sound is disclosed only after the answer is shown.
+      if (special === "normal" && typeof q.answerAudioFile === "string" && /^\/media\/[a-zA-Z0-9._-]+\.mp3$/.test(q.answerAudioFile))
+        room.current.answerAudioFile = q.answerAudioFile;
+      // Audio questions can also display a simultaneous non-spoiler visual clue.
+      if (special === "normal" && q.type === "audio" && typeof q.image === "string" && /^\/media\/[a-zA-Z0-9._-]+\.(jpg|png|webp)$/.test(q.image))
+        room.current.image = q.image;
       // Media questions: direct HTTPS links or same-origin files under /media/.
       if (special === "normal" && ["audio", "audioReveal", "video"].includes(q.type)) {
         const source = String(q.media || q.audio || q.video || "");
@@ -1424,6 +1440,7 @@ io.on("connection", socket => {
           unit: q.unit || "",
           value: q.value,
           seconds: Number(q.seconds || 30),
+          answerImage: typeof q.answerImage === "string" && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerImage) ? q.answerImage : "",
         };
         room.numericAnswers = {};
         room.numericSubmittedAt = {};
