@@ -1392,6 +1392,14 @@
 
       /* UI-03: VS panel uses actual duelPlayers ids, not player list order. */
       let lastDuelPairKey = null;
+      function halloweenSpecialLabel(kind) {
+        if (state?.gameId !== "halloween-special-2026") return "";
+        const titles = [
+          { va_bank: "😈 УГОДА З ДИЯВОЛОМ", cat: "⚰️ ТРУНА З СЮРПРИЗОМ", duel: "🪦 РОЗБІРКИ НА КЛАДОВИЩІ" },
+          { va_bank: "💀 ДУШУ ЗА БАЛИ", cat: "👻 ПОСИЛКА З ПОТОЙБІЧЧЯ", duel: "🔥 СУДНИЙ ДВОБІЙ" },
+        ];
+        return titles[state.round]?.[kind] || "";
+      }
       function duelMatchupHTML() {
         const ids = Array.isArray(state?.duelPlayers) ? state.duelPlayers : [];
         const p1 = state.players.find(p => p.id === (ids[0] || state.turnPlayerId));
@@ -1427,7 +1435,8 @@
           );
         };
         return (
-          '<div class="duelStage"><div class="duelHeading">⚔️ ДУЕЛЬ'
+          '<div class="duelStage"><div class="duelHeading">'
+          + GameUI.esc(halloweenSpecialLabel("duel") || "⚔️ ДУЕЛЬ")
           + (value ? " • " + value + " БАЛІВ" : "")
           + '</div><div class="duelMatchup">'
           + fighter(p1, "ВИКЛИК")
@@ -1445,7 +1454,9 @@
         const name = player ? GameUI.esc(player.name) : "—";
         const wager = hasBet ? "СТАВКА: " + GameUI.esc(String(betValue)) + " БАЛІВ" : "ГОТУЄ СТАВКУ";
         return (
-          '<div class="vaBankStage"><div class="vaBankHeading">🎰 ВА-БАНК</div><div class="vaBankInfo"><div class="vaBankAnswerer">ВІДПОВІДАЄ: <b>'
+          '<div class="vaBankStage"><div class="vaBankHeading">'
+          + GameUI.esc(halloweenSpecialLabel("va_bank") || "🎰 ВА-БАНК")
+          + '</div><div class="vaBankInfo"><div class="vaBankAnswerer">ВІДПОВІДАЄ: <b>'
           + name
           + '</b></div><div class="vaBankStake">'
           + wager
@@ -1651,7 +1662,7 @@
             show = state.phase === "triplet_result" && state.revealAnswer;
           h += `<div class="obsGameLayout"><div class="obsSegment obsSegmentQuestion panel">${tripletProgressHTML(t, p?.name)}<div class="question">${GameUI.esc(state.current?.q || "")}</div></div><div class="obsSegment obsSegmentMedia"></div><div class="obsSegment obsSegmentAnswer panel ${show ? "" : "is-empty"}">${show ? `<div class="answer"><b>Правильна відповідь:</b> ${GameUI.esc(state.current?.a || "")}</div>` : ""}</div><div class="obsSegment obsSegmentPlayers">${GameUI.playersHTML(state.players, t.answererId, state)}</div></div>`;
         } else if (["question", "buzz", "answering", "cat_question", "result", "video_result"].includes(state.phase)) {
-          const label = state.current?.type === "cat" ? "🐈 КІТ У МІШКУ" : "";
+          const label = state.current?.type === "cat" ? (halloweenSpecialLabel("cat") || "🐈 КІТ У МІШКУ") : "";
           const catAnswerer =
             state.current?.type === "cat" && state.catReceiver
               ? state.players.find(p => p.id === state.catReceiver)
@@ -1687,7 +1698,7 @@
         else if (state.phase === "duel_question")
           h += `<div class="obsGameLayout"><div class="obsSegment obsSegmentQuestion panel">${duelMatchupHTML()}<div class="question">${GameUI.esc(state.current?.q || "")}</div></div><div class="obsSegment obsSegmentMedia">${emojiQuestionHTML(state.current)}</div><div class="obsSegment obsSegmentAnswer panel is-empty"></div><div class="obsSegment obsSegmentPlayers">${GameUI.playersHTML(state.players, null, state)}</div></div>`;
         else if (state.phase === "cat_choose")
-          h += `<div class="panel center"><div class="huge">🐈</div><h1>КІТ У МІШКУ</h1><p>Ведучий обирає гравця</p></div>${GameUI.playersHTML(state.players, null, state)}`;
+          h += `<div class="panel center"><div class="huge">🐈</div><h1>${GameUI.esc(halloweenSpecialLabel("cat") || "КІТ У МІШКУ")}</h1><p>Ведучий обирає гравця</p></div>${GameUI.playersHTML(state.players, null, state)}`;
         else if (state.phase === "final_bets")
           h += `<div class="panel center"><div class="huge">ФІНАЛ</div><h2>Таємні ставки</h2></div>${GameUI.playersHTML(state.players, null, state)}`;
         else if (state.phase === "final_ready")
