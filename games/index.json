@@ -65,10 +65,10 @@
   },
   {
     "id": "halloween-special-2026",
-    "title": "HALLOWEEN SPECIAL — У РОЗРОБЦІ",
+    "title": "HALLOWEEN SPECIAL — ТЕСТ РАУНДУ 1",
     "icon": "🎃",
-    "description": "Чорний гумор без жорстокості • готова 1 із 10 категорій • чернетка",
+    "description": "🎃 Halloween Special 2026 • 25 питань першого раунду • фото, аудіо, STOP-відео • тестування (раунд 2 ще готується)",
     "file": "halloween_special_2026.json",
-    "enabled": false
+    "enabled": true
   }
 ]
