@@ -201,9 +201,17 @@
         question: new Audio("/sounds/question.mp3"),
         buzz_open: new Audio("/sounds/buzz.mp3"),
       };
-      Object.values(cueAudio).forEach(a => {
+      // Halloween Special sounds are isolated; all other quizzes use their original cues.
+      const halloweenCueAudio = {
+        question: new Audio("/sounds/halloween_gong.mp3"),
+        buzz_open: new Audio("/sounds/halloween_buzz_1sec.mp3"),
+      };
+      [...Object.values(cueAudio), ...Object.values(halloweenCueAudio)].forEach(a => {
         a.preload = "auto";
       });
+      function halloweenAudioActive() {
+        return (state?.gameId || selectedGameId) === "halloween-special-2026";
+      }
       function setupCueMixer() {
         const settings = [
           ["gongVolume", "question"],
@@ -219,6 +227,7 @@
           const update = () => {
             const v = Number(input.value);
             cueAudio[key].volume = v / 100;
+            halloweenCueAudio[key].volume = v / 100;
             out.textContent = v + "%";
             if (!window.QuizPreview) localStorage.setItem("sgCueVolume_" + key, String(v));
           };
@@ -230,7 +239,7 @@
 
       function playCueSound(type) {
         const key = type === "gong" ? "question" : type;
-        const a = cueAudio[key];
+        const a = (halloweenAudioActive() ? halloweenCueAudio : cueAudio)[key];
         if (!a) return;
         try {
           a.pause();
@@ -243,26 +252,31 @@
         results_theme: new Audio("/media/results_theme.mp3"),
         winner_theme: new Audio("/media/winner_theme.mp3"),
       };
-      Object.values(hostFinalMusic).forEach(a => {
+      const halloweenHostFinalMusic = {
+        results_theme: new Audio("/sounds/halloween_results.mp3"),
+        winner_theme: new Audio("/sounds/halloween_winner.mp3"),
+      };
+      [...Object.values(hostFinalMusic), ...Object.values(halloweenHostFinalMusic)].forEach(a => {
         a.preload = "auto";
         a.volume = 0.35;
       });
       function setHostFinalVolume(v) {
         const volume = Math.max(0, Math.min(100, Number(v) || 0));
         if (!window.QuizPreview) localStorage.setItem("sgFinalMusicVolume", String(volume));
-        Object.values(hostFinalMusic).forEach(a => (a.volume = volume / 100));
+        [...Object.values(hostFinalMusic), ...Object.values(halloweenHostFinalMusic)].forEach(a => (a.volume = volume / 100));
         const out = document.getElementById("finalMusicVolumeValue");
         if (out) out.textContent = volume + "%";
       }
       setHostFinalVolume(localStorage.getItem("sgFinalMusicVolume") ?? 35);
       function playHostFinalMusic(type) {
         if (!["results_theme", "winner_theme", "final_music_stop"].includes(type)) return false;
-        for (const a of Object.values(hostFinalMusic)) {
+        for (const a of [...Object.values(hostFinalMusic), ...Object.values(halloweenHostFinalMusic)]) {
           a.pause();
           a.currentTime = 0;
         }
         if (type !== "final_music_stop") {
-          const p = hostFinalMusic[type].play();
+          const bank = halloweenAudioActive() ? halloweenHostFinalMusic : hostFinalMusic;
+          const p = bank[type].play();
           if (p && p.catch) p.catch(err => console.warn("Host final music playback blocked:", err));
         }
         return true;

@@ -852,12 +852,22 @@
         question: new Audio("/sounds/question.mp3"),
         buzz_open: new Audio("/sounds/buzz.mp3"),
       };
-      Object.values(cueAudio).forEach(a => {
+      const halloweenCueAudio = {
+        question: new Audio("/media/halloween_sfx_haunted_gong.wav"),
+        buzz_open: new Audio("/media/halloween_sfx_ghost_buzz.wav"),
+      };
+      [...Object.values(cueAudio), ...Object.values(halloweenCueAudio)].forEach(a => {
         a.preload = "auto";
       });
+      // OBS cues stay quieter than media questions.
+      halloweenCueAudio.question.volume = 0.30;
+      halloweenCueAudio.buzz_open.volume = 0.25;
+      function halloweenAudioActive() {
+        return state?.gameId === "halloween-special-2026";
+      }
       function playCueSound(type) {
         const key = type === "gong" ? "question" : type;
-        const a = cueAudio[key];
+        const a = (halloweenAudioActive() ? halloweenCueAudio : cueAudio)[key];
         if (!a) return;
         try {
           a.pause();
@@ -871,20 +881,24 @@
         results_theme: new Audio("/media/results_theme.mp3"),
         winner_theme: new Audio("/media/winner_theme.mp3"),
       };
+      const halloweenFinalMusic = {
+        results_theme: new Audio("/media/halloween_music_results.wav"),
+        winner_theme: new Audio("/media/halloween_music_winner.wav"),
+      };
       let activeFinalMusic = null;
-      Object.values(finalMusic).forEach(a => {
+      [...Object.values(finalMusic), ...Object.values(halloweenFinalMusic)].forEach(a => {
         a.preload = "auto";
         a.volume = 0.35;
       });
       function handleFinalMusic(type) {
         if (!["results_theme", "winner_theme", "final_music_stop"].includes(type)) return false;
-        for (const a of Object.values(finalMusic)) {
+        for (const a of [...Object.values(finalMusic), ...Object.values(halloweenFinalMusic)]) {
           a.pause();
           a.currentTime = 0;
         }
         activeFinalMusic = null;
         if (type !== "final_music_stop") {
-          const a = finalMusic[type];
+          const a = (halloweenAudioActive() ? halloweenFinalMusic : finalMusic)[type];
           activeFinalMusic = a;
           a.play().catch(err => console.warn("OBS final music playback blocked:", err));
         }
