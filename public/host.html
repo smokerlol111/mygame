@@ -203,8 +203,8 @@
       };
       // Halloween Special sounds are isolated; all other quizzes use their original cues.
       const halloweenCueAudio = {
-        question: new Audio("/media/halloween_sfx_haunted_gong.wav"),
-        buzz_open: new Audio("/media/halloween_sfx_ghost_buzz.wav"),
+        question: new Audio("/sounds/halloween_gong.mp3"),
+        buzz_open: new Audio("/sounds/halloween_buzz_1sec.mp3"),
       };
       [...Object.values(cueAudio), ...Object.values(halloweenCueAudio)].forEach(a => {
         a.preload = "auto";
@@ -253,8 +253,8 @@
         winner_theme: new Audio("/media/winner_theme.mp3"),
       };
       const halloweenHostFinalMusic = {
-        results_theme: new Audio("/media/halloween_music_results.wav"),
-        winner_theme: new Audio("/media/halloween_music_winner.wav"),
+        results_theme: new Audio("/sounds/halloween_results.mp3"),
+        winner_theme: new Audio("/sounds/halloween_winner.mp3"),
       };
       [...Object.values(hostFinalMusic), ...Object.values(halloweenHostFinalMusic)].forEach(a => {
         a.preload = "auto";
