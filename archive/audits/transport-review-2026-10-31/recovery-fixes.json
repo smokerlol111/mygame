@@ -1,0 +1,45 @@
+{
+  "scope": "Fixed behavior on isolated server/jsdom; no real Discord/OBS/phones",
+  "findings": {
+    "failedGameLoad": {
+      "attempts": 2,
+      "firstError": "",
+      "dataMissing": false,
+      "retryButtonShown": true,
+      "attemptsWithHeadReconnect": 2,
+      "dataRestoredWithHeadReconnect": true
+    },
+    "concurrentLoads": {
+      "requestsBeforeRoomChange": 2,
+      "loaded": "review-new",
+      "dataId": "review-new",
+      "staleAccepted": false,
+      "oldRoomAccepted": false
+    },
+    "manualRetry": {
+      "attempts": 2,
+      "recovered": true
+    },
+    "stuckBuzzButton": {
+      "keyUnchanged": true,
+      "allPlayersReady": true,
+      "disabled": false,
+      "disabledWithHeadHandler": false
+    },
+    "networkRecovery": {
+      "readyToSyncToReady": true,
+      "playerRejoined": true,
+      "ping": 155,
+      "preservedField": true
+    },
+    "staleVoiceTestCheckbox": {
+      "selectedIds": 0,
+      "checked": false,
+      "checkedWithHeadHandler": false
+    },
+    "voiceCancel": {
+      "enabledDuringRecovery": true,
+      "sentEnabled": false
+    }
+  }
+}

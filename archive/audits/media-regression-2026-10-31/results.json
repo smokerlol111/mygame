@@ -1,0 +1,215 @@
+{
+  "sourceCommit": "a0bf59e68827f661aab165c851ae8cb403d70e81",
+  "workingTree": true,
+  "checks": [
+    {
+      "gameId": "halloween-special-2026",
+      "round": 0,
+      "ci": 0,
+      "qi": 4,
+      "type": "video",
+      "media": "/media/halloween_r1_c1_500_shaun_stop.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 0,
+      "ci": 2,
+      "qi": 0,
+      "type": "audio",
+      "media": "/media/halloween_r1_c3_100_thriller_excerpt.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 0,
+      "ci": 2,
+      "qi": 1,
+      "type": "audio",
+      "media": "/media/halloween_r1_c3_200_fnaf_intro.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 0,
+      "ci": 2,
+      "qi": 4,
+      "type": "audio",
+      "media": "/media/halloween_r1_c3_500_stranger_things_intro.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 0,
+      "ci": 4,
+      "qi": 4,
+      "type": "audio",
+      "media": "/media/halloween_r1_c5_500_hampster_loop.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 1,
+      "qi": 3,
+      "type": "video",
+      "media": "/media/halloween_r2_c2_800_fido_stop.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 1,
+      "qi": 4,
+      "type": "audio",
+      "media": "/media/halloween_r2_c2_1000_clicker_sound.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 2,
+      "qi": 0,
+      "type": "audio",
+      "media": "/media/halloween_r2_c3_200_bloop.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 3,
+      "qi": 2,
+      "type": "audio",
+      "media": "/media/halloween_r2_c4_600_celery_snap.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 4,
+      "qi": 1,
+      "type": "audio",
+      "media": "/media/halloween_r2_c5_400_barn_owl.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 4,
+      "qi": 3,
+      "type": "audio",
+      "media": "/media/halloween_r2_c5_800_aztec_whistle.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "halloween-special-2026",
+      "round": 1,
+      "ci": 4,
+      "qi": 4,
+      "type": "audioReveal",
+      "media": "/media/halloween_r2_c5_1000_first_voice_1860.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 0,
+      "ci": 0,
+      "qi": 4,
+      "type": "video",
+      "media": "/media/SMOKERLOL_GrandFinal_Ratatouille_500_STOP.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 0,
+      "ci": 2,
+      "qi": 3,
+      "type": "audio",
+      "media": "/media/SMOKERLOL_GrandFinal_Ukrnet_Oleg_400.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 0,
+      "ci": 2,
+      "qi": 4,
+      "type": "video",
+      "media": "/media/SMOKERLOL_GrandFinal_Ukrnet_Shtany_40_500_STOP.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 0,
+      "ci": 3,
+      "qi": 1,
+      "type": "audio",
+      "media": "/media/SMOKERLOL_GrandFinal_BehindScenes_R2D2_200.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 0,
+      "ci": 3,
+      "qi": 4,
+      "type": "video",
+      "media": "/media/SMOKERLOL_GrandFinal_BehindScenes_SpiderMan_500_STOP.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 0,
+      "qi": 0,
+      "type": "audio",
+      "media": "/media/GrandFinal_Cinema_Bond_200.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 0,
+      "qi": 3,
+      "type": "video",
+      "media": "/media/GrandFinal_Cinema_Mask_800_STOP.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 2,
+      "qi": 1,
+      "type": "audio",
+      "media": "/media/GrandFinal_Algorithm_CoffinDance_400.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 2,
+      "qi": 4,
+      "type": "video",
+      "media": "/media/GrandFinal_Algorithm_Panda_1000_STOP.mp4",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 3,
+      "qi": 1,
+      "type": "audio",
+      "media": "/media/GrandFinal_MemeForensics_Roundabout_400.mp3",
+      "passed": true
+    },
+    {
+      "gameId": "season2-grand-final",
+      "round": 1,
+      "ci": 3,
+      "qi": 3,
+      "type": "video",
+      "media": "/media/GrandFinal_MemeForensics_Chipmunk_800_STOP.mp4",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": "Isolated real Edge, silent native playback and server commands; no actual OBS/audio output/phones/live Discord."
+}

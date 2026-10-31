@@ -1,0 +1,29 @@
+{
+  "scope": "Risk reproductions in working tree; no production changes",
+  "hostLoadFailure": {
+    "firstRequestFailed": true,
+    "loadAttempts": 1,
+    "dataStillMissing": true,
+    "riskConfirmed": true
+  },
+  "staleAudienceAnswer": {
+    "intendedQuestion": 0,
+    "currentQuestion": 1,
+    "accepted": true,
+    "submittedOnNewQuestion": 1,
+    "riskConfirmed": true
+  },
+  "staleMediaCommand": {
+    "intendedTile": "0:2:0",
+    "currentTile": "0:2:1",
+    "accepted": true,
+    "emittedMedia": "/media/halloween_r1_c3_200_fnaf_intro.mp3",
+    "riskConfirmed": true
+  },
+  "partialRenderingStalePing": {
+    "stateKeyUnchanged": true,
+    "actualRtt": 150,
+    "manualControlsStillShow50": true,
+    "riskConfirmed": true
+  }
+}

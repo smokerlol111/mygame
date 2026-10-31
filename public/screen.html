@@ -1062,7 +1062,7 @@
         const seconds = progress && !lastAudio ? Number(cur.revealSeconds?.[cur.revealStage] || 2) : 0;
         const media = video
           ? `<video class="quizMedia quizVideo" src="${src}" data-pause-at="${Number(cur.pauseAt || 0)}" playsinline preload="metadata" style="width:100%;max-height:50vh"></video>`
-          : `<audio class="quizMedia quizAudio" src="${src}" controls preload="metadata" style="width:100%"></audio>`;
+          : `<audio class="quizMedia quizAudio" src="${src}" data-reveal-stage="${Number(cur.revealStage || 0)}" controls preload="metadata" style="width:100%"></audio>`;
         const clueImage = cur.image && !video
           ? `<img src="${GameUI.esc(cur.image)}" alt="Ілюстрація запитання" style="display:block;width:100%;max-width:640px;max-height:32vh;object-fit:contain;margin:0 auto 10px;border-radius:10px">`
           : "";
@@ -1075,7 +1075,7 @@
           node: el,
           src: el.getAttribute("src"),
           kind: el.tagName,
-          stage: Number(state.current.revealStage || 0),
+          stage: Number(el.dataset.revealStage || 0),
           time: Number(el.currentTime || 0),
           playing: !el.paused,
         };

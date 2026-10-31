@@ -1,0 +1,154 @@
+{
+  "observedAtUTC": "2026-10-31T00:16:13.157Z",
+  "scope": "Read-only current connectivity; forced public DNS ingress and valid TLS. Not historical evidence.",
+  "publicAddresses": [
+    "185.40.234.55",
+    "185.40.234.75",
+    "185.40.234.198"
+  ],
+  "health": [
+    {
+      "local": {
+        "status": 200,
+        "ms": 7,
+        "bytes": 43,
+        "remoteIP": "127.0.0.1",
+        "range": null
+      },
+      "public": {
+        "status": 200,
+        "ms": 277,
+        "bytes": 43,
+        "remoteIP": "185.40.234.55",
+        "range": null
+      }
+    },
+    {
+      "local": {
+        "status": 200,
+        "ms": 2,
+        "bytes": 43,
+        "remoteIP": "127.0.0.1",
+        "range": null
+      },
+      "public": {
+        "status": 200,
+        "ms": 252,
+        "bytes": 43,
+        "remoteIP": "185.40.234.55",
+        "range": null
+      }
+    },
+    {
+      "local": {
+        "status": 200,
+        "ms": 3,
+        "bytes": 43,
+        "remoteIP": "127.0.0.1",
+        "range": null
+      },
+      "public": {
+        "status": 200,
+        "ms": 250,
+        "bytes": 43,
+        "remoteIP": "185.40.234.55",
+        "range": null
+      }
+    },
+    {
+      "local": {
+        "status": 200,
+        "ms": 2,
+        "bytes": 43,
+        "remoteIP": "127.0.0.1",
+        "range": null
+      },
+      "public": {
+        "status": 200,
+        "ms": 345,
+        "bytes": 43,
+        "remoteIP": "185.40.234.55",
+        "range": null
+      }
+    }
+  ],
+  "page": {
+    "status": 200,
+    "ms": 296,
+    "bytes": 19901,
+    "remoteIP": "185.40.234.55",
+    "range": null
+  },
+  "range": {
+    "status": 206,
+    "ms": 254,
+    "bytes": 1024,
+    "remoteIP": "185.40.234.55",
+    "range": "bytes 0-1023/348160"
+  },
+  "transports": [
+    {
+      "transport": "websocket",
+      "connected": true,
+      "ms": 326
+    },
+    {
+      "transport": "polling",
+      "connected": true,
+      "ms": 577
+    }
+  ],
+  "allIngressHTTP": [
+    {
+      "ip": "185.40.234.55",
+      "results": [
+        {
+          "route": "/health",
+          "status": 200,
+          "ms": 293,
+          "ip": "185.40.234.55"
+        },
+        {
+          "route": "/audience/DIAGNOSTIC-NOT-A-ROOM",
+          "status": 200,
+          "ms": 324,
+          "ip": "185.40.234.55"
+        }
+      ]
+    },
+    {
+      "ip": "185.40.234.75",
+      "results": [
+        {
+          "route": "/health",
+          "status": 200,
+          "ms": 1164,
+          "ip": "185.40.234.75"
+        },
+        {
+          "route": "/audience/DIAGNOSTIC-NOT-A-ROOM",
+          "status": 200,
+          "ms": 1004,
+          "ip": "185.40.234.75"
+        }
+      ]
+    },
+    {
+      "ip": "185.40.234.198",
+      "results": [
+        {
+          "route": "/health",
+          "status": 200,
+          "ms": 301,
+          "ip": "185.40.234.198"
+        },
+        {
+          "route": "/audience/DIAGNOSTIC-NOT-A-ROOM",
+          "status": 200,
+          "ms": 354,
+          "ip": "185.40.234.198"
+        }
+      ]
+    }
+  ]
+}

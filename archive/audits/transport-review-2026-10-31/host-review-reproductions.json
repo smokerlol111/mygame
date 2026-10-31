@@ -1,0 +1,23 @@
+{
+  "scope": "Review reproductions on isolated server/jsdom; defects remain unfixed",
+  "findings": {
+    "failedGameLoad": {
+      "attempts": 1,
+      "firstError": "simulated interrupted game HTTP",
+      "dataMissing": true,
+      "attemptsWithHeadReconnect": 2,
+      "dataRestoredWithHeadReconnect": true
+    },
+    "stuckBuzzButton": {
+      "keyUnchanged": true,
+      "allPlayersReady": true,
+      "disabled": true,
+      "disabledWithHeadHandler": false
+    },
+    "staleVoiceTestCheckbox": {
+      "selectedIds": 0,
+      "checked": true,
+      "checkedWithHeadHandler": false
+    }
+  }
+}
