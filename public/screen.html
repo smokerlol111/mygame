@@ -64,6 +64,22 @@
       body.screen #app .scorebar .player {
         padding: 7px;
       }
+      .numericResult { text-align: center; }
+      .numericResultSummary { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 10px 0; }
+      .numericCorrect { min-width: 0; }
+      .numericCorrectLabel { font-size: clamp(16px, 1.5vw, 26px); font-weight: 800; }
+      .numericCorrectValue { font-size: clamp(36px, 4vw, 70px); font-weight: 900; overflow-wrap: anywhere; }
+      .numericResultImage { display: block; max-width: 35%; max-height: 22vh; object-fit: contain; border-radius: 12px; }
+      body.screen #app .numericResult img.numericResultImage { max-height: 22vh !important; margin: 0 !important; }
+      .numericWinner { border: 2px solid #ffc165; border-radius: 12px; padding: 10px 16px; background: #513b1660; }
+      .numericWinnerTitle { font-size: clamp(24px, 2.4vw, 42px); font-weight: 900; overflow-wrap: anywhere; }
+      .numericWinnerDetails { font-size: clamp(17px, 1.5vw, 25px); margin-top: 5px; }
+      .numericTie { font-size: clamp(15px, 1.3vw, 21px); margin-top: 4px; }
+      .numericRevealStatus { font-size: clamp(18px, 1.6vw, 28px); font-weight: 700; margin: 8px 0; }
+      .numericRanking { display: grid; gap: 6px; }
+      .numericResultRow { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 8px 12px; border: 1px solid #ffffff25; border-radius: 10px; background: #171128; font-size: clamp(17px, 1.4vw, 24px); }
+      .numericResultRow.is-winner { border-color: #ffc165; }
+      .numericResultRow b { overflow-wrap: anywhere; min-width: 0; }
     </style>
 
     <style>
@@ -1614,11 +1630,18 @@
           const n = state.numericChallenge || {},
             rs = n.results || [],
             rev = n.revealCount || 0,
-            revealed = rs.slice(Math.max(0, rs.length - rev)).reverse();
-          h += `<div class="panel center"><div class="huge">${n.correctAnswer}</div><h2>ПРАВИЛЬНА ВІДПОВІДЬ</h2>${n.answerImage ? `<img src="${GameUI.esc(n.answerImage)}" alt="Фото правильної відповіді" style="display:block;max-width:90%;max-height:35vh;object-fit:contain;margin:10px auto;border-radius:12px">` : ""}<div class="finalList">${revealed
+            revealed = rs.slice(Math.max(0, rs.length - rev)).reverse(),
+            winner = rev >= rs.length && rs[0] && !rs[0].noAnswer ? rs[0] : null,
+            number = value => GameUI.esc(typeof value === "number" ? value.toLocaleString("uk-UA", { maximumFractionDigits: 10 }) : String(value ?? ""));
+          const status = winner
+            ? `<div class="numericWinner" role="status"><div class="numericWinnerTitle">🏆 ПЕРЕМОЖЕЦЬ — ${GameUI.esc(winner.name)}</div><div class="numericWinnerDetails">Відповідь: <b>${number(winner.answer)}</b> · Відхилення: <b>${number(winner.diff)}</b> · <b>+${number(n.value)} балів</b></div>${rs[1] && !rs[1].noAnswer && rs[1].diff === winner.diff ? '<div class="numericTie">За однакового відхилення перемагає той, хто відповів раніше</div>' : ""}</div>`
+            : rev >= rs.length
+              ? '<div class="numericRevealStatus" role="status">Ніхто не відповів — бали не нараховано</div>'
+              : `<div class="numericRevealStatus" role="status">Ведучий відкриває місця · ${Math.min(rev, rs.length)}/${rs.length}</div>`;
+          h += `<div class="panel numericResult">${status}<div class="numericResultSummary"><div class="numericCorrect"><div class="numericCorrectLabel">ПРАВИЛЬНА ВІДПОВІДЬ</div><div class="numericCorrectValue">${number(n.correctAnswer)} ${GameUI.esc(n.unit || "")}</div></div>${n.answerImage ? `<img class="numericResultImage" src="${GameUI.esc(n.answerImage)}" alt="Фото правильної відповіді">` : ""}</div><div class="numericRanking">${revealed
             .map(r => {
               const place = rs.findIndex(x => x.id === r.id) + 1;
-              return `<div class="finalItem"><span class="winner">${place === 1 ? "🥇 " : ""}${place}. ${GameUI.esc(r.name)}</span><span>${r.noAnswer ? "— НЕМАЄ ВІДПОВІДІ" : `Відповідь: <b>${r.answer}</b> • різниця: <b>${r.diff}</b>${place === 1 ? " • +" + n.value : ""}`}</span></div>`;
+              return `<div class="numericResultRow ${winner?.id === r.id ? "is-winner" : ""}"><b>${place === 1 && !r.noAnswer ? "🥇 " : ""}${place}. ${GameUI.esc(r.name)}</b><span>${r.noAnswer ? "— НЕМАЄ ВІДПОВІДІ" : `Відповідь: <b>${number(r.answer)}</b> · Відхилення: <b>${number(r.diff)}</b>`}</span></div>`;
             })
             .join("")}</div></div>`;
         } else if (state.phase === "board" && tripletFinishPreview?.until > Date.now() && !state.selectedTile) {

@@ -159,12 +159,11 @@
         <audio
           id="playerAudio"
           class="protectedMedia"
-          controls
-          controlsList="nodownload noremoteplayback"
+          hidden
           preload="metadata"
           oncontextmenu="return false;"
-          style="width: 100%"
         ></audio>
+        <button id="playerAudioEnable" class="btn secondary" hidden>🔊 Дозволити звук</button>
       </div>
       <div id="app" class="panel"></div>
     </div>
@@ -175,7 +174,9 @@
         playerVideo = document.getElementById("playerVideo"),
         playerAudioPanel = document.getElementById("playerAudioPanel"),
         playerAudio = document.getElementById("playerAudio"),
-        playerAudioInfo = document.getElementById("playerAudioInfo");
+        playerAudioInfo = document.getElementById("playerAudioInfo"),
+        playerAudioEnable = document.getElementById("playerAudioEnable");
+      let playerAudioSyncKey = "", playerAudioControlVersion = 0;
       // Browser audio must be unlocked by a direct tap/click on the PLAYER device.
       const cueAudio = {
         question: new Audio("/sounds/question.mp3"),
@@ -368,6 +369,7 @@
 
       function applyJoinedState(s) {
         if (!s || s.code !== code) return;
+        playerAudioSyncKey = ""; // Rejoin recovers commands missed while disconnected.
         state = s;
         render();
       }
@@ -658,12 +660,18 @@
           && ["question", "buzz", "answering", "result"].includes(state?.phase);
         if (!show) {
           playerAudioPanel.style.display = "none";
+          playerAudioSyncKey = "";
+          ++playerAudioControlVersion;
+          playerAudioEnable.hidden = true;
           if (!["audio", "audioReveal"].includes(cur?.questionType)) playerAudio.pause();
           return;
         }
         const src = playerMediaSrc(cur);
         if (!src) {
           playerAudioPanel.style.display = "none";
+          playerAudioSyncKey = "";
+          ++playerAudioControlVersion;
+          playerAudioEnable.hidden = true;
           return;
         }
         playerAudioPanel.style.display = "block";
@@ -674,6 +682,7 @@
         if (playerAudio.getAttribute("src") !== src) {
           playerAudio.pause();
           playerAudio.setAttribute("src", src);
+          playerAudio.volume = src === "/media/halloween_r1_c3_100_thriller_excerpt.mp3" ? 0.5 : 1;
           playerAudio.dataset.stage = String(stage);
           try {
             playerAudio.currentTime = 0;
@@ -694,8 +703,62 @@
               ? "🎵 Повне аудіо"
               : `🎵 Фрагмент до ${seconds} с • ${cur.value} балів`
             : "🎵 Аудіопитання";
-        if (state.phase === "answering") playerAudio.pause();
+        playerAudioInfo.textContent += " · керує ведучий";
+        syncPlayerAudioFromHost();
       }
+      function playPlayerAudioFromHost(version) {
+        const p = playerAudio.play();
+        if (p?.then) p.then(() => {
+          if (version === playerAudioControlVersion) playerAudioEnable.hidden = true;
+        }).catch(err => {
+          if (version !== playerAudioControlVersion) return;
+          // A desktop browser may require a click after a page reload.
+          playerAudioEnable.hidden = err.name !== "NotAllowedError";
+          if (err.name !== "AbortError") console.warn("PLAYER audio playback:", err);
+        });
+      }
+      function syncPlayerAudioFromHost(forceSeek = false) {
+        const cur = state?.current;
+        if (!["audio", "audioReveal"].includes(cur?.questionType)) return;
+        const context = [code, state.round, cur.ci, cur.qi, cur.media, Number(cur.revealStage || 0)].join(":");
+        const playing = !!cur.audioPlaying && state.phase !== "answering";
+        const key = [context, cur.audioUpdatedAt, cur.audioTime, playing].join(":");
+        if (playerAudioSyncKey === key && !forceSeek) return; // Routine states preserve the player and its position.
+        playerAudioSyncKey = key;
+        const version = ++playerAudioControlVersion;
+        playerAudioEnable.hidden = true;
+        const seek = () => {
+          if (version !== playerAudioControlVersion || playerAudio.getAttribute("src") !== cur.media) return;
+          const elapsed = playing && cur.audioUpdatedAt ? Math.max(0, (serverNow() - cur.audioUpdatedAt) / 1000) : 0;
+          const target = Math.max(0, Number(cur.audioTime) || 0) + elapsed;
+          if (forceSeek || Math.abs(playerAudio.currentTime - target) > 0.35) {
+            try { playerAudio.currentTime = target; } catch (e) {}
+          }
+        };
+        if (playerAudio.readyState >= 1) seek();
+        else playerAudio.addEventListener("loadedmetadata", seek, { once: true });
+        if (playing) playPlayerAudioFromHost(version);
+        else playerAudio.pause();
+      }
+      playerAudioEnable.addEventListener("click", () => {
+        if (state?.current?.audioPlaying && state.phase !== "answering")
+          syncPlayerAudioFromHost(true);
+      });
+      socket.on("audioControl", command => {
+        const cur = state?.current;
+        if (
+          !["audio", "audioReveal"].includes(cur?.questionType)
+          || command?.code !== code || command.media !== cur.media
+          || Number(command.stage || 0) !== Number(cur.revealStage || 0)
+          || cur.media !== playerAudio.getAttribute("src")
+          || !["play", "pause", "seek"].includes(command.action)
+          || !Number.isFinite(command.time) || command.time < 0
+        ) return;
+        cur.audioTime = command.time;
+        if (command.action !== "seek") cur.audioPlaying = command.action === "play";
+        cur.audioUpdatedAt = Number(command.sentAt) || serverNow();
+        syncPlayerAudioFromHost(command.action === "seek");
+      });
       function bindPlayerLocalMedia() {
         if (playerVideo.dataset.localGuardBound !== "1") {
           playerVideo.dataset.localGuardBound = "1";
@@ -740,7 +803,10 @@
           playerAudio.addEventListener("timeupdate", guard);
           playerAudio.addEventListener("seeking", guard);
           playerAudio.addEventListener("play", () => {
-            if (state?.phase === "answering") playerAudio.pause();
+            const cur = state?.current;
+            if (!cur?.audioPlaying || cur.media !== playerAudio.getAttribute("src")
+              || !["audio", "audioReveal"].includes(cur.questionType) || state.phase === "answering")
+              playerAudio.pause();
           });
         }
       }

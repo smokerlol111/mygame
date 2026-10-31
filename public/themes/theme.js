@@ -2,6 +2,73 @@
 window.QuizTheme = (() => {
   const cameraContent = new WeakMap();
   const questionFits = new WeakMap();
+  let fittedApp = null, fitFrame = 0, forceFit = false;
+  function fitOBSPanel(panel, force = false) {
+    const style = getComputedStyle(panel);
+    const left = parseFloat(style.paddingLeft) || 0, top = parseFloat(style.paddingTop) || 0;
+    const width = panel.clientWidth - left - (parseFloat(style.paddingRight) || 0);
+    const height = panel.clientHeight - top - (parseFloat(style.paddingBottom) || 0);
+    if (width <= 0 || height <= 0) return;
+    let content = panel.querySelector(':scope > .obsFitContent');
+    if (!content) {
+      content = document.createElement('div');
+      content.className = 'obsFitContent';
+      content.append(...panel.childNodes);
+      panel.append(content);
+      panel.classList.add('obsFitViewport');
+    }
+    const key = JSON.stringify([width, height, content.innerHTML]);
+    if (!force && questionFits.get(content) === key) return;
+    // Reflow at a wider logical width as we reduce the whole content block.
+    // This fits headings, timers, status rows and long words as well as question text.
+    const fits = scale => {
+      content.style.width = `${width / scale}px`;
+      return content.scrollHeight * scale <= height - 1 && content.scrollWidth * scale <= width + 0.5;
+    };
+    let scale = 1;
+    if (!fits(1)) {
+      let low = 0, high = 1;
+      for (let i = 0; i < 14; i++) {
+        const mid = (low + high) / 2;
+        if (fits(mid)) low = mid;
+        else high = mid;
+      }
+      scale = Math.max(low, 1 / 16384);
+      fits(scale);
+    }
+    content.style.transform = `scale(${scale})`;
+    content.style.left = `${left}px`;
+    content.style.top = `${top + Math.max(0, (height - content.scrollHeight * scale) / 2)}px`;
+    questionFits.set(content, key);
+  }
+  function fitOBS(app, force = false) {
+    if (!app || document.body.dataset.uiTheme !== 'halloween') return;
+    const layout = app.querySelector('.obsGameLayout');
+    if (layout) {
+      for (const panel of layout.querySelectorAll('.obsSegmentQuestion,.obsSegmentAnswer:not(.is-empty)'))
+        fitOBSPanel(panel, force);
+    } else if (!app.querySelector('.grid')) fitOBSPanel(app, force);
+  }
+  function observeOBSFit(app) {
+    if (fittedApp === app) return;
+    fittedApp = app;
+    const schedule = (force = false) => {
+      forceFit ||= force;
+      if (fitFrame) return;
+      fitFrame = requestAnimationFrame(() => {
+        fitFrame = 0;
+        const force = forceFit;
+        forceFit = false;
+        fitOBS(app, force);
+      });
+    };
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => schedule()).observe(app);
+    // Timer/status text can change without a full render. Ignore fitting's own style writes.
+    new MutationObserver(() => schedule()).observe(app, {subtree:true, childList:true, characterData:true});
+    app.addEventListener('load', () => schedule(true), true);
+    window.addEventListener('resize', () => schedule(true));
+    document.fonts?.ready.then(() => schedule(true));
+  }
   function setText(element, value) {
     if (element.textContent !== value) element.textContent = value;
   }
@@ -51,8 +118,10 @@ window.QuizTheme = (() => {
   function renderOBS(state, app) {
     const theme = apply(state);
     if (!theme) {
-      const layout = app?.querySelector(".obsGameLayout");
-      if (layout) questionFits.delete(layout);
+      for (const content of [...(app?.querySelectorAll('.obsFitContent') || [])].reverse()) {
+        content.parentElement.classList.remove('obsFitViewport');
+        content.replaceWith(...content.childNodes);
+      }
       document.getElementById("halloweenHeader")?.remove();
       document.getElementById("halloweenCameras")?.remove();
       document.getElementById("halloweenBroadcast")?.remove();
@@ -131,20 +200,9 @@ window.QuizTheme = (() => {
       if (layout.classList.contains("halloween-has-media") !== hasMedia) layout.classList.toggle("halloween-has-media", hasMedia);
       const hasVisual = !!media?.querySelector("img, video");
       if (layout.classList.contains("halloween-has-visual") !== hasVisual) layout.classList.toggle("halloween-has-visual", hasVisual);
-      const panel = layout.querySelector(".obsSegmentQuestion");
-      const question = panel?.querySelector(".question");
-      if (question) {
-        const fitKey = JSON.stringify([question.textContent, panel.clientWidth, panel.clientHeight, hasMedia, hasVisual]);
-        if (questionFits.get(layout) === fitKey) return;
-        if (question.style.fontSize) question.style.removeProperty('font-size');
-        let size = parseFloat(getComputedStyle(question).fontSize);
-        while (panel.scrollHeight > panel.clientHeight + 1 && size > 18) {
-          size = Math.max(18, size - 1);
-          question.style.fontSize = `${size}px`;
-        }
-        questionFits.set(layout, fitKey);
-      }
     }
+    observeOBSFit(app);
+    fitOBS(app);
   }
   function bind(socket, getState, afterChange = () => {}) {
     socket.on("uiThemeChanged", update => {

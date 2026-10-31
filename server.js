@@ -966,8 +966,8 @@ io.on("connection", socket => {
     cb({ ok: true });
   });
 
-  // VIDEO and AUDIO are intentionally independent.
-  // PLAYER devices control their own local media. Only OBS mirrors HOST.
+  // VIDEO and AUDIO use separate commands. Both OBS and PLAYER follow HOST;
+  // PLAYER has no local playback controls.
   socket.on("hostVideoControl", (payload = {}, cb = () => {}) => {
     const room = getRoom(payload.code);
     if (!room || !isHost(socket, room) || room.current?.questionType !== "video") return cb({ ok: false });
