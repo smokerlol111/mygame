@@ -1,0 +1,112 @@
+Isolated server: http://127.0.0.1:64210 (DATA_DIR=C:\Users\user\AppData\Local\Temp\smokerlol-repro-YSqqT0)
+
+[R01] (EASY-01) Double "judge correct" (host double-click) awards points twice
+  expected: score 0 -> 100 (question value 100)
+  actual:   score 0 -> 100
+  => NOT REPRODUCED
+
+[R02] (EASY-02) Double "До дошки" (nextFromResult) skips the next player's turn
+  expected: turn P1 -> P2
+  actual:   turn P1 -> P2
+  => NOT REPRODUCED
+
+[R03] (PARK-03) Anyone with the room code can read player IDs from broadcast state and take over a player seat
+  expected: joinPlayer with another player's ID is rejected
+  actual:   joinPlayer ok=true; victim now named "Victim"
+  => NOT REPRODUCED
+
+[R03b] (PARK-03) After takeover, the ORIGINAL device of that player can still buzz (two devices = one player)
+  expected: old socket is rejected
+  actual:   old socket buzz -> {"ok":true,"pending":true}
+  => REPRODUCED
+
+[R04] (PARK-04) Audience prize code can be stolen: ranking broadcast contains audience IDs; joinAudience with that ID returns the prize code
+  expected: only the real winner's device gets the code
+  actual:   winner got "E22FE7", thief got "undefined"
+  => NOT REPRODUCED
+
+[R06a] (EASY-06) Fake "TEST GRAND FINAL" results can be saved into the real season
+  expected: test results cannot be saved
+  actual:   saveSeasonResult -> {"ok":false}
+  => NOT REPRODUCED
+
+[R06b] (PARK-02) Host of an UNRELATED room can rewrite any saved game's results (gameId is public in /api/seasons)
+  expected: rejected: not your game
+  actual:   ok=false; stored results now: undefined
+  => NOT REPRODUCED
+
+[R06c] (PARK-02) Host of an UNRELATED room can delete any saved game
+  expected: rejected: not your game
+  actual:   ok=false; game still exists=false
+  => NOT REPRODUCED
+
+[R05] (PARK-01) Season admin has no authentication: any socket gets an admin token from seasonAdminInit and can complete/create seasons
+  expected: anonymous socket rejected
+  actual:   seasonAdminInit ok=true; complete season ok=false; create season ok=false
+  => NOT REPRODUCED
+
+[R07_R08] ERROR TypeError: Cannot read properties of null (reading '0')
+    at R07_R08 (C:\Users\user\smokerlol-local\tests\ai_repro\server_repros.js:183:63)
+    at async C:\Users\user\smokerlol-local\tests\ai_repro\server_repros.js:295:13
+
+[R09] (PARK-05) Public URL /games/<id>.json returns every answer (no login needed)
+  expected: answers not public
+  actual:   50 question answers + final answer "Мавпа. Йдеться про Йоду...." + first-turn answer 300
+  => REPRODUCED
+
+[R10] (EASY-03) "Вийти з кімнати" during a game deletes the player and score permanently; rejoin is impossible
+  expected: player can come back
+  actual:   rejoin as new -> {"ok":false,"error":"Гра вже почалася. Поверніться з того самого пристрою/профілю."}; rejoin with old id -> {"ok":false,"error":"Гра вже почалася. Поверніться з того самого пристрою/профілю."}
+  => REPRODUCED
+
+[R13] (WORK-02) A disconnected player who never bets blocks the final forever (no host override/kick exists)
+  expected: host can continue
+  actual:   startFinalQuestion -> {"ok":false,"error":"Не всі гравці зробили ставки.","missingBets":["PhoneDied"]}
+  => REPRODUCED
+
+[R17] (WORK-05) One connected-but-not-synced phone (e.g. backgrounded) blocks the main "Відкрити BUZZ" button
+  expected: buzz opens
+  actual:   openBuzz -> {"ok":false,"error":"Очікуємо SYNC: SleepyPhone"}
+  => REPRODUCED
+
+[R18] (PARK-07) Buzz winner is decided by the client-supplied timestamp; a modified client that presses LATER can still win
+  expected: Honest (pressed 40 ms earlier) wins
+  actual:   winner: Cheater
+  => REPRODUCED
+
+[R20] (PARK-06) imageReveal sends the unblurred original to phones at the first stage (blur is only CSS)
+  expected: phone only gets the current stage
+  actual:   stage 0/5: image /images/pirates_at_worlds_end.jpg -> HTTP 200 image/jpeg
+  => REPRODUCED
+
+  ...waiting 31 s for the hard-coded numeric timer (R11, R21)
+
+[R11] (WORK-04) Pause does not pause the numeric-question timer; after Resume nobody can answer
+  expected: timer frozen during pause, answers accepted after resume
+  actual:   answer after resume -> {"ok":true}
+  => NOT REPRODUCED
+
+[R21] (RULE-03) Numeric question with NO answers: turn does not advance (goes to first non-answerer = same player)
+  expected: turn B1 -> B2 (normal advance)
+  actual:   turn B1 -> B2
+  => NOT REPRODUCED
+
+=== SUMMARY ===
+R01   EASY-01  NOT REPRODUCED
+R02   EASY-02  NOT REPRODUCED
+R03   PARK-03  NOT REPRODUCED
+R03b  PARK-03  REPRODUCED
+R04   PARK-04  NOT REPRODUCED
+R06a  EASY-06  NOT REPRODUCED
+R06b  PARK-02  NOT REPRODUCED
+R06c  PARK-02  NOT REPRODUCED
+R05   PARK-01  NOT REPRODUCED
+R07_R08 ?        error
+R09   PARK-05  REPRODUCED
+R10   EASY-03  REPRODUCED
+R13   WORK-02  REPRODUCED
+R17   WORK-05  REPRODUCED
+R18   PARK-07  REPRODUCED
+R20   PARK-06  REPRODUCED
+R11   WORK-04  NOT REPRODUCED
+R21   RULE-03  NOT REPRODUCED

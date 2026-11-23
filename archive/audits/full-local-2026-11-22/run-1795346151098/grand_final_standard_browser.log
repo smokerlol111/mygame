@@ -1,0 +1,3 @@
+PASS: 198 actual Edge HOST/PLAYER/OBS renders, 54 decoded question images, standard colors/layout unchanged by Halloween CSS; live default room, start and two-way theme change
+PASS: all 29 Grand Final image/audio/video paths decode in Edge and each audio/video advances during muted playback; every configured STOP is inside its file
+PASS: all 6 actual HOST video players pause at their configured STOP during native Edge playback (seek to 0.3 s before the mark; tolerance 0.08 s)

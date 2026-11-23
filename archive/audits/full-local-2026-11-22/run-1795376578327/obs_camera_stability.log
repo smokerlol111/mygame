@@ -1,0 +1,3 @@
+PASS: 8 live transitions, player and screen reconnect, room close; fixed windows
+PASS: 1920x1080: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames
+PASS: 1280x720: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames

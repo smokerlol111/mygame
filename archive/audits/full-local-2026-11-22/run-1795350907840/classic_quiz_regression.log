@@ -1,0 +1,4 @@
+PASS: arbitrary pool size, 60-second authoritative deadline, pause/resume, last-ms/late/stale packets, private answers, five teams, manual judgments, idempotent scoring, tied places and timer cleanup
+PASS: real HTTP/Socket.IO, five captains, private responses, secret-key reconnect, old socket revocation, cross-mode/role isolation, manual scoring and stale-question guards
+Waiting for the real 60-second classic answer deadline...
+PASS: real deadline/late rejection, finish, private export history, no secret token in results and complete room cleanup

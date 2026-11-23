@@ -1,0 +1,2755 @@
+// Load local settings before storage, server and Discord initialization.
+// Existing environment variables take precedence over the file.
+try {
+  process.loadEnvFile(process.env.DOTENV_CONFIG_PATH || require("path").join(__dirname, ".env"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const storage = require("./storage");
+const QRCode = require("qrcode");
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: true, credentials: true }, pingInterval: 5000, pingTimeout: 20000 });
+const PORT = process.env.PORT || 3000;
+// HOST_KEY (.env; start-local.ps1 creates it once): only its holder can create rooms,
+// manage seasons and read full game JSON. Not set = open access, as before.
+const HOST_KEY = String(process.env.HOST_KEY || '').trim();
+const HOST_KEY_ERROR = 'Потрібен ключ ведучого: відкрийте /host за посиланням із ключем.';
+function hostKeyOk(key) { return !HOST_KEY || key === HOST_KEY; }
+const gamesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, "games", "index.json"), "utf8"));
+const games = new Map();
+for (const meta of gamesIndex.filter(g => g.enabled !== false)) {
+  const game = JSON.parse(fs.readFileSync(path.join(__dirname, "games", meta.file), "utf8"));
+  games.set(meta.id, {
+    ...game,
+    id: meta.id,
+    menuTitle: meta.title || game.menuTitle || game.title,
+    menuIcon: meta.icon || game.menuIcon || "🎮",
+    description: meta.description || game.description || "",
+  });
+}
+const DEFAULT_GAME_ID = gamesIndex.find(g => g.enabled !== false)?.id || "kinohardkor";
+const rooms = new Map();
+
+function getGameById(id) {
+  return games.get(String(id || DEFAULT_GAME_ID)) || games.get(DEFAULT_GAME_ID);
+}
+function getRoomGame(room) {
+  return room?.gameData || getGameById(room?.gameId);
+}
+
+// Always serve the current deployed UI. This prevents Safari/iPhone from
+// keeping an older play/host/screen page after a new Render deployment.
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/socket.io/")) {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+    res.set("Surrogate-Control", "no-store");
+  }
+  next();
+});
+
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    etag: false,
+    lastModified: false,
+    maxAge: 0,
+  }),
+);
+app.get("/", (_, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/host", (_, res) => res.sendFile(path.join(__dirname, "public", "host.html")));
+app.get("/play", (_, res) => res.sendFile(path.join(__dirname, "public", "play.html")));
+app.get("/audience", (_, res) => res.sendFile(path.join(__dirname, "public", "audience.html")));
+app.get("/audience/:code", (_, res) => res.sendFile(path.join(__dirname, "public", "audience.html")));
+function publicBaseUrl(req) {
+  // The launcher updates this file even when it reuses an already running server.
+  let configured = process.env.PUBLIC_URL;
+  if (!configured) {
+    try {
+      configured = fs.readFileSync(process.env.FUNNEL_URL_FILE || path.join(__dirname, ".funnel-url"), "utf8").trim();
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  if (configured) {
+    const url = new URL(configured);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password)
+      throw new Error("PUBLIC_URL must be an HTTP(S) address without credentials.");
+    return url.origin;
+  }
+  const forwardProto = String(req.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
+  return `${forwardProto === "https" ? "https" : req.protocol}://${req.get("host")}`;
+}
+app.get("/public-config.js", (req, res) => {
+  const base = JSON.stringify(publicBaseUrl(req)).replace(/</g, "\\u003c");
+  res.type("application/javascript").send(`window.PUBLIC_GAME_URL = ${base};`);
+});
+app.get("/audience-qr/:code", async (req, res) => {
+  try {
+    const c = String(req.params.code || "").toUpperCase();
+    const base = publicBaseUrl(req);
+    const svg = await QRCode.toString(`${base}/audience/${encodeURIComponent(c)}`, {
+      type: "svg",
+      margin: 1,
+      width: 360,
+      errorCorrectionLevel: "M",
+    });
+    res.type("image/svg+xml").send(svg);
+  } catch (e) {
+    res.status(500).send("QR error");
+  }
+});
+
+app.get("/games", (_, res) => res.json(gamesIndex.filter(g => g.enabled !== false).map(({ file, ...g }) => g)));
+app.get("/games/:id.json", (req, res) => {
+  const meta = gamesIndex.find(g => g.id === req.params.id && g.enabled !== false);
+  if (!meta) return res.status(404).json({ error: "Гру не знайдено." });
+  // Special-cell positions are HOST-only secrets; never publish them in game JSON.
+  const game = games.get(meta.id);
+  if (!game) return res.status(404).json({ error: "Гру не знайдено." });
+  const { specialSetup, specialPools, ...publicGame } = game;
+  if (hostKeyOk(req.query.key)) return res.json(publicGame);
+  // Without the key: only what the OBS board needs (category names, values). No questions or answers.
+  res.json({ id: game.id, rounds: (game.rounds || []).map(r => ({ categories: (r.categories || []).map(c => ({ name: c.name, questions: (c.questions || []).map(q => ({ value: q.value })) })) })) });
+});
+app.get("/screen", (_, res) => res.sendFile(path.join(__dirname, "public", "screen.html")));
+app.get("/screen/:code", (_, res) => res.sendFile(path.join(__dirname, "public", "screen.html")));
+app.get("/health", (_, res) => res.json({ ok: true, version: "3.1.0-dev", rooms: rooms.size }));
+app.get("/seasons", (_, res) => res.sendFile(path.join(__dirname, "public", "seasons.html")));
+app.get("/api/seasons", async (_, res) => {
+  try {
+    res.json(await storage.publicData());
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Не вдалося завантажити сезони." });
+  }
+});
+
+function code() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  do {
+    out = Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  } while (rooms.has(out));
+  return out;
+}
+
+function publicState(room) {
+  return {
+    code: room.code,
+    title: getRoomGame(room).title,
+    gameId: room.gameId,
+    uiTheme: (room.uiTheme === undefined ? getRoomGame(room).uiTheme : room.uiTheme) === "halloween" ? "halloween" : null,
+    isGrandFinal: getRoomGame(room).isGrandFinal === true,
+    isTestResult: !!room.isTestResult,
+    gameMenuTitle: getRoomGame(room).menuTitle || getRoomGame(room).title,
+    phase: room.phase,
+    paused: !!room.paused,
+    pausedPhase: room.pausedPhase || null,
+    round: room.round,
+    used: room.used,
+    selectedTile: room.phase === "board" ? room.selectedTile || null : null,
+    board: (getRoomGame(room).rounds?.[room.round]?.categories || []).map(cat => ({
+      name: cat.name,
+      questions: (cat.questions || []).map(q => ({ value: q.value })),
+    })),
+    current: room.current
+      ? {
+          type: room.current.type,
+          ci: room.current.ci,
+          qi: room.current.qi,
+          value: room.current.value,
+          q: room.current.q,
+          questionType: room.current.questionType || null,
+          emoji: room.current.emoji || "",
+          image: room.current.image || "",
+          media: room.current.media || "",
+          revealStage: room.current.revealStage,
+          revealValues: room.current.revealValues,
+          revealSeconds: room.current.revealSeconds,
+          pauseAt: room.current.pauseAt,
+          videoContinued: room.current.videoContinued,
+          videoTime: Number(room.current.videoTime || 0),
+          videoPlaying: !!room.current.videoPlaying,
+          videoUpdatedAt: Number(room.current.videoUpdatedAt || 0),
+          audioTime: Number(room.current.audioTime || 0),
+          audioPlaying: !!room.current.audioPlaying,
+          audioUpdatedAt: Number(room.current.audioUpdatedAt || 0),
+          // Answers stay hidden until the server explicitly reveals them.
+          a: room.revealAnswer ? room.current.a : "",
+          answerImage: room.revealAnswer ? room.current.answerImage || "" : "",
+          answerVideo: room.revealAnswer ? room.current.answerVideo || "" : "",
+          answerAudioFile: room.revealAnswer ? room.current.answerAudioFile || "" : "",
+          triplet: room.current.triplet
+            ? {
+                index: room.current.triplet.index,
+                total: room.current.triplet.total,
+                baseValue: room.current.triplet.baseValue,
+                answererId: room.current.triplet.answererId,
+                // UI-06: only value and judged outcomes; prompts and answers are never exposed.
+                steps: room.current.triplet.items.map(x => Number(x.value) || 0),
+                results: (room.current.triplet.results || []).map(x => ({
+                  correct: !!x.correct,
+                  value: Number(x.value) || 0,
+                })),
+              }
+            : undefined,
+        }
+      : null,
+    // Dedicated safe payload for PLAYER/OBS rendering of the currently active question.
+    // This intentionally duplicates only public question fields so UI rendering does not depend
+    // on the internal room.current object shape.
+    activeQuestion: room.current
+      ? {
+          value: room.current.value,
+          q: room.current.q || "",
+          questionType: room.current.questionType || null,
+          emoji: room.current.emoji || "",
+          image: room.current.image || "",
+          media: room.current.media || "",
+          revealStage: room.current.revealStage,
+          revealValues: room.current.revealValues,
+          revealSeconds: room.current.revealSeconds,
+          pauseAt: room.current.pauseAt,
+          videoContinued: room.current.videoContinued,
+          videoTime: Number(room.current.videoTime || 0),
+          videoPlaying: !!room.current.videoPlaying,
+          videoUpdatedAt: Number(room.current.videoUpdatedAt || 0),
+          audioTime: Number(room.current.audioTime || 0),
+          audioPlaying: !!room.current.audioPlaying,
+          audioUpdatedAt: Number(room.current.audioUpdatedAt || 0),
+          a: room.revealAnswer ? room.current.a || "" : "",
+        }
+      : null,
+    buzzer: room.buzzer,
+    catChooser: room.catChooser,
+    catReceiver: room.catReceiver,
+    turnPlayerId: room.turnPlayerId,
+    vaBankPlayer: room.vaBankPlayer,
+    vaBankBet: room.vaBankBet,
+    duelPlayers: room.duelPlayers || [],
+    voice: {
+      speakingPlayerIds: (room.voiceSpeaking || []).filter(id => room.players.some(p => p.id === id)),
+      updatedAt: room.voiceUpdatedAt || 0,
+    },
+    players: room.players.map(p => ({
+      id: p.id,
+      cameraSlot: p.cameraSlot,
+      name: p.name,
+      score: p.score,
+      connected: p.connected,
+      reactionMs: room.buzzReactions?.[p.id] ?? null,
+      reactionWrong: !!room.answeringLocked?.has(p.id),
+      falseStartUntil: Number(p.falseStartUntil || 0),
+      falseStartRemainingMs: Math.max(0, Number(p.falseStartUntil || 0) - Date.now()),
+      networkRttMs: Number.isFinite(p.networkRttMs) ? Math.round(p.networkRttMs) : null,
+      networkJitterMs: Number.isFinite(p.networkJitterMs) ? Math.round(p.networkJitterMs) : null,
+      syncReady: !!p.connected && Number(p.syncSamples || 0) >= 3 && Date.now() - Number(p.lastSyncAt || 0) < 12000,
+      hasBet: p.bet !== null,
+      hasFinalAnswer: !!p.finalAnswer,
+      finalAnswer: ["final_review", "final_result"].includes(room.phase) ? p.finalAnswer : "",
+    })),
+    buzzOpensAt: room.buzzOpensAt || null,
+    answeringLocked: Array.from(room.answeringLocked || []),
+    finalSeconds: room.finalSeconds,
+    revealAnswer: room.revealAnswer,
+    finalResults: room.finalResults || null,
+    finalRevealCount: room.finalRevealCount || 0,
+    savedSeasonGameId: room.savedSeasonGameId || null,
+    savedSeasonId: room.savedSeasonId || null,
+    seasonFinal: room.seasonFinal || null,
+    seasonCeremonyActive: !!room.seasonCeremonyActive,
+    seasonRevealCount: room.seasonRevealCount || 0,
+    numericChallenge: room.numericChallenge
+      ? {
+          question: room.numericChallenge.question,
+          unit: room.numericChallenge.unit || "",
+          value: room.numericChallenge.value,
+          submittedPlayerIds: Object.keys(room.numericAnswers || {}),
+          remainingMs: room.numericEndsAt ? Math.max(0, room.numericEndsAt - Date.now()) : 0,
+          endsAt: null,
+          results: room.phase === "numeric_result" ? room.numericResults : null,
+          revealCount: room.numericRevealCount || 0,
+          correctAnswer: room.phase === "numeric_result" ? room.numericChallenge.answer : null,
+          answerImage: room.phase === "numeric_result" ? room.numericChallenge.answerImage || "" : "",
+        }
+      : null,
+    audience:
+      room.audienceRoundIndex !== null
+        ? (() => {
+            const rounds = getRoomGame(room).audienceRounds || [];
+            const ar = rounds[room.audienceRoundIndex] || null;
+            const aq = ar?.questions?.[room.audienceQuestionIndex] || null;
+            const submitted = Object.keys(room.audienceAnswers || {});
+            const counts = aq
+              ? aq.options.map((_, i) => Object.values(room.audienceAnswers || {}).filter(x => x.option === i).length)
+              : [];
+            const ranking = (room.audienceRanking || []).map(x => ({
+              id: x.id,
+              name: x.name,
+              correct: x.correct,
+              timeMs: x.timeMs,
+              eligible: x.eligible,
+            }));
+            const currentWinner =
+              (room.audienceWinners || []).find(x => x.roundIndex === room.audienceRoundIndex) || null;
+            return {
+              roundIndex: room.audienceRoundIndex,
+              title: ar?.title || "",
+              questionIndex: room.audienceQuestionIndex,
+              totalQuestions: ar?.questions?.length || 0,
+              question: aq ? aq.q : "",
+              options: aq ? aq.options : [],
+              correct: ["audience_result", "audience_podium"].includes(room.phase) ? aq?.correct : null,
+              fact: ["audience_result", "audience_podium"].includes(room.phase) ? aq?.fact : "",
+              questionSeconds: Number(getRoomGame(room).audienceQuestionSeconds || 15),
+              endsAt: room.audienceEndsAt || null,
+              remainingMs: room.audienceEndsAt ? Math.max(0, room.audienceEndsAt - Date.now()) : 0,
+              joined: room.audience.filter(x => x.connected).length,
+              submitted: submitted.length,
+              submittedPlayerIds: submitted,
+              counts,
+              ranking: room.phase === "audience_podium" ? ranking : [],
+              revealCount: room.audienceRevealCount || 0,
+              winner:
+                room.phase === "audience_podium"
+                && room.audienceRevealCount >= Math.min(5, ranking.length)
+                && currentWinner
+                  ? ranking.find(x => x.id === currentWinner.id) || null
+                  : null,
+            };
+          })()
+        : null,
+    firstTurnQuiz: room.firstTurnQuiz
+      ? {
+          title: room.firstTurnQuiz.title,
+          question: room.firstTurnQuiz.question,
+          unit: room.firstTurnQuiz.unit,
+          submittedPlayerIds: Object.keys(room.firstTurnAnswers || {}),
+          timerStatus: room.firstTurnTimerStatus || "ready",
+          duration: 30,
+          remainingMs:
+            room.firstTurnTimerStatus === "running" && room.firstTurnEndsAt
+              ? Math.max(0, room.firstTurnEndsAt - Date.now())
+              : 0,
+          endsAt: null,
+          results: room.phase === "first_turn_result" ? room.firstTurnResults : null,
+          revealCount: room.phase === "first_turn_result" ? room.firstTurnRevealCount || 0 : 0,
+          correctAnswer: room.phase === "first_turn_result" ? room.firstTurnQuiz.answer : null,
+        }
+      : null,
+  };
+}
+
+function emitState(room) {
+  io.to(room.code).emit("state", publicState(room));
+  // Hidden service information is sent only to the authenticated HOST socket.
+  // Players and the OBS screen never receive the special-cell map.
+  if (room.hostSocket)
+    io.to(room.hostSocket).emit("hostSecrets", {
+      code: room.code,
+      specialCells: room.specialCells || {},
+      voiceMappings: room.voiceMappings || {},
+      audienceWinner: room.audienceWinners?.[room.audienceWinners.length - 1] || null,
+    });
+}
+function emitPlayerPresence(room, player) {
+  if (!room || !player) return;
+  // The themed camera row needs presence updates without rebuilding active media.
+  const theme = room.uiTheme === undefined ? getRoomGame(room).uiTheme : room.uiTheme;
+  const target = theme === "halloween" ? room.code : room.hostSocket;
+  if (!target) return;
+  io.to(target).emit("playerPresence", {
+    code: room.code,
+    playerId: player.id,
+    connected: !!player.connected,
+    syncReady:
+      !!player.connected && Number(player.syncSamples || 0) >= 3 && Date.now() - Number(player.lastSyncAt || 0) < 12000,
+  });
+}
+function getRoom(c) {
+  return rooms.get(String(c || "").toUpperCase());
+}
+function isHost(socket, room) {
+  return room && socket.data.hostToken && socket.data.hostToken === room.hostToken;
+}
+function resetQuestionState(room) {
+  room.buzzReactions = {};
+  room.buzzer = null;
+  room.revealAnswer = false;
+  room.resultReason = null;
+  room.answeringLocked = new Set();
+  room.catChooser = null;
+  room.catReceiver = null;
+  room.vaBankPlayer = null;
+  room.vaBankBet = null;
+  room.duelPlayers = [];
+  room.buzzOpensAt = null;
+  room.buzzCandidates = [];
+  if (room.buzzResolveTimer) clearTimeout(room.buzzResolveTimer);
+  room.buzzResolveTimer = null;
+}
+function resetEligibleBuzzReactions(room) {
+  for (const id of Object.keys(room.buzzReactions || {})) {
+    if (!room.answeringLocked.has(id)) delete room.buzzReactions[id];
+  }
+}
+function advanceTurn(room) {
+  if (!room.players.length) {
+    room.turnPlayerId = null;
+    return;
+  }
+  const i = room.players.findIndex(p => p.id === room.turnPlayerId);
+  room.turnPlayerId = room.players[i < 0 ? 0 : (i + 1) % room.players.length].id;
+}
+function finishTile(room) {
+  if (room.current && room.current.type !== "final")
+    room.used[`${room.round}:${room.current.ci}:${room.current.qi}`] = true;
+  advanceTurn(room);
+  room.current = null;
+  resetQuestionState(room);
+  room.phase = "board";
+}
+
+function expireFirstTurn(room) {
+  room.firstTurnTimer = null;
+  room.firstTurnTimerStatus = "expired";
+  room.firstTurnEndsAt = null;
+  emitState(room);
+}
+function startFirstTurnCountdown(room, ms) {
+  const duration = Math.max(0, Number(ms) || 0);
+  clearTimeout(room.firstTurnTimer);
+  room.firstTurnTimerStatus = "running";
+  room.firstTurnEndsAt = Date.now() + duration;
+  room.firstTurnTimer = setTimeout(() => expireFirstTurn(room), duration);
+}
+function startFinalCountdown(room) {
+  clearInterval(room.finalTimer);
+  room.finalGraceTicks = 0;
+  room.finalTimer = setInterval(() => {
+    if (room.paused) return;
+    if (room.finalSeconds > 0) {
+      room.finalSeconds--;
+      emitState(room); // at 0, player pages send any answer that was typed but not sent
+      return;
+    }
+    // WORK-01: keep accepting answers for 2 s after everyone sees 0 (server 32 s, players see 30 s).
+    if (++room.finalGraceTicks < 2) return;
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+    room.phase = "final_review";
+    emitState(room);
+  }, 1000);
+}
+function startNumericCountdown(room, ms) {
+  clearTimeout(room.numericTimer);
+  room.numericEndsAt = Date.now() + ms;
+  room.numericTimer = setTimeout(() => {
+    room.numericTimer = null;
+    if (rooms.get(room.code) === room && room.phase === "numeric_question") {
+      room.numericEndsAt = null;
+      emitState(room);
+    }
+  }, ms);
+}
+function startAudienceCountdown(room, ms) {
+  clearTimeout(room.audienceTimer);
+  room.audienceEndsAt = Date.now() + ms;
+  room.audienceTimer = setTimeout(() => {
+    room.audienceTimer = null;
+    if (rooms.get(room.code) === room && room.phase === "audience_question") {
+      room.audienceEndsAt = null;
+      room.phase = "audience_result";
+      emitState(room);
+    }
+  }, ms);
+}
+function pauseRoom(room) {
+  if (room.paused) return;
+  room.paused = true;
+  room.pausedPhase = room.phase;
+  room.pauseStartedAt = Date.now();
+  room.pauseNumericRemaining = room.phase === "numeric_question" && room.numericEndsAt
+    ? Math.max(0, room.numericEndsAt - Date.now()) : null;
+  room.pauseAudienceRemaining = room.phase === "audience_question" && room.audienceEndsAt
+    ? Math.max(0, room.audienceEndsAt - Date.now()) : null;
+  clearTimeout(room.numericTimer);
+  clearTimeout(room.audienceTimer);
+  room.numericTimer = null;
+  room.audienceTimer = null;
+  if (room.pauseNumericRemaining !== null) room.numericEndsAt = null;
+  if (room.pauseAudienceRemaining !== null) room.audienceEndsAt = null;
+
+  if (room.firstTurnTimerStatus === "running") {
+    room.pauseFirstTurnRemaining = Math.max(0, Number(room.firstTurnEndsAt || 0) - Date.now());
+    clearTimeout(room.firstTurnTimer);
+    room.firstTurnTimer = null;
+    room.firstTurnEndsAt = null;
+    room.firstTurnTimerStatus = "paused";
+  } else room.pauseFirstTurnRemaining = null;
+
+  if (room.phase === "final_question" && room.finalTimer) {
+    room.pauseFinalRemaining = Math.max(0, Number(room.finalSeconds) || 0);
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+  } else room.pauseFinalRemaining = null;
+
+  room.phase = "paused";
+}
+function resumeRoom(room) {
+  if (!room.paused) return;
+  const previous = room.pausedPhase || "board";
+  room.paused = false;
+  room.pausedPhase = null;
+  room.phase = previous;
+  if (previous === "numeric_question" && room.pauseNumericRemaining !== null)
+    startNumericCountdown(room, room.pauseNumericRemaining);
+  if (previous === "audience_question" && room.pauseAudienceRemaining !== null) {
+    room.audienceStartedAt += Math.max(0, Date.now() - room.pauseStartedAt);
+    startAudienceCountdown(room, room.pauseAudienceRemaining);
+  }
+  room.pauseNumericRemaining = null;
+  room.pauseAudienceRemaining = null;
+  room.pauseStartedAt = null;
+
+  if (room.firstTurnTimerStatus === "paused") {
+    const ms = Math.max(0, Number(room.pauseFirstTurnRemaining) || 0);
+    room.pauseFirstTurnRemaining = null;
+    if (ms <= 0) expireFirstTurn(room);
+    else startFirstTurnCountdown(room, ms);
+  }
+
+  if (previous === "final_question" && room.pauseFinalRemaining !== null) {
+    room.finalSeconds = Math.max(0, Number(room.pauseFinalRemaining) || 0);
+    room.pauseFinalRemaining = null;
+    startFinalCountdown(room); // at 0 this only runs the 2 s answer window (WORK-01)
+  }
+}
+
+function randomSpecialCells(room) {
+  const game = getRoomGame(room);
+  if (game.specialSetup?.mode === "season2_balanced") {
+    const out = {};
+    const normal = q =>
+      q
+      && !q.cat
+      && (!q.type || q.type === "normal" || q.type === "text")
+      && !q.media
+      && !q.image
+      && !q.audio
+      && !q.video
+      && !q.numericAnswer
+      && !q.answerImage
+      && !q.answerVideo;
+    // Only games that explicitly opt in may randomly assign special cells to emoji questions.
+    const emojiEligible = q =>
+      game.specialSetup.allowEmojiSpecials === true
+      && q?.type === "emoji"
+      && !q.cat
+      && !!String(q.emoji || "").trim()
+      && !q.media && !q.image && !q.audio && !q.video
+      && !q.numericAnswer && !q.answerImage && !q.answerVideo;
+    // Keep existing fixed emoji cats/VA-BANKs; a fixed emoji duel requires opt-in.
+    for (const [key, kind] of Object.entries(game.specialSetup.fixed || {})) {
+      const [ri, ci, qi] = key.split(":").map(Number);
+      const q = game.rounds?.[ri]?.categories?.[ci]?.questions?.[qi];
+      if (
+        (normal(q) || (q?.type === "emoji" && (["cat", "va_bank"].includes(kind) || (kind === "duel" && emojiEligible(q)))))
+        && ["cat", "duel", "va_bank"].includes(kind)
+      )
+        out[key] = kind;
+    }
+    for (const ri of [0, 1]) {
+      const keys = [];
+      (game.rounds?.[ri]?.categories || []).forEach((cat, ci) =>
+        (cat.questions || []).forEach((q, qi) => {
+          const key = `${ri}:${ci}:${qi}`;
+          if (!out[key] && (normal(q) || emojiEligible(q))) keys.push(key);
+        }),
+      );
+      for (let i = keys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [keys[i], keys[j]] = [keys[j], keys[i]];
+      }
+      const existing = Object.entries(out)
+        .filter(([key]) => key.startsWith(ri + ":"))
+        .map(([, kind]) => kind);
+      for (const kind of ["cat", "duel", "va_bank"]) {
+        if (!existing.includes(kind) && keys.length) out[keys.pop()] = kind;
+      }
+    }
+    return out;
+  }
+  const secondRound = game.rounds?.[1];
+  if (!secondRound?.categories?.length) return {};
+  // Special cells are reserved exclusively for ordinary text questions.
+  // Never replace audio, video, photo/reveal or numerical question mechanics.
+  const eligible = new Set();
+  secondRound.categories.forEach((cat, ci) =>
+    (cat.questions || []).forEach((q, qi) => {
+      if (
+        !q.cat
+        && (!q.type || q.type === "normal" || q.type === "text")
+        && !q.media
+        && !q.image
+        && !q.audio
+        && !q.video
+        && !q.numericAnswer
+        && !q.answerImage
+        && !q.answerVideo
+      ) {
+        eligible.add(`1:${ci}:${qi}`);
+      }
+    }),
+  );
+  const shuffle = a => {
+    a = [...a];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const pools = game.specialPools || null;
+  const available = pools ? new Set(eligible) : eligible;
+  const pick = (pool, count) => shuffle(pool.filter(key => available.has(key))).slice(0, count);
+  const vb = pick(pools ? pools.vaBank || [] : [...eligible], 2);
+  vb.forEach(key => available.delete(key));
+  const duel = pick(pools ? pools.duel || [] : [...eligible], 1);
+  duel.forEach(key => available.delete(key));
+  const out = {};
+  vb.forEach(key => (out[key] = "va_bank"));
+  duel.forEach(key => (out[key] = "duel"));
+  return out;
+}
+
+io.on("connection", socket => {
+  socket.data.seasonAdminToken = crypto.randomUUID();
+  socket.on("createRoom", ({ hostToken, gameId, hostKey } = {}, cb = () => {}) => {
+    if (!hostKeyOk(hostKey)) return cb({ ok:false, error:HOST_KEY_ERROR });
+    const selectedGame = getGameById(gameId);
+    if (!selectedGame) return cb({ ok: false, error: "Гру не знайдено." });
+    const roomCode = code();
+    const token = hostToken || crypto.randomUUID();
+    const room = {
+      code: roomCode,
+      hostToken: token,
+      hostSocket: socket.id,
+      gameId: selectedGame.id || gameId || DEFAULT_GAME_ID,
+      gameData: selectedGame,
+      voiceMappings: {},
+      voiceSpeaking: [],
+      voiceUpdatedAt: 0,
+      players: [],
+      phase: "lobby",
+      round: 0,
+      used: {},
+      selectedTile: null,
+      current: null,
+      buzzer: null,
+      revealAnswer: false,
+      answeringLocked: new Set(),
+      catChooser: null,
+      catReceiver: null,
+      turnPlayerId: null,
+      specialCells: {},
+      vaBankPlayer: null,
+      vaBankBet: null,
+      duelPlayers: [],
+      finalSeconds: 30,
+      finalTimer: null,
+      finalResults: null,
+      finalRevealCount: 0,
+      savedSeasonGameId: null,
+      savedSeasonId: null,
+      seasonFinal: null,
+      seasonCeremonyActive: false,
+      seasonRevealCount: 0,
+      firstTurnQuiz: selectedGame.firstTurnQuiz || null,
+      firstTurnAnswers: {},
+      firstTurnResults: null,
+      firstTurnTimerStatus: "ready",
+      firstTurnEndsAt: null,
+      firstTurnTimer: null,
+      firstTurnRevealCount: 0,
+      numericChallenge: null,
+      numericAnswers: {},
+      numericSubmittedAt: {},
+      numericResults: null,
+      numericEndsAt: null,
+      numericTimer: null,
+      numericRevealCount: 0,
+      audience: [],
+      audienceRoundIndex: null,
+      audienceQuestionIndex: 0,
+      audienceAnswers: {},
+      audienceStartedAt: null,
+      audienceEndsAt: null,
+      audienceTimer: null,
+      audienceReturnPhase: null,
+      audienceRevealCount: 0,
+      audienceWinners: [],
+      paused: false,
+      pausedPhase: null,
+      pauseFirstTurnRemaining: null,
+      pauseFinalRemaining: null,
+      buzzCandidates: [],
+      buzzResolveTimer: null,
+      buzzReactions: {},
+    };
+    rooms.set(roomCode, room);
+    socket.data.hostToken = token;
+    socket.data.roomCode = roomCode;
+    socket.join(roomCode);
+    cb({
+      ok: true,
+      code: roomCode,
+      hostToken: token,
+      gameId: room.gameId,
+      state: publicState(room),
+      specialCells: room.specialCells || {},
+      voiceMappings: room.voiceMappings || {},
+    });
+    emitState(room);
+  });
+
+  socket.on("getRoomTheme", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room) return cb({ ok: false });
+    const selected = room.uiTheme === undefined ? getRoomGame(room).uiTheme : room.uiTheme;
+    // Public presentation metadata only; looking up a theme does not join the room.
+    cb({ ok: true, code: room.code, uiTheme: selected === "halloween" ? "halloween" : null });
+  });
+
+  socket.on("setUiTheme", ({ code: c, uiTheme } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Тему змінює тільки ведучий кімнати." });
+    if (uiTheme !== null && uiTheme !== "halloween") return cb({ ok: false, error: "Невідома тема оформлення." });
+    const previous = (room.uiTheme === undefined ? getRoomGame(room).uiTheme : room.uiTheme) === "halloween" ? "halloween" : null;
+    room.uiTheme = uiTheme;
+    if (previous === uiTheme) return cb({ ok: true, uiTheme, changed: false });
+    // A presentation-only update preserves focused inputs and active media.
+    io.to(room.code).emit("uiThemeChanged", { code: room.code, uiTheme });
+    cb({ ok: true, uiTheme });
+  });
+
+  socket.on("rejoinHost", ({ code: c, hostToken }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room || room.hostToken !== hostToken)
+      return cb({ ok: false, error: "Кімнату або ключ ведучого не знайдено." });
+    room.hostSocket = socket.id;
+    socket.data.hostToken = hostToken;
+    socket.data.roomCode = room.code;
+    socket.join(room.code);
+    cb({
+      ok: true,
+      code: room.code,
+      gameId: room.gameId,
+      state: publicState(room),
+      specialCells: room.specialCells || {},
+    });
+    // Rejoining HOST already receives the full room state in the callback.
+    // Do not rebroadcast it and rebuild active media on every client.
+  });
+
+  socket.on("joinPlayer", ({ code: c, name, playerKey }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room) return cb({ ok: false, error: "Кімнату не знайдено." });
+    // Rejoin only with the secret key: player ids are public (state.players).
+    let p = playerKey ? room.players.find(x => x.key === playerKey) : null;
+    const reconnectingExistingPlayer = !!p;
+    if (!p) {
+      if (room.phase !== "lobby")
+        return cb({ ok: false, error: "Гра вже почалася. Поверніться з того самого пристрою/профілю." });
+      if (room.players.length >= 4) return cb({ ok: false, error: "У кімнаті вже 4 гравці." });
+      const clean =
+        String(name || "").trim().slice(0, 20) || `Гравець ${room.players.length + 1}`;
+      p = { id: crypto.randomUUID(), key: crypto.randomBytes(16).toString('hex'), name: clean,
+        cameraSlot: [0, 1, 2, 3].find(slot => !room.players.some(player => player.cameraSlot === slot)),
+        score: 0,
+        socketId: socket.id,
+        connected: true,
+        bet: null,
+        finalAnswer: "",
+        falseStartUntil: 0,
+        networkRttMs: null,
+        networkJitterMs: null,
+        syncSamples: 0,
+        lastSyncAt: 0,
+      };
+      room.players.push(p);
+    } else {
+      p.socketId = socket.id;
+      p.connected = true;
+      p.syncSamples = 0;
+      p.lastSyncAt = 0;
+      if (name) p.name = String(name).trim().slice(0, 20) || p.name;
+    }
+    socket.data.playerId = p.id;
+    socket.data.roomCode = room.code;
+    socket.join(room.code);
+    cb({ ok: true, playerId: p.id, playerKey: p.key, code: room.code, name: p.name, state: publicState(room) });
+    if (reconnectingExistingPlayer && room.phase !== "lobby") {
+      // Refreshing a player phone must not reset HOST/OBS/video on the rest of the room.
+      emitPlayerPresence(room, p);
+    } else {
+      emitState(room);
+    }
+  });
+
+  socket.on("leavePlayer", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c || socket.data.roomCode);
+    if (!room) {
+      socket.data.playerId = null;
+      socket.data.roomCode = null;
+      return cb({ ok: true });
+    }
+    const pid = socket.data.playerId;
+    const idx = room.players.findIndex(x => x.id === pid);
+    if (idx >= 0) {
+      const wasTurn = room.turnPlayerId === pid;
+      room.players.splice(idx, 1);
+      if (wasTurn)
+        room.turnPlayerId = room.players.length ? room.players[Math.min(idx, room.players.length - 1)].id : null;
+    }
+    socket.leave(room.code);
+    socket.data.playerId = null;
+    socket.data.roomCode = null;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  // v3.0.1 — lightweight NTP-style clock sync. The client measures RTT and
+  // estimates server clock offset from the midpoint of the request.
+  socket.on("timeSync", ({ clientSentAt } = {}, cb = () => {}) => {
+    const serverReceivedAt = Date.now();
+    cb({ ok: true, clientSentAt: Number(clientSentAt) || 0, serverReceivedAt, serverSentAt: Date.now() });
+  });
+
+  socket.on("reportNetworkStats", ({ code: c, rttMs, jitterMs, samples } = {}, cb = () => {}) => {
+    const room = getRoom(c || socket.data.roomCode);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || p.socketId !== socket.id || !p.connected) return cb({ ok: false });
+    const rtt = Number(rttMs),
+      jitter = Number(jitterMs);
+    if (Number.isFinite(rtt) && rtt >= 0 && rtt < 10000) p.networkRttMs = rtt;
+    if (Number.isFinite(jitter) && jitter >= 0 && jitter < 10000) p.networkJitterMs = jitter;
+    p.syncSamples = Math.min(8, Math.max(0, Number(samples) || 0));
+    p.lastSyncAt = Date.now();
+    cb({ ok: true });
+    if (room.hostSocket)
+      io.to(room.hostSocket).emit("networkStats", {
+        code: room.code,
+        playerId: p.id,
+        rttMs: p.networkRttMs,
+        jitterMs: p.networkJitterMs,
+        syncReady: p.syncSamples >= 3,
+        connected: p.connected,
+      });
+  });
+
+  socket.on("togglePause", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    if (room.phase === "lobby" || room.phase === "final_result")
+      return cb({ ok: false, error: "Пауза на цьому етапі не потрібна." });
+    if (room.paused) resumeRoom(room);
+    else pauseRoom(room);
+    cb({ ok: true, paused: room.paused });
+    emitState(room);
+  });
+
+  socket.on("emergencyReopenBuzz", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current) return cb({ ok: false, error: "Немає активного питання." });
+    if (room.paused) return cb({ ok: false, error: "Спочатку зніміть паузу." });
+    if (room.current.type === "final" || ["cat_question", "va_bank_question"].includes(room.phase))
+      return cb({ ok: false, error: "Для цього типу питання BUZZ не використовується." });
+    const leadMs = 1200;
+    resetEligibleBuzzReactions(room);
+    room.buzzer = null;
+    room.phase = "buzz";
+    room.resultReason = null;
+    room.buzzCandidates = [];
+    if (room.buzzResolveTimer) {
+      clearTimeout(room.buzzResolveTimer);
+      room.buzzResolveTimer = null;
+    }
+    room.buzzOpensAt = Date.now() + leadMs;
+    io.to(room.code).emit("buzzScheduled", { opensAt: room.buzzOpensAt });
+    setTimeout(() => {
+      if (rooms.get(room.code) === room && room.phase === "buzz" && !room.buzzer)
+        io.to(room.code).emit("cue", {
+          type: "buzz_open",
+          at: room.buzzOpensAt,
+          playerIds: [...(room.duelPlayers || [])],
+        });
+    }, leadMs);
+    cb({ ok: true, opensAt: room.buzzOpensAt });
+    emitState(room);
+  });
+
+  socket.on("emergencyRevealQuestion", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current || room.current.type === "final")
+      return cb({ ok: false, error: "Немає активного звичайного питання." });
+    if (room.paused) return cb({ ok: false, error: "Спочатку зніміть паузу." });
+    room.buzzer = null;
+    room.revealAnswer = true;
+    room.resultReason = "host_emergency";
+    if (room.current?.questionType === "video") {
+      room.current.videoContinued = true;
+      room.current.videoPlaying = false;
+      room.current.videoUpdatedAt = Date.now();
+    }
+    room.phase = "result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("emergencyFinishTile", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current || room.current.type === "final")
+      return cb({ ok: false, error: "Немає активного питання." });
+    if (room.paused) return cb({ ok: false, error: "Спочатку зніміть паузу." });
+    finishTile(room);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("adjustScore", ({ code: c, playerId, amount } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу до цієї кімнати." });
+    if (room.savedSeasonGameId)
+      return cb({ ok: false, error: "Результат уже збережено в сезон. Спочатку видаліть його з сезону, потім скоригуйте бали й збережіть знову." });
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return cb({ ok: false, error: "Гравця не знайдено." });
+
+    const delta = Number(amount);
+    if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 100000)
+      return cb({ ok: false, error: "Вкажіть ціле число від -100000 до 100000, крім 0." });
+
+    player.score += delta;
+
+    // Якщо коригування зроблено вже після фінального підрахунку —
+    // одразу оновлюємо й фінальну таблицю.
+    if (room.phase === "final_result" && Array.isArray(room.finalResults)) {
+      const entry = room.finalResults.find(r => r.id === player.id);
+      if (entry) entry.score = player.score;
+      room.finalResults.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "uk"));
+    }
+
+    cb({ ok: true, playerId: player.id, score: player.score, delta });
+    emitState(room);
+  });
+
+  socket.on("closeRoom", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу до цієї кімнати." });
+    if (room.finalTimer) clearInterval(room.finalTimer);
+    if (room.firstTurnTimer) clearTimeout(room.firstTurnTimer);
+    if (room.audienceTimer) clearTimeout(room.audienceTimer);
+    io.to(room.code).emit("roomClosed", { code: room.code, message: "Ведучий закрив кімнату." });
+    rooms.delete(room.code);
+    socket.leave(room.code);
+    socket.data.roomCode = null;
+    cb({ ok: true });
+  });
+
+  // VIDEO and AUDIO use separate commands. Both OBS and PLAYER follow HOST;
+  // PLAYER has no local playback controls.
+  socket.on("hostVideoControl", (payload = {}, cb = () => {}) => {
+    const room = getRoom(payload.code);
+    if (!room || !isHost(socket, room) || room.current?.questionType !== "video") return cb({ ok: false });
+    const action = String(payload.action || "");
+    const time = Number(payload.time);
+    if (!["play", "pause", "seek"].includes(action) || !Number.isFinite(time) || time < 0) return cb({ ok: false });
+    room.current.videoTime = time;
+    room.current.videoPlaying = action === "play" ? true : action === "pause" ? false : !!room.current.videoPlaying;
+    room.current.videoUpdatedAt = Date.now();
+    socket.to(room.code).emit("videoControl", {
+      code: room.code,
+      action,
+      time,
+      media: room.current.media,
+      stopAt: Number(room.current.pauseAt || 0),
+      continued: !!room.current.videoContinued,
+      sentAt: room.current.videoUpdatedAt,
+    });
+    cb({ ok: true });
+  });
+  socket.on("hostAudioControl", (payload = {}, cb = () => {}) => {
+    const room = getRoom(payload.code);
+    if (!room || !isHost(socket, room) || !["audio", "audioReveal"].includes(room.current?.questionType))
+      return cb({ ok: false });
+    const action = String(payload.action || "");
+    const time = Number(payload.time);
+    if (!["play", "pause", "seek"].includes(action) || !Number.isFinite(time) || time < 0) return cb({ ok: false });
+    room.current.audioTime = time;
+    room.current.audioPlaying = action === "play" ? true : action === "pause" ? false : !!room.current.audioPlaying;
+    room.current.audioUpdatedAt = Date.now();
+    socket.to(room.code).emit("audioControl", {
+      code: room.code,
+      action,
+      time,
+      media: room.current.media,
+      stage: Number(room.current.revealStage || 0),
+      sentAt: room.current.audioUpdatedAt,
+    });
+    cb({ ok: true });
+  });
+  socket.on("joinScreen", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room) return cb({ ok: false, error: "Кімнату не знайдено." });
+    socket.data.roomCode = room.code;
+    socket.join(room.code);
+    cb({ ok: true, code: room.code });
+    // OBS receives its own current snapshot. Its reload must not make HOST/PLAYER rerender media.
+    socket.emit("state", publicState(room));
+  });
+
+  // HOST-only Discord Active Speaker controls and player mappings.
+  socket.on("voiceGetStatus", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може переглядати статус Discord." });
+    cb({ ok: true, status: voiceBotStatus, error: voiceBotError });
+  });
+  socket.on("voiceSetEnabled", ({ code: c, enabled }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може керувати Discord Active Speaker." });
+    if (!voiceBotProcess?.connected) return cb({ ok: false, error: "Discord-бот зараз недоступний." });
+    voiceBotError = "";
+    voiceBotStatus = enabled ? "connecting" : "disconnected";
+    voiceBotProcess.send({ type: enabled ? "voiceConnect" : "voiceDisconnect" });
+    if (!enabled) {
+      voiceLastEvent = 0;
+      clearDiscordSpeaking();
+    }
+    io.to(room.hostSocket).emit("voiceBotStatus", { code: room.code, status: voiceBotStatus, error: "" });
+    cb({ ok: true, status: voiceBotStatus });
+  });
+  socket.on("voiceSetMapping", ({ code: c, playerId, discordId }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може змінювати прив’язки." });
+    if (!room.players.some(p => p.id === playerId)) return cb({ ok: false, error: "Гравця не знайдено." });
+    const id = String(discordId || "").trim();
+    if (id && !/^\d{17,20}$/.test(id))
+      return cb({ ok: false, error: "Введіть Discord User ID (17–20 цифр) або залиште поле порожнім." });
+    if (id && Object.entries(room.voiceMappings || {}).some(([p, v]) => p !== playerId && v === id))
+      return cb({ ok: false, error: "Цей Discord ID вже прив’язано." });
+    room.voiceMappings = room.voiceMappings || {};
+    if (id) room.voiceMappings[playerId] = id;
+    else delete room.voiceMappings[playerId];
+    io.to(room.hostSocket).emit("voiceMappings", { code: room.code, mappings: room.voiceMappings });
+    cb({ ok: true });
+  });
+  socket.on("voiceTestSpeaking", ({ code: c, playerIds }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може запускати тест." });
+    const valid = new Set(room.players.map(p => p.id));
+    room.voiceSpeaking = [...new Set(Array.isArray(playerIds) ? playerIds : [])]
+      .filter(id => valid.has(id))
+      .slice(0, 4);
+    room.voiceUpdatedAt = Date.now();
+    emitState(room);
+    cb({ ok: true });
+  });
+
+  socket.on("startGame", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "lobby") return cb({ ok: false, error: "Гру можна почати лише з лобі." });
+    if (room.players.length < 1) return cb({ ok: false, error: "Потрібен хоча б один гравець." });
+    clearTimeout(room.firstTurnTimer);
+    room.firstTurnTimer = null;
+    room.round = 0;
+    room.used = {};
+    room.finalResults = null;
+    room.finalRevealCount = 0;
+    room.specialCells = randomSpecialCells(room);
+    room.selectedTile = null;
+    room.turnPlayerId = null;
+    room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
+    room.firstTurnAnswers = {};
+    room.firstTurnResults = null;
+    room.firstTurnTimerStatus = "ready";
+    room.firstTurnEndsAt = null;
+    room.firstTurnRevealCount = 0;
+    room.players.forEach(p => {
+      p.score = 0;
+      p.bet = null;
+      p.finalAnswer = "";
+    });
+    room.paused = false;
+    room.isTestResult = false;
+    room.pausedPhase = null;
+    room.pauseFirstTurnRemaining = null;
+    room.pauseFinalRemaining = null;
+    room.phase = room.firstTurnQuiz ? "first_turn_quiz" : "board";
+    if (!room.firstTurnQuiz) room.turnPlayerId = room.players[0]?.id || null;
+    cb({ ok: true, specialCells: room.specialCells || {} });
+    emitState(room);
+  });
+
+  socket.on("startFirstTurnTimer", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "first_turn_quiz" || !room.firstTurnQuiz)
+      return cb({ ok: false, error: "Розіграш зараз недоступний." });
+    if (room.firstTurnTimerStatus === "running") return cb({ ok: false, error: "Таймер уже запущено." });
+    if (room.firstTurnTimerStatus === "expired") return cb({ ok: false, error: "Час уже вийшов." });
+
+    startFirstTurnCountdown(room, 30000);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("submitFirstTurnAnswer", ({ code: c, answer }, cb = () => {}) => {
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== "first_turn_quiz" || !room.firstTurnQuiz)
+      return cb({ ok: false, error: "Розіграш зараз недоступний." });
+    if (room.firstTurnTimerStatus !== "running")
+      return cb({
+        ok: false,
+        error:
+          room.firstTurnTimerStatus === "expired"
+            ? "Час вийшов."
+            : room.firstTurnTimerStatus === "paused"
+              ? "Гра на паузі."
+              : "Дочекайтеся запуску таймера.",
+      });
+    if (Date.now() >= Number(room.firstTurnEndsAt || 0)) {
+      clearTimeout(room.firstTurnTimer);
+      room.firstTurnTimer = null;
+      room.firstTurnTimerStatus = "expired";
+      room.firstTurnEndsAt = null;
+      emitState(room);
+      return cb({ ok: false, error: "Час вийшов." });
+    }
+    if (Object.prototype.hasOwnProperty.call(room.firstTurnAnswers, p.id))
+      return cb({ ok: false, error: "Відповідь уже зафіксована." });
+    const numericText = String(answer ?? "").trim();
+    const n = /^\d+$/.test(numericText) ? Number(numericText) : NaN;
+    if (!Number.isFinite(n) || n < 0 || n > 1000000000)
+      return cb({ ok: false, error: "Введіть коректне невід’ємне число." });
+
+    room.firstTurnAnswers[p.id] = n;
+    const submittedPlayerIds = Object.keys(room.firstTurnAnswers);
+    cb({ ok: true, submittedPlayerIds });
+    // Не перебудовуємо UI телефонів інших гравців під час введення:
+    // прогрес слухають тільки HOST/OBS.
+    io.to(room.code).emit("firstTurnProgress", {
+      code: room.code,
+      submittedPlayerIds,
+      remainingMs: room.firstTurnEndsAt ? Math.max(0, room.firstTurnEndsAt - Date.now()) : 0,
+      timerStatus: room.firstTurnTimerStatus,
+    });
+  });
+
+  socket.on("revealFirstTurnResults", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "first_turn_quiz" || !room.firstTurnQuiz)
+      return cb({ ok: false, error: "Розіграш зараз недоступний." });
+
+    const allAnswered = room.players.every(p => Object.prototype.hasOwnProperty.call(room.firstTurnAnswers, p.id));
+    if (!allAnswered && room.firstTurnTimerStatus !== "expired")
+      return cb({ ok: false, error: "Ще не всі гравці відповіли, а час не завершився." });
+
+    clearTimeout(room.firstTurnTimer);
+    room.firstTurnTimer = null;
+    room.firstTurnTimerStatus = "done";
+    room.firstTurnEndsAt = null;
+
+    const correct = Number(room.firstTurnQuiz.answer);
+    const collator = new Intl.Collator("uk", { sensitivity: "base" });
+    const answered = room.players
+      .filter(p => Object.prototype.hasOwnProperty.call(room.firstTurnAnswers, p.id))
+      .map(p => {
+        const answer = room.firstTurnAnswers[p.id];
+        return {
+          id: p.id,
+          name: p.name,
+          answer,
+          diff: Math.abs(answer - correct),
+          delta: answer - correct,
+          noAnswer: false,
+        };
+      })
+      .sort((x, y) => x.diff - y.diff || collator.compare(x.name, y.name));
+
+    const unanswered = room.players
+      .filter(p => !Object.prototype.hasOwnProperty.call(room.firstTurnAnswers, p.id))
+      .map(p => ({ id: p.id, name: p.name, answer: null, diff: null, delta: null, noAnswer: true }))
+      .sort((x, y) => collator.compare(x.name, y.name));
+
+    room.firstTurnResults = [...answered, ...unanswered];
+
+    // Порядок результатів стає реальним порядком ходів на всю гру.
+    const order = new Map(room.firstTurnResults.map((r, i) => [r.id, i]));
+    room.players.sort((x, y) => (order.get(x.id) ?? 999) - (order.get(y.id) ?? 999));
+    room.turnPlayerId = room.players[0]?.id || null;
+
+    room.firstTurnRevealCount = 0;
+    room.phase = "first_turn_result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("revealNextFirstTurnResult", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "first_turn_result" || !room.firstTurnResults)
+      return cb({ ok: false, error: "Результати розіграшу зараз недоступні." });
+    const total = room.firstTurnResults.length;
+    if ((room.firstTurnRevealCount || 0) >= total) return cb({ ok: false, error: "Усі результати вже відкриті." });
+    room.firstTurnRevealCount = (room.firstTurnRevealCount || 0) + 1;
+    cb({ ok: true, revealCount: room.firstTurnRevealCount, total });
+    emitState(room);
+  });
+
+  socket.on("beginRoundOne", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "first_turn_result")
+      return cb({ ok: false, error: "Спочатку відкрийте результати розіграшу." });
+    if ((room.firstTurnRevealCount || 0) < (room.firstTurnResults?.length || 0))
+      return cb({ ok: false, error: "Спочатку відкрийте всі місця від останнього до першого." });
+    room.phase = "board";
+    room.round = 0;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("skipFirstTurnQuiz", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !["lobby", "first_turn_quiz"].includes(room.phase))
+      return cb({ ok: false, error: "Розіграш зараз не можна пропустити." });
+    clearTimeout(room.firstTurnTimer);
+    room.firstTurnTimer = null;
+    room.firstTurnTimerStatus = "ready";
+    room.firstTurnEndsAt = null;
+    room.isTestResult = false;
+    room.firstTurnAnswers = {};
+    room.firstTurnResults = null;
+    room.firstTurnRevealCount = 0;
+    room.turnPlayerId = room.players[0]?.id || null;
+    room.phase = "board";
+    room.round = 0;
+    room.used = {};
+    room.finalResults = null;
+    room.finalRevealCount = 0;
+    room.specialCells = randomSpecialCells(room);
+    room.players.forEach(p => {
+      p.score = 0;
+      p.bet = null;
+      p.finalAnswer = "";
+    });
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("playCue", ({ code: c, type } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    if (type === "murloc_answer") {
+      if (
+        room.phase !== "result"
+        || room.current?.sponsorDouble !== true
+        || room.current?.answerAudio !== "/media/murloc.mp3"
+      )
+        return cb({ ok: false, error: "Звук доступний лише після відповіді на запитання про мурлока." });
+    } else if (type === "question_answer_audio") {
+      if (
+        room.phase !== "result"
+        || room.revealAnswer !== true
+        || !/^\/media\/[a-zA-Z0-9._-]+\.mp3$/.test(room.current?.answerAudioFile || "")
+      )
+        return cb({ ok: false, error: "Звук відповіді недоступний." });
+    } else if (!["gong", "results_theme", "winner_theme", "final_music_stop"].includes(type))
+      return cb({ ok: false, error: "Невідомий звук." });
+    const cue = { type, at: Date.now() };
+    if (type === "question_answer_audio") cue.media = room.current.answerAudioFile;
+    if (
+      type === "gong"
+      && room.current?.type === "duel"
+      && Array.isArray(room.duelPlayers)
+      && room.duelPlayers.length
+    ) {
+      cue.playerIds = [...room.duelPlayers];
+    }
+    io.to(room.code).emit("cue", cue);
+    cb({ ok: true });
+  });
+
+  socket.on("chooseTile", ({ code: c, ci, qi }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room || room.phase !== "board") return cb({ ok: false, error: "Зараз не можна обирати питання." });
+    if (room.selectedTile) return cb({ ok: false, error: "Зачекайте: вибране питання відкривається." });
+    const pid = socket.data.playerId;
+    const host = isHost(socket, room);
+    if (!host && pid !== room.turnPlayerId) return cb({ ok: false, error: "Зараз питання обирає інший гравець." });
+    ci = Number(ci);
+    qi = Number(qi);
+    const game = getRoomGame(room);
+    const q = game.rounds[room.round]?.categories[ci]?.questions[qi];
+    if (!q) return cb({ ok: false, error: "Невірна клітинка." });
+    const key = `${room.round}:${ci}:${qi}`;
+    if (room.used[key]) return cb({ ok: false, error: "Цю клітинку вже зіграно." });
+    // Show the chosen cell for one second before starting question/media/BUZZ logic.
+    const selection = { round: room.round, ci, qi };
+    room.selectedTile = selection;
+    emitState(room);
+    setTimeout(function openSelectedTile() {
+      if (rooms.get(room.code) !== room || room.selectedTile !== selection) return;
+      if (room.paused) {
+        setTimeout(openSelectedTile, 100);
+        return;
+      }
+      room.selectedTile = null;
+      if (room.phase !== "board" || room.round !== selection.round) {
+        cb({ ok: false, error: "Вибір питання скасовано." });
+        emitState(room);
+        return;
+      }
+      resetQuestionState(room);
+      room.players.forEach(p => (p.falseStartUntil = 0));
+      // Question-defined formats (emoji, Triplet, numeric/media) must never be replaced
+      // by a randomly assigned special cell. Otherwise their payload/mechanic disappears.
+      const formatLocked =
+        ["emoji", "triplet", "numericClosest", "audio", "audioReveal", "video", "imageReveal"].includes(q.type)
+        && !(q.type === "emoji" && (["cat", "va_bank"].includes(room.specialCells[key])
+          || (game.specialSetup?.allowEmojiSpecials === true && room.specialCells[key] === "duel")));
+      const special =
+        room.gameId === "media-test" || formatLocked
+          ? "normal"
+          : q.cat && room.round === 1
+            ? "cat"
+            : room.specialCells[key] || "normal";
+      // Check that test assets actually exist before marking a cell as used.
+      if (room.gameId === "media-test" && String(q.media || "").startsWith("/media/")) {
+        const mediaPath = path.resolve(__dirname, "public", String(q.media).replace(/^\//, ""));
+        if (!mediaPath.startsWith(path.join(__dirname, "public", "media") + path.sep) || !fs.existsSync(mediaPath))
+          return cb({ ok: false, error: "Медіафайл не встановлено на сервері: " + q.media });
+      }
+      room.current = { type: special, ci, qi, value: q.value, q: q.cat ? q.cat.q : q.q, a: q.cat ? q.cat.a : q.a };
+      if (special === "normal" && q.sponsorDouble === true && q.value === 600) {
+        room.current.sponsorDouble = true;
+        room.current.answerAudio = q.answerAudio;
+      }
+      if (special === "normal" && typeof q.answerImage === "string" && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerImage))
+        room.current.answerImage = q.answerImage;
+      if (special === "normal" && typeof q.answerVideo === "string" && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerVideo))
+        room.current.answerVideo = q.answerVideo;
+      // Optional answer sound is disclosed only after the answer is shown.
+      if (special === "normal" && typeof q.answerAudioFile === "string" && /^\/media\/[a-zA-Z0-9._-]+\.mp3$/.test(q.answerAudioFile))
+        room.current.answerAudioFile = q.answerAudioFile;
+      // Audio questions can also display a simultaneous non-spoiler visual clue.
+      if (special === "normal" && q.type === "audio" && typeof q.image === "string" && /^\/media\/[a-zA-Z0-9._-]+\.(jpg|png|webp)$/.test(q.image))
+        room.current.image = q.image;
+      // Media questions: direct HTTPS links or same-origin files under /media/.
+      if (special === "normal" && ["audio", "audioReveal", "video"].includes(q.type)) {
+        const source = String(q.media || q.audio || q.video || "");
+        const valid = source.startsWith("/media/") || /^https:\/\/[^\s]+$/i.test(source);
+        if (!valid) return cb({ ok: false, error: "Для медіапитання потрібне HTTPS-посилання або файл /media/…" });
+        room.current.questionType = q.type;
+        room.current.media = source;
+        if (q.type === "video") {
+          room.current.videoTime = 0;
+          room.current.videoPlaying = false;
+          room.current.videoUpdatedAt = Date.now();
+          if (Number(q.pauseAt ?? q.stopAt) > 0) {
+            room.current.pauseAt = Number(q.pauseAt ?? q.stopAt);
+            room.current.videoContinued = false;
+          }
+        }
+        if (q.type === "audio" || q.type === "audioReveal") {
+          room.current.audioTime = 0;
+          room.current.audioPlaying = false;
+          room.current.audioUpdatedAt = Date.now();
+        }
+        if (q.type === "audioReveal") {
+          const values =
+            Array.isArray(q.revealValues) && q.revealValues.length
+              ? q.revealValues
+              : [
+                  q.value,
+                  Math.round(q.value * 0.8),
+                  Math.round(q.value * 0.6),
+                  Math.round(q.value * 0.4),
+                  Math.round(q.value * 0.2),
+                ];
+          room.current.revealValues = values.map(v => Number(v));
+          room.current.revealSeconds =
+            Array.isArray(q.revealSeconds) && q.revealSeconds.length === values.length
+              ? q.revealSeconds.map(v => (String(v).toLowerCase() === "full" ? "full" : Math.max(1, Number(v) || 1)))
+              : [2, 5, 10, 17, 25].slice(0, values.length);
+          room.current.revealStage = 0;
+          room.current.value = room.current.revealValues[0];
+        }
+      }
+      if (q.type === "emoji" && ["normal", "cat", "va_bank", "duel"].includes(special)) {
+        room.current.questionType = "emoji";
+        room.current.emoji = String(q.emoji || "").trim();
+        if (!room.current.emoji) return cb({ ok: false, error: "Для emoji-питання потрібне поле emoji." });
+      }
+      if (q.type === "imageReveal" && special === "normal") {
+        room.current.questionType = "imageReveal";
+        room.current.image = q.image;
+        room.current.revealValues = Array.isArray(q.revealValues) && q.revealValues.length ? q.revealValues : [q.value];
+        room.current.revealStage = 0;
+        room.current.value = room.current.revealValues[0];
+      }
+
+      if (special === "cat") {
+        room.phase = "cat_choose";
+        room.catChooser = room.turnPlayerId;
+      } else if (special === "va_bank") {
+        room.phase = "va_bank_bet";
+        room.vaBankPlayer = room.turnPlayerId;
+      } else if (special === "duel") {
+        room.phase = "duel_choose";
+        room.duelPlayers = room.turnPlayerId ? [room.turnPlayerId] : [];
+      } else if (q.type === "triplet" && special === "normal") {
+        const items = Array.isArray(q.triplet) ? q.triplet : [];
+        if (items.length < 3) return cb({ ok: false, error: "ТРИПЛЕТ має містити щонайменше 3 питання." });
+        const first = items[0];
+        room.current.questionType = "triplet";
+        room.current.triplet = {
+          index: 0,
+          total: items.length,
+          baseValue: q.value,
+          items: items.map(x => ({ value: Number(x.value), q: String(x.q || ""), a: String(x.a || "") })),
+          answererId: room.turnPlayerId,
+          results: [],
+        };
+        room.current.value = Number(first.value);
+        room.current.q = String(first.q || "");
+        room.current.a = String(first.a || "");
+        room.phase = "triplet_question";
+      } else if (q.type === "numericClosest" && special === "normal") {
+        room.numericChallenge = {
+          question: q.q,
+          answer: Number(q.numericAnswer),
+          unit: q.unit || "",
+          value: q.value,
+          seconds: Number(q.seconds || 30),
+          answerImage: typeof q.answerImage === "string" && /^\/media\/[a-zA-Z0-9._-]+$/.test(q.answerImage) ? q.answerImage : "",
+        };
+        room.numericAnswers = {};
+        room.numericSubmittedAt = {};
+        room.numericResults = null;
+        room.numericRevealCount = 0;
+        room.numericEndsAt = null;
+        room.phase = "numeric_ready";
+        clearTimeout(room.numericTimer);
+        room.numericTimer = null;
+      } else if (
+        room.current.questionType
+        && ["audio", "audioReveal", "video"].includes(room.current.questionType)
+      ) {
+        // Audio and video preserve automatic BUZZ; photo + text questions stay in the question phase
+        // with their image already visible, until the HOST manually opens BUZZ.
+        room.phase = "buzz";
+        room.buzzer = null;
+        room.buzzOpensAt = Date.now();
+        room.answeringLocked = new Set();
+        room.buzzCandidates = [];
+      } else {
+        room.phase = "question";
+      }
+      cb({ ok: true });
+      emitState(room);
+    }, 1000);
+  });
+
+  socket.on("startNumericTimer", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "numeric_ready" || !room.numericChallenge)
+      return cb({ ok: false, error: "Числове питання не готове." });
+    room.numericAnswers = {};
+    room.numericSubmittedAt = {};
+    room.phase = "numeric_question";
+    startNumericCountdown(room, 30000);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("submitNumericAnswer", ({ code: c, answer }, cb = () => {}) => {
+    const room = getRoom(c),
+      p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== "numeric_question" || !room.numericChallenge)
+      return cb({ ok: false, error: "Числове питання зараз неактивне." });
+    if (!room.numericEndsAt || Date.now() > room.numericEndsAt) return cb({ ok: false, error: "Час вийшов." });
+    if (Object.prototype.hasOwnProperty.call(room.numericAnswers, p.id))
+      return cb({ ok: false, error: "Відповідь уже зафіксована." });
+    const numericText = String(answer ?? "").trim();
+    const n = /^-?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(numericText) ? Number(numericText.replace(",", ".")) : NaN;
+    if (!Number.isFinite(n)) return cb({ ok: false, error: "Введіть коректне число без літер." });
+    room.numericAnswers[p.id] = n;
+    room.numericSubmittedAt[p.id] = Date.now();
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("finishNumericQuestion", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "numeric_question" || !room.numericChallenge) return cb({ ok: false });
+    const all = room.players.every(p => Object.prototype.hasOwnProperty.call(room.numericAnswers, p.id));
+    if (!all && room.numericEndsAt && Date.now() < room.numericEndsAt)
+      return cb({ ok: false, error: "Ще є час і не всі відповіли." });
+    clearTimeout(room.numericTimer);
+    room.numericTimer = null;
+    room.numericEndsAt = null;
+    const correct = room.numericChallenge.answer;
+    const answered = room.players
+      .filter(p => Object.prototype.hasOwnProperty.call(room.numericAnswers, p.id))
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        answer: room.numericAnswers[p.id],
+        diff: Math.abs(room.numericAnswers[p.id] - correct),
+        at: room.numericSubmittedAt[p.id],
+      }))
+      .sort((a, b) => a.diff - b.diff || a.at - b.at);
+    const missing = room.players
+      .filter(p => !Object.prototype.hasOwnProperty.call(room.numericAnswers, p.id))
+      .map(p => ({ id: p.id, name: p.name, noAnswer: true, diff: null }));
+    room.numericResults = [...answered, ...missing];
+    if (answered[0]) {
+      const w = room.players.find(p => p.id === answered[0].id);
+      if (w) w.score += room.numericChallenge.value;
+    }
+    room.revealAnswer = true;
+    room.phase = "numeric_result";
+    room.numericRevealCount = 0;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("revealNextNumeric", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "numeric_result") return cb({ ok: false });
+    const total = room.numericResults?.length || 0;
+    if (room.numericRevealCount < total) room.numericRevealCount++;
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("finishNumericResult", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "numeric_result") return cb({ ok: false });
+    if ((room.numericRevealCount || 0) < (room.numericResults?.length || 0))
+      return cb({ ok: false, error: "Спочатку відкрийте всі місця." });
+    const key = `${room.round}:${room.current.ci}:${room.current.qi}`;
+    room.used[key] = true;
+    advanceTurn(room);
+    room.phase = "board";
+    room.current = null;
+    room.numericChallenge = null;
+    room.numericAnswers = {};
+    room.numericResults = null;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("finishVideoResult", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room?.phase !== "video_result")
+      return cb({ ok: false, error: "Немає продовження відео" });
+    room.phase = "result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("continueVideo", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room?.phase !== "video_result" || room.current?.questionType !== "video")
+      return cb({ ok: false, error: "Відео недоступне" });
+    room.current.videoContinued = true;
+    room.current.videoPlaying = false;
+    room.current.videoUpdatedAt = Date.now();
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("revealAudioStep", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (
+      !isHost(socket, room)
+      || !["question", "buzz"].includes(room?.phase)
+      || room.current?.questionType !== "audioReveal"
+    )
+      return cb({ ok: false, error: "Аудіо можна відкривати лише до BUZZ." });
+    if (room.current.revealStage >= room.current.revealValues.length - 1)
+      return cb({ ok: false, error: "Усі фрагменти відкриті." });
+    room.current.revealStage++;
+    room.current.value = room.current.revealValues[room.current.revealStage];
+    room.current.audioTime = 0;
+    room.current.audioPlaying = false;
+    room.current.audioUpdatedAt = Date.now();
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("revealImageStep", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current || room.current.questionType !== "imageReveal")
+      return cb({ ok: false, error: "Це не питання із зображенням." });
+    if (!["question", "buzz"].includes(room.phase) || room.buzzer)
+      return cb({ ok: false, error: "Зображення можна відкривати лише до відповіді гравця." });
+    const values = room.current.revealValues || [room.current.value];
+    if (room.current.revealStage >= values.length - 1)
+      return cb({ ok: false, error: "Зображення вже повністю відкрите." });
+    room.current.revealStage += 1;
+    room.current.value = values[room.current.revealStage];
+    cb({ ok: true, value: room.current.value, stage: room.current.revealStage });
+    emitState(room);
+  });
+
+  socket.on("openBuzz", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current) return;
+    const unready = room.players.filter(
+      p => p.connected && (Number(p.syncSamples || 0) < 3 || Date.now() - Number(p.lastSyncAt || 0) >= 12000),
+    );
+    if (unready.length) return cb({ ok: false, error: "Очікуємо SYNC: " + unready.map(p => p.name).join(", ") });
+    const leadMs = 1200;
+    room.phase = "buzz";
+    room.buzzer = null;
+    room.answeringLocked = new Set();
+    room.buzzReactions = {};
+    room.resultReason = null;
+    room.buzzCandidates = [];
+    if (room.buzzResolveTimer) {
+      clearTimeout(room.buzzResolveTimer);
+      room.buzzResolveTimer = null;
+    }
+    room.buzzOpensAt = Date.now() + leadMs;
+    io.to(room.code).emit("buzzScheduled", { opensAt: room.buzzOpensAt });
+    setTimeout(() => {
+      if (
+        rooms.get(room.code) === room
+        && room.phase === "buzz"
+        && !room.buzzer
+        && room.buzzOpensAt
+        && Date.now() >= room.buzzOpensAt - 20
+      )
+        io.to(room.code).emit("cue", { type: "buzz_open", at: room.buzzOpensAt });
+    }, leadMs);
+    cb({ ok: true, opensAt: room.buzzOpensAt });
+    emitState(room);
+  });
+
+  // v3.0.3 Fair Press Engine: compare validated synchronized press timestamps,
+  // not just packet arrival order. A short collection window lets near-simultaneous
+  // presses arrive before the server chooses a winner.
+  socket.on("buzz", ({ code: c, pressedAtServerTime }, cb = () => {}) => {
+    const receivedAt = Date.now();
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || !room.current) return cb({ ok: false, error: "Питання зараз неактивне." });
+    const duel = room.current?.type === "duel";
+    if (duel && !room.duelPlayers.includes(p.id)) return cb({ ok: false, error: "Ви не берете участі в цій дуелі." });
+
+    const claimed = Number(pressedAtServerTime);
+    const beforeScheduledOpen = room.phase === "buzz" && Number(room.buzzOpensAt || 0) > receivedAt;
+    const claimedBeforeOpen =
+      Number.isFinite(claimed) && Number(room.buzzOpensAt || 0) > 0 && claimed < Number(room.buzzOpensAt) - 35;
+    if (room.phase === "question" || room.phase === "duel_question" || beforeScheduledOpen || claimedBeforeOpen) {
+      if (Number(p.falseStartUntil || 0) <= receivedAt) p.falseStartUntil = receivedAt + 3000;
+      emitState(room);
+      return cb({ ok: false, falseStart: true, until: p.falseStartUntil });
+    }
+    if (room.phase !== "buzz" || room.buzzer || room.answeringLocked.has(p.id)) return cb({ ok: false });
+    if (Number(p.falseStartUntil || 0) > receivedAt)
+      return cb({ ok: false, falseStart: true, until: p.falseStartUntil });
+
+    // Anti-spoof sanity check: a real press cannot be in the future, and it should
+    // not predate packet receipt by much more than the player's observed RTT.
+    const observedRtt = Number.isFinite(p.networkRttMs) ? Math.max(0, p.networkRttMs) : 300;
+    const maxAge = Math.min(1200, Math.max(180, observedRtt * 1.5 + 80));
+    let pressTime = claimed;
+    if (!Number.isFinite(pressTime) || pressTime > receivedAt + 40 || pressTime < receivedAt - maxAge) {
+      // Safe fallback for an old/stale client: estimate one-way transit as RTT/2.
+      pressTime = receivedAt - Math.min(300, observedRtt / 2);
+    }
+    pressTime = Math.max(Number(room.buzzOpensAt || 0), pressTime);
+
+    room.buzzCandidates = room.buzzCandidates || [];
+    if (!room.buzzCandidates.some(x => x.playerId === p.id)) {
+      room.buzzCandidates.push({
+        playerId: p.id,
+        pressTime,
+        receivedAt,
+        reactionMs: Math.round(Math.max(0, pressTime - Number(room.buzzOpensAt || 0))),
+      });
+    }
+    cb({ ok: true, pending: true });
+
+    if (!room.buzzResolveTimer) {
+      const FAIR_WINDOW_MS = 90;
+      room.buzzResolveTimer = setTimeout(() => {
+        room.buzzResolveTimer = null;
+        if (rooms.get(room.code) !== room || room.phase !== "buzz" || room.buzzer) return;
+        const candidates = (room.buzzCandidates || []).filter(x => {
+          const player = room.players.find(p => p.id === x.playerId);
+          return player && !room.answeringLocked.has(player.id) && Number(player.falseStartUntil || 0) <= Date.now();
+        });
+        room.buzzCandidates = [];
+        if (!candidates.length) return;
+        room.buzzReactions = room.buzzReactions || {};
+        for (const candidate of candidates) room.buzzReactions[candidate.playerId] = candidate.reactionMs;
+        candidates.sort((a, b) => a.pressTime - b.pressTime || a.receivedAt - b.receivedAt);
+        const winner = candidates[0];
+        room.buzzer = winner.playerId;
+        room.buzzOpensAt = null;
+        room.phase = "answering";
+        emitState(room);
+      }, FAIR_WINDOW_MS);
+    }
+  });
+
+  socket.on("judge", ({ code: c, correct, sponsorBonus }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "answering" || !room.current || !room.buzzer) return;
+    const p = room.players.find(x => x.id === room.buzzer);
+    if (!p) return;
+    const value = room.current.value;
+    const awarded = correct && room.current.sponsorDouble === true && sponsorBonus === true ? value * 2 : value;
+    p.score += correct ? awarded : -value;
+    // Duel is zero-sum on a correct answer: winner gains the question value,
+    // loser loses the same value. If the opponent already answered wrong,
+    // their normal wrong-answer penalty has already been applied, so do not deduct twice.
+    if (correct && room.current?.type === "duel") {
+      const loser = room.players.find(x => room.duelPlayers.includes(x.id) && x.id !== p.id);
+      if (loser && !room.answeringLocked.has(loser.id)) loser.score -= value;
+    }
+    if (correct) {
+      room.revealAnswer = true;
+      room.resultReason = "correct";
+      if (room.current.questionType === "video") {
+        room.current.videoContinued = true;
+        room.current.videoPlaying = false;
+        room.current.videoUpdatedAt = Date.now();
+      }
+      room.phase = "result";
+    } else {
+      room.answeringLocked.add(p.id);
+      resetEligibleBuzzReactions(room);
+      room.buzzer = null;
+      // Important: do not auto-finish just because another player is temporarily disconnected.
+      // Auto-reveal only when EVERY player in the room has already answered incorrectly.
+      const eligiblePlayers =
+        room.current?.type === "duel" ? room.players.filter(x => room.duelPlayers.includes(x.id)) : room.players;
+      const everyoneWrong = eligiblePlayers.length > 0 && eligiblePlayers.every(x => room.answeringLocked.has(x.id));
+      if (everyoneWrong) {
+        room.revealAnswer = true;
+        room.resultReason = "all_wrong";
+        if (room.current.questionType === "video") {
+          room.current.videoContinued = true;
+          room.current.videoPlaying = false;
+          room.current.videoUpdatedAt = Date.now();
+        }
+        room.phase = "result";
+      } else {
+        room.phase = "buzz";
+        room.buzzCandidates = [];
+        if (room.buzzResolveTimer) {
+          clearTimeout(room.buzzResolveTimer);
+          room.buzzResolveTimer = null;
+        }
+        room.buzzOpensAt = Date.now() + 800;
+        io.to(room.code).emit("buzzScheduled", { opensAt: room.buzzOpensAt });
+        const opensAt = room.buzzOpensAt; // RULE-04: play the same "buzz open" sound as the first opening
+        setTimeout(() => {
+          if (rooms.get(room.code) === room && room.phase === "buzz" && !room.buzzer && room.buzzOpensAt === opensAt)
+            io.to(room.code).emit("cue", { type: "buzz_open", at: opensAt });
+        }, 800);
+      }
+    }
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("submitVaBankBet", ({ code: c, bet }, cb = () => {}) => {
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== "va_bank_bet" || p.id !== room.vaBankPlayer)
+      return cb({ ok: false, error: "Ставку зараз зробити не можна." });
+    const max = Math.max(0, p.score);
+    const n = Math.floor(Number(bet));
+    if (!Number.isFinite(n) || n < 0 || n > max) return cb({ ok: false, error: `Ставка має бути від 0 до ${max}.` });
+    room.vaBankBet = n;
+    room.phase = "va_bank_question";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("judgeVaBank", ({ code: c, correct }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "va_bank_question" || !room.vaBankPlayer) return;
+    const p = room.players.find(x => x.id === room.vaBankPlayer);
+    if (!p) return;
+    p.score += correct ? room.vaBankBet : -room.vaBankBet;
+    if (!correct) room.answeringLocked.add(p.id);
+    room.revealAnswer = true;
+    room.resultReason = correct ? "correct" : "va_bank_wrong";
+    room.phase = "result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("selectDuelOpponent", ({ code: c, playerId }, cb = () => {}) => {
+    const room = getRoom(c);
+    const chooser = room?.players.find(x => x.id === socket.data.playerId);
+    const host = isHost(socket, room);
+    if (!room || room.phase !== "duel_choose") return cb({ ok: false, error: "Дуель зараз недоступна." });
+    if (!host && (!chooser || chooser.id !== room.turnPlayerId))
+      return cb({ ok: false, error: "Суперника обирає гравець, чия черга." });
+    if (playerId === room.turnPlayerId) return cb({ ok: false, error: "Не можна обрати себе." });
+    if (!room.players.some(p => p.id === playerId)) return cb({ ok: false, error: "Гравця не знайдено." });
+    room.duelPlayers = [room.turnPlayerId, playerId];
+    room.phase = "duel_question";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("openDuelBuzz", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "duel_question") return;
+    const leadMs = 1200;
+    room.phase = "buzz";
+    room.buzzer = null;
+    room.answeringLocked = new Set();
+    room.buzzReactions = {};
+    room.resultReason = null;
+    room.buzzCandidates = [];
+    if (room.buzzResolveTimer) {
+      clearTimeout(room.buzzResolveTimer);
+      room.buzzResolveTimer = null;
+    }
+    room.buzzOpensAt = Date.now() + leadMs;
+    io.to(room.code).emit("buzzScheduled", { opensAt: room.buzzOpensAt });
+    setTimeout(() => {
+      if (rooms.get(room.code) === room && room.phase === "buzz" && !room.buzzer)
+        io.to(room.code).emit("cue", { type: "buzz_open", at: room.buzzOpensAt });
+    }, leadMs);
+    cb({ ok: true, opensAt: room.buzzOpensAt });
+    emitState(room);
+  });
+
+  socket.on("revealAnswer", ({ code: c }) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.current) return;
+    room.buzzer = null;
+    room.revealAnswer = true;
+    room.resultReason = "no_answer";
+    if (room.current.questionType === "video") {
+      room.current.videoContinued = true;
+      room.current.videoPlaying = false;
+      room.current.videoUpdatedAt = Date.now();
+    }
+    room.phase = "result";
+    emitState(room);
+  });
+  socket.on("nextFromResult", ({ code: c }) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "result") return;
+    finishTile(room);
+    emitState(room);
+  });
+
+  socket.on("judgeTriplet", ({ code: c, correct }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "triplet_question" || room.current?.questionType !== "triplet")
+      return cb({ ok: false, error: "ТРИПЛЕТ зараз неактивний." });
+    const t = room.current.triplet,
+      p = room.players.find(x => x.id === t?.answererId);
+    if (!t || !p) return cb({ ok: false, error: "Гравця ТРИПЛЕТА не знайдено." });
+    const value = Number(room.current.value) || 0;
+    p.score += correct ? value : -value;
+    // UI-06: capture completed stages for the OBS progress display only.
+    t.results.push({ correct: !!correct, value });
+    room.revealAnswer = true;
+    room.resultReason = correct ? "triplet_correct" : "triplet_wrong";
+    room.phase = "triplet_result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("nextTriplet", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "triplet_result" || room.current?.questionType !== "triplet")
+      return cb({ ok: false, error: "Немає завершеного етапу ТРИПЛЕТА." });
+    const t = room.current.triplet;
+    if (t.index < t.total - 1) {
+      t.index += 1;
+      const item = t.items[t.index];
+      room.current.value = Number(item.value) || 0;
+      room.current.q = item.q;
+      room.current.a = item.a;
+      room.revealAnswer = false;
+      room.resultReason = null;
+      room.buzzer = null;
+      room.answeringLocked = new Set();
+      room.phase = "triplet_question";
+    } else {
+      const key = `${room.round}:${room.current.ci}:${room.current.qi}`;
+      room.used[key] = true;
+      advanceTurn(room);
+      room.current = null;
+      resetQuestionState(room);
+      room.phase = "board";
+    }
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("selectCatReceiver", ({ code: c, playerId }, cb = () => {}) => {
+    const room = getRoom(c);
+    const chooser = room?.players.find(x => x.id === socket.data.playerId);
+    const host = isHost(socket, room);
+    if (!room || room.phase !== "cat_choose" || !room.current || (!host && chooser?.id !== room.catChooser)) return;
+    const p = room.players.find(x => x.id === playerId);
+    if (!p) return cb({ ok: false, error: "Гравця не знайдено." });
+    if (p.id === room.catChooser && room.players.length > 1)
+      return cb({ ok: false, error: "Кота в мішку треба передати іншому гравцеві." });
+    room.catReceiver = p.id;
+    room.phase = "cat_question";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("judgeCat", ({ code: c, correct }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "cat_question" || !room.catReceiver) return;
+    const p = room.players.find(x => x.id === room.catReceiver);
+    if (!p) return;
+    p.score += correct ? room.current.value : -room.current.value;
+    if (!correct) room.answeringLocked.add(p.id);
+    room.revealAnswer = true;
+    room.phase = "result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("getAudienceState", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room) return cb({ ok: false, error: "Кімнату не знайдено." });
+    socket.data.roomCode = room.code;
+    socket.join(room.code);
+    socket.emit("state", publicState(room));
+    cb({ ok: true, code: room.code });
+  });
+
+  socket.on("joinAudience", ({ code: c, name, audienceKey } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!room) return cb({ ok: false, error: "Кімнату не знайдено." });
+    // Rejoin only with the secret key: audience ids are public (ranking, submittedPlayerIds).
+    let a = audienceKey ? room.audience.find(x => x.key === audienceKey) : null;
+    if (!a) {
+      if (room.phase !== "audience_lobby") return cb({ ok: false, error: "Зараз реєстрація глядачів закрита." });
+      const clean = String(name || "")
+        .trim()
+        .slice(0, 24);
+      if (!clean) return cb({ ok: false, error: "Введіть нік." });
+      a = {
+        id: crypto.randomUUID(),
+        key: crypto.randomBytes(16).toString("hex"),
+        name: clean,
+        socketId: socket.id,
+        connected: true,
+        roundStats: {},
+      };
+      room.audience.push(a);
+    } else {
+      a.socketId = socket.id;
+      a.connected = true;
+      if (name) a.name = String(name).trim().slice(0, 24) || a.name;
+    }
+    socket.data.audienceId = a.id;
+    socket.data.roomCode = room.code;
+    socket.join(room.code);
+    const ownWin = [...(room.audienceWinners || [])].reverse().find(x => x.id === a.id) || null;
+    cb({
+      ok: true,
+      audienceId: a.id,
+      audienceKey: a.key,
+      name: a.name,
+      code: room.code,
+      joined: room.audience.filter(x => x.connected).length,
+      prizeCode: ownWin?.code || "",
+    });
+    io.to(room.code).emit("audienceProgress", {
+      code: room.code,
+      joined: room.audience.filter(x => x.connected).length,
+      submitted: Object.keys(room.audienceAnswers || {}).length,
+      roundIndex: room.audienceRoundIndex,
+      questionIndex: room.audienceQuestionIndex,
+      remainingMs: room.audienceEndsAt ? Math.max(0, room.audienceEndsAt - Date.now()) : 0,
+    });
+  });
+
+  socket.on("openAudienceRound", ({ code: c, roundIndex } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false });
+    const rounds = getRoomGame(room).audienceRounds || [];
+    const ri = Number(roundIndex);
+    if (!rounds[ri]) return cb({ ok: false, error: "Глядацький раунд не налаштований." });
+    room.audienceRoundIndex = ri;
+    room.audienceQuestionIndex = 0;
+    room.audienceAnswers = {};
+    room.audienceRanking = [];
+    room.audienceRevealCount = 0;
+    room.audienceReturnPhase = "board";
+    room.audienceEndsAt = null;
+    room.audience.forEach(a => {
+      a.roundStats[ri] = { correct: 0, timeMs: 0, answered: 0 };
+    });
+    room.phase = "audience_lobby";
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("startAudienceQuestion", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !["audience_lobby", "audience_result"].includes(room.phase))
+      return cb({ ok: false, error: "Питання зараз не готове." });
+    if (room.phase === "audience_lobby" && room.audience.filter(x => x.connected).length < 1)
+      return cb({ ok: false, error: "Спочатку має приєднатися хоча б один глядач." });
+    const ar = (getRoomGame(room).audienceRounds || [])[room.audienceRoundIndex];
+    if (!ar) return cb({ ok: false });
+    if (room.phase === "audience_result" && room.audienceQuestionIndex < ar.questions.length - 1)
+      room.audienceQuestionIndex++;
+    const audienceDurationMs = getRoomGame(room).audienceQuestionSeconds === 30 ? 30000 : 15000;
+    room.audienceAnswers = {};
+    room.audienceStartedAt = Date.now();
+    room.phase = "audience_question";
+    startAudienceCountdown(room, audienceDurationMs);
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("submitAudienceAnswer", ({ code: c, option } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    const a = room?.audience.find(x => x.id === socket.data.audienceId);
+    if (!room || !a || room.phase !== "audience_question") return cb({ ok: false, error: "Питання неактивне." });
+    if (!room.audienceEndsAt || Date.now() > room.audienceEndsAt) return cb({ ok: false, error: "Час вийшов." });
+    if (room.audienceAnswers[a.id]) return cb({ ok: false, error: "Відповідь уже зафіксована." });
+    const ar = (getRoomGame(room).audienceRounds || [])[room.audienceRoundIndex],
+      q = ar?.questions?.[room.audienceQuestionIndex];
+    const o = Number(option);
+    if (!q || !Number.isInteger(o) || o < 0 || o >= q.options.length) return cb({ ok: false });
+    const ms = Math.max(0, Date.now() - room.audienceStartedAt);
+    room.audienceAnswers[a.id] = { option: o, ms };
+    const st =
+      a.roundStats[room.audienceRoundIndex]
+      || (a.roundStats[room.audienceRoundIndex] = { correct: 0, timeMs: 0, answered: 0 });
+    st.answered++;
+    if (o === q.correct) {
+      st.correct++;
+      st.timeMs += ms;
+    }
+    cb({ ok: true, remainingMs: room.audienceEndsAt ? Math.max(0, room.audienceEndsAt - Date.now()) : 0 });
+    io.to(room.code).emit("audienceProgress", {
+      code: room.code,
+      joined: room.audience.filter(x => x.connected).length,
+      submitted: Object.keys(room.audienceAnswers || {}).length,
+      roundIndex: room.audienceRoundIndex,
+      questionIndex: room.audienceQuestionIndex,
+      remainingMs: room.audienceEndsAt ? Math.max(0, room.audienceEndsAt - Date.now()) : 0,
+    });
+  });
+  socket.on("finishAudienceQuestion", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "audience_question") return cb({ ok: false });
+    clearTimeout(room.audienceTimer);
+    room.audienceTimer = null;
+    room.audienceEndsAt = null;
+    room.phase = "audience_result";
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("finishAudienceRound", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "audience_result") return cb({ ok: false });
+    const ar = (getRoomGame(room).audienceRounds || [])[room.audienceRoundIndex];
+    if (room.audienceQuestionIndex !== ar.questions.length - 1) return cb({ ok: false, error: "Ще є питання." });
+    const prev = new Set(room.audienceWinners.map(x => x.id));
+    const ranked = room.audience
+      .map(a => {
+        const st = a.roundStats[room.audienceRoundIndex] || { correct: 0, timeMs: 0 };
+        return {
+          id: a.id,
+          name: a.name,
+          correct: st.correct,
+          timeMs: st.timeMs,
+          eligible: !prev.has(a.id) && st.answered > 0,
+        };
+      })
+      .filter(x => x.eligible)
+      .sort((a, b) => b.correct - a.correct || a.timeMs - b.timeMs || a.name.localeCompare(b.name, "uk"));
+    const win = ranked.find(x => x.correct > 0) || null;
+    if (win) {
+      win.code = crypto.randomBytes(3).toString("hex").toUpperCase();
+      room.audienceWinners.push({ id: win.id, name: win.name, code: win.code, roundIndex: room.audienceRoundIndex });
+    }
+    room.audienceRanking = ranked;
+    room.audienceRevealCount = 0;
+    room.phase = "audience_podium";
+    if (win) {
+      const wa = room.audience.find(x => x.id === win.id);
+      if (wa?.socketId)
+        io.to(wa.socketId).emit("audiencePrize", { code: win.code, roundIndex: room.audienceRoundIndex });
+    }
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("revealNextAudience", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "audience_podium") return cb({ ok: false });
+    const n = Math.min(5, room.audienceRanking?.length || 0);
+    if (room.audienceRevealCount < n) room.audienceRevealCount++;
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("closeAudienceRound", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "audience_podium") return cb({ ok: false });
+    room.phase = "board";
+    room.audienceRoundIndex = null;
+    room.audienceQuestionIndex = 0;
+    room.audienceAnswers = {};
+    room.audienceEndsAt = null;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("nextRound", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.round !== 0) return;
+    if (room.selectedTile) return cb({ ok: false, error: "Спочатку дочекайтеся відкриття вибраного питання." });
+    room.round = 1;
+    room.phase = "board";
+    room.current = null;
+    resetQuestionState(room);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("startFinalBets", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "board")
+      return cb({ ok: false, error: "Ставки можна почати лише з дошки питань." });
+    if (room.selectedTile) return cb({ ok: false, error: "Спочатку дочекайтеся відкриття вибраного питання." });
+    room.phase = "final_bets";
+    room.current = null;
+    room.finalResults = null;
+    room.finalRevealCount = 0;
+    room.players.forEach(p => {
+      p.bet = null;
+      p.finalAnswer = "";
+    });
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("submitBet", ({ code: c, bet }, cb = () => {}) => {
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== "final_bets") return;
+    const max = Math.max(0, p.score);
+    let n = Math.floor(Number(bet));
+    if (!Number.isFinite(n)) n = 0;
+    n = Math.max(0, Math.min(max, n));
+    p.bet = n;
+    cb({ ok: true, bet: n });
+    emitState(room);
+  });
+
+  socket.on("startFinalQuestion", ({ code: c, fillMissingBets = false }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "final_bets") return cb({ ok: false, error: "Етап ставок уже завершено." });
+    const missing = room.players.filter(p => p.bet === null);
+    if (missing.length && fillMissingBets !== true)
+      return cb({ ok: false, error: "Не всі гравці зробили ставки.", missingBets: missing.map(p => p.name) });
+    const game = getRoomGame(room);
+    if (!game.final?.q || !game.final?.a) return cb({ ok: false, error: "Фінальне питання не налаштовано." });
+    missing.forEach(p => { p.bet = 0; });
+    room.current = { type: "final", q: game.final.q, a: game.final.a };
+    room.phase = "final_ready";
+    room.finalSeconds = 30;
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("startFinalTimer", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "final_ready") return;
+    room.phase = "final_question";
+    room.finalSeconds = 30;
+    startFinalCountdown(room);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("submitFinalAnswer", ({ code: c, answer }, cb = () => {}) => {
+    const room = getRoom(c);
+    const p = room?.players.find(x => x.id === socket.data.playerId);
+    if (!room || !p || room.phase !== "final_question") return;
+    p.finalAnswer = String(answer || "")
+      .trim()
+      .slice(0, 240);
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("finishFinalNow", ({ code: c }) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "final_question") return;
+    // WORK-01: if someone hasn't pressed Send, jump to 0 and keep the 2 s window for typed answers.
+    if (room.phase === "final_question" && room.players.some(p => !p.finalAnswer)) {
+      room.finalSeconds = 0;
+      startFinalCountdown(room);
+      emitState(room);
+      return;
+    }
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+    room.phase = "final_review";
+    emitState(room);
+  });
+
+  socket.on("scoreFinal", ({ code: c, results }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "final_review") return cb({ ok: false, error: "Фінал зараз не очікує оцінювання." });
+    const map = new Map((results || []).map(r => [r.playerId, !!r.correct]));
+    const details = room.players.map(p => {
+      const correct = map.get(p.id) || false;
+      const beforeScore = p.score;
+      const bet = p.bet || 0;
+      p.score += correct ? bet : -bet;
+      return { id: p.id, name: p.name, beforeScore, bet, correct, finalAnswer: p.finalAnswer || "", score: p.score };
+    });
+    room.finalResults = details.sort((a, b) => b.score - a.score);
+    room.finalRevealCount = 0;
+    room.revealAnswer = true;
+    room.phase = "final_result";
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("testGrandFinal", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може запускати тест." });
+    if (room.phase !== "lobby") return cb({ ok: false, error: "Тест доступний лише в лобі, до початку гри." });
+    if (!room.players.length) return cb({ ok: false, error: "Додайте хоча б одного тестового гравця." });
+    room.isTestResult = true;
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+    const ordered = room.players
+      .map((p, i) => ({
+        id: p.id,
+        name: p.name,
+        beforeScore: 4000 - i * 700,
+        bet: 500,
+        correct: i % 2 === 0,
+        finalAnswer: i % 2 === 0 ? "Тестова правильна відповідь" : "Тестова відповідь",
+        score: 4500 - i * 700,
+      }))
+      .sort((a, b) => b.score - a.score);
+    ordered.forEach(r => {
+      const p = room.players.find(x => x.id === r.id);
+      if (p) {
+        p.score = r.score;
+        p.bet = r.bet;
+        p.finalAnswer = r.finalAnswer;
+      }
+    });
+    room.finalResults = ordered;
+    room.finalRevealCount = 0;
+    room.revealAnswer = true;
+    room.phase = "final_result";
+    room.savedSeasonGameId = null;
+    room.savedSeasonId = null;
+    room.seasonFinal = null;
+    room.seasonCeremonyActive = false;
+    room.seasonRevealCount = 0;
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("revealNextFinalResult", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || room.phase !== "final_result" || !Array.isArray(room.finalResults))
+      return cb({ ok: false, error: "Фінальні результати ще не готові." });
+    const total = room.finalResults.length;
+    if ((room.finalRevealCount || 0) < total) room.finalRevealCount = (room.finalRevealCount || 0) + 1;
+    cb({ ok: true, revealCount: room.finalRevealCount, total });
+    emitState(room);
+  });
+
+  socket.on("seasonAdminInit", async (payload, cb = () => {}) => {
+    if(!hostKeyOk(payload?.hostKey))return cb({ok:false,error:HOST_KEY_ERROR});
+    try {
+      cb({ ok: true, adminToken: socket.data.seasonAdminToken, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  function isSeasonAdmin(token) {
+    return !!token && token === socket.data.seasonAdminToken;
+  }
+  socket.on("setSeasonWildCard", async ({ adminToken, code: c, seasonId, mode, name } = {}, cb = () => {}) => {
+    if (!isSeasonAdmin(adminToken) && !isHost(socket, getRoom(c)))
+      return cb({ ok: false, error: "Немає доступу." });
+    try {
+      const season = await storage.setSeasonWildCard(seasonId, { mode, name });
+      cb({ ok: true, qualification: season.qualification });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("seasonAdminCreate", async ({ adminToken, name } = {}, cb = () => {}) => {
+    if (!isSeasonAdmin(adminToken)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      const id = await storage.createSeason(name);
+      cb({ ok: true, id, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("seasonAdminSetStatus", async ({ adminToken, seasonId, status } = {}, cb = () => {}) => {
+    if (!isSeasonAdmin(adminToken)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      await storage.setSeasonStatus(seasonId, status);
+      cb({ ok: true, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+
+  socket.on("seasonListHost", async ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      cb({ ok: true, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("createSeason", async ({ code: c, name } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      const id = await storage.createSeason(name);
+      cb({ ok: true, id, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("setSeasonStatus", async ({ code: c, seasonId, status } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      await storage.setSeasonStatus(seasonId, status);
+      cb({ ok: true, seasons: await storage.listSeasons() });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("saveSeasonResult", async ({ code: c, seasonId, isGrandFinal = false } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    if (room.isTestResult) return cb({ ok: false, error: "Тестові результати не зберігаються в сезон. Проведіть справжню гру." });
+    if (room.phase !== "final_result" || !room.finalResults)
+      return cb({ ok: false, error: "Спочатку завершіть фінал." });
+    try {
+      isGrandFinal = getRoomGame(room).isGrandFinal === true || isGrandFinal === true;
+      const before = await storage.seasonDetails(seasonId);
+      if (before?.seasonFormat === "qualifiers") {
+        const qualifiersPlayed = before.qualification?.qualifierGamesPlayed || 0;
+        if (!isGrandFinal && qualifiersPlayed >= 3)
+          return cb({ ok: false, error: "Три відбіркові гри вже зіграно. Наступна гра має бути Grand Final." });
+        if (isGrandFinal && qualifiersPlayed < 3)
+          return cb({ ok: false, error: "Grand Final можна зберегти лише після трьох відбіркових ігор." });
+      }
+      const id = await storage.saveGame({
+        seasonId,
+        roomCode: room.code,
+        gameId: room.gameId,
+        title: getRoomGame(room).menuTitle || getRoomGame(room).title,
+        results: room.finalResults,
+        isGrandFinal,
+      });
+      room.savedSeasonGameId = id;
+      room.savedSeasonId = seasonId;
+      room.seasonCeremonyActive = false;
+      room.seasonRevealCount = 0;
+      if (isGrandFinal) {
+        const season = await storage.seasonDetails(seasonId);
+        room.seasonFinal = season
+          ? {
+              seasonId: season.id,
+              name: season.name,
+              leaderboard: season.championshipRule === "grand_final" ? season.grandFinalResults : season.leaderboard,
+              championshipRule: season.championshipRule,
+              isGrandFinal: true,
+            }
+          : null;
+      } else room.seasonFinal = null;
+      const season = await storage.seasonDetails(seasonId);
+      cb({
+        ok: true,
+        id,
+        isGrandFinal: !!isGrandFinal,
+        seasonFinal: room.seasonFinal,
+        seasonFormat: season?.seasonFormat,
+        qualification: season?.qualification || null,
+      });
+      emitState(room);
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  async function refreshSeasonFinal(room) {
+    if (!room.savedSeasonId || !room.savedSeasonGameId) return;
+    const season = await storage.seasonDetails(room.savedSeasonId);
+    const saved = season?.games.find(g => g.id === room.savedSeasonGameId && g.isGrandFinal);
+    if (!saved) {
+      room.seasonFinal = null;
+      room.seasonCeremonyActive = false;
+      return;
+    }
+    room.seasonFinal = {
+      seasonId: season.id,
+      name: season.name,
+      championshipRule: season.championshipRule,
+      leaderboard: season.championshipRule === "grand_final" ? season.grandFinalResults : season.leaderboard,
+      isGrandFinal: true,
+    };
+  }
+  socket.on("startSeasonCeremony", async ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      await refreshSeasonFinal(room);
+    } catch (e) {
+      return cb({ ok: false, error: e.message });
+    }
+    if (room.phase !== "final_result" || !room.seasonFinal?.leaderboard?.length)
+      return cb({ ok: false, error: "Спочатку збережіть Grand Final у сезон." });
+    room.seasonCeremonyActive = true;
+    room.seasonRevealCount = 0;
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("revealNextSeasonResult", async ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room) || !room.seasonCeremonyActive)
+      return cb({ ok: false, error: "Сезонна церемонія не запущена." });
+    try {
+      await refreshSeasonFinal(room);
+    } catch (e) {
+      return cb({ ok: false, error: e.message });
+    }
+    if (!room.seasonCeremonyActive) {
+      emitState(room);
+      return cb({ ok: false, error: "Grand Final видалено із сезону." });
+    }
+    const total = room.seasonFinal?.leaderboard?.length || 0;
+    if (room.seasonRevealCount < total) room.seasonRevealCount++;
+    cb({ ok: true, revealCount: room.seasonRevealCount, total });
+    emitState(room);
+  });
+  socket.on("closeSeasonCeremony", ({ code: c } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    room.seasonCeremonyActive = false;
+    cb({ ok: true });
+    emitState(room);
+  });
+  socket.on("deleteSavedSeasonResult", async ({ code: c, gameId } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    if (!gameId) return cb({ ok: false, error: "Не вказано збережену гру." });
+    try {
+      await storage.deleteGame(gameId);
+      if (room.savedSeasonGameId === gameId) {
+        room.savedSeasonGameId = null;
+        room.savedSeasonId = null;
+        room.seasonFinal = null;
+        room.seasonCeremonyActive = false;
+        room.seasonRevealCount = 0;
+      }
+      cb({ ok: true });
+      emitState(room);
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+  socket.on("correctSavedSeasonResult", async ({ code: c, gameId, results } = {}, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Немає доступу." });
+    try {
+      await storage.updateGameResults(gameId, results);
+      await refreshSeasonFinal(room);
+      emitState(room);
+      cb({ ok: true });
+    } catch (e) {
+      cb({ ok: false, error: e.message });
+    }
+  });
+
+  socket.on("restartSameGame", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може перезапустити гру." });
+    clearInterval(room.finalTimer);
+    room.finalTimer = null;
+    clearTimeout(room.firstTurnTimer);
+    room.firstTurnTimer = null;
+    room.phase = "lobby";
+    room.isTestResult = false;
+    room.paused = false;
+    room.pausedPhase = null;
+    room.pauseFirstTurnRemaining = null;
+    room.pauseFinalRemaining = null;
+    room.round = 0;
+    room.used = {};
+    room.current = null;
+    room.buzzer = null;
+    room.revealAnswer = false;
+    room.answeringLocked = new Set();
+    room.buzzReactions = {};
+    room.catChooser = null;
+    room.catReceiver = null;
+    room.turnPlayerId = null;
+    room.specialCells = {};
+    room.vaBankPlayer = null;
+    room.vaBankBet = null;
+    room.duelPlayers = [];
+    room.finalSeconds = 30;
+    room.finalResults = null;
+    room.finalRevealCount = 0;
+    room.savedSeasonGameId = null;
+    room.savedSeasonId = null;
+    room.seasonFinal = null;
+    room.seasonCeremonyActive = false;
+    room.seasonRevealCount = 0;
+    room.firstTurnQuiz = getRoomGame(room).firstTurnQuiz || null;
+    room.firstTurnAnswers = {};
+    room.firstTurnResults = null;
+    clearTimeout(room.audienceTimer);
+    room.audienceTimer = null;
+    room.audienceRoundIndex = null;
+    room.audienceQuestionIndex = 0;
+    room.audienceAnswers = {};
+    room.audienceStartedAt = null;
+    room.audienceEndsAt = null;
+    room.audienceRanking = [];
+    room.audienceRevealCount = 0;
+    room.audienceWinners = [];
+    room.audience.forEach(a => {
+      a.roundStats = {};
+    });
+    room.players.forEach(p => {
+      p.score = 0;
+      p.bet = null;
+      p.finalAnswer = "";
+    });
+    cb({ ok: true });
+    emitState(room);
+  });
+
+  socket.on("returnToGameMenu", ({ code: c }, cb = () => {}) => {
+    const room = getRoom(c);
+    if (!isHost(socket, room)) return cb({ ok: false, error: "Лише ведучий може закрити кімнату." });
+    clearInterval(room.finalTimer);
+    clearTimeout(room.firstTurnTimer);
+    clearTimeout(room.audienceTimer);
+    io.to(room.code).emit("roomClosed", { code: room.code, reason: "Ведучий повернувся в головне меню." });
+    rooms.delete(room.code);
+    socket.data.roomCode = null;
+    cb({ ok: true });
+  });
+
+  socket.on("disconnect", () => {
+    const room = getRoom(socket.data.roomCode);
+    if (!room) return;
+    const p = room.players.find(x => x.id === socket.data.playerId);
+    if (p && p.socketId === socket.id) {
+      p.connected = false;
+      p.socketId = null;
+      p.syncSamples = 0;
+      p.lastSyncAt = 0;
+    }
+    const a = room.audience.find(x => x.id === socket.data.audienceId);
+    const audienceDisconnected = !!(a && a.socketId === socket.id);
+    if (audienceDisconnected) {
+      a.connected = false;
+      a.socketId = null;
+    }
+    if (p && !p.connected) {
+      if (room.phase === "lobby") emitState(room);
+      else emitPlayerPresence(room, p);
+    }
+    if (audienceDisconnected)
+      io.to(room.code).emit("audienceProgress", {
+        code: room.code,
+        joined: room.audience.filter(x => x.connected).length,
+        submitted: Object.keys(room.audienceAnswers || {}).length,
+        roundIndex: room.audienceRoundIndex,
+        questionIndex: room.audienceQuestionIndex,
+        remainingMs: room.audienceEndsAt ? Math.max(0, room.audienceEndsAt - Date.now()) : 0,
+      });
+  });
+});
+
+// A backgrounded mobile browser can stop answering while Socket.IO still reports
+// connected. Expire stale player sync and notify HOST without removing their score.
+const playerLivenessTimer = setInterval(() => {
+  const now = Date.now();
+  for (const room of rooms.values()) {
+    let changed = false;
+    for (const player of room.players) {
+      if (!player.connected) continue;
+      // Missing clock-sync reports do not mean the Socket.IO connection is lost.
+      // Keep the player in the room and let normal Socket.IO disconnect/reconnect handle transport loss.
+      if (!player.socketId || !io.sockets.sockets.has(player.socketId)) {
+        player.connected = false;
+        player.socketId = null;
+        player.syncSamples = 0;
+        player.lastSyncAt = 0;
+        changed = true;
+      } else if (now - Number(player.lastSyncAt || 0) > 11000 && player.syncSamples !== 0) {
+        player.syncSamples = 0;
+        changed = true; // Show SYNC instead of LOST until clock synchronization resumes.
+      }
+    }
+    if (changed) emitState(room);
+  }
+}, 2000);
+playerLivenessTimer.unref?.();
+
+// Voice events arrive only over IPC from the locally forked Discord bot.
+// Public socket clients cannot publish Discord speaking IDs.
+let voiceLastEvent = 0;
+function clearDiscordSpeaking() {
+  for (const room of rooms.values()) {
+    if (room.voiceSpeaking?.length) {
+      room.voiceSpeaking = [];
+      room.voiceUpdatedAt = Date.now();
+      io.to(room.code).emit("voiceSpeaking", { code: room.code, playerIds: [] });
+    }
+  }
+}
+function handleDiscordVoiceMessage(message) {
+  if (!message) return;
+  if (message.type === "voiceStatus") {
+    voiceBotStatus = String(message.status || "disconnected");
+    voiceBotError = String(message.error || "");
+    for (const room of rooms.values())
+      if (room.hostSocket)
+        io.to(room.hostSocket).emit("voiceBotStatus", {
+          code: room.code,
+          status: voiceBotStatus,
+          error: voiceBotError,
+        });
+    if (voiceBotStatus !== "connected") {
+      voiceLastEvent = 0;
+      clearDiscordSpeaking();
+    }
+    return;
+  }
+  if (message.type !== "voiceActivity") return;
+  if (message.guildId !== process.env.DISCORD_GUILD_ID || message.channelId !== process.env.DISCORD_VOICE_CHANNEL_ID)
+    return;
+  if (!Array.isArray(message.userIds) || message.userIds.length > 100) return;
+  const active = new Set(message.userIds.filter(id => typeof id === "string" && /^\d{17,20}$/.test(id)));
+  voiceLastEvent = Date.now();
+  for (const room of rooms.values()) {
+    const next = room.players.filter(p => active.has(room.voiceMappings?.[p.id])).map(p => p.id);
+    const previous = room.voiceSpeaking || [];
+    if (next.length !== previous.length || next.some(id => !previous.includes(id))) {
+      room.voiceSpeaking = next;
+      room.voiceUpdatedAt = Date.now();
+      io.to(room.code).emit("voiceSpeaking", { code: room.code, playerIds: next });
+    }
+  }
+}
+const voiceStaleTimer = setInterval(() => {
+  if (voiceLastEvent && Date.now() - voiceLastEvent > 20000) {
+    voiceLastEvent = 0;
+    clearDiscordSpeaking();
+  }
+}, 2000);
+voiceStaleTimer.unref?.();
+
+// DEV-only: optional bot process shares this free Render Web Service.
+let voiceBotProcess = null;
+let voiceBotStatus = "unavailable";
+let voiceBotError = "";
+function startOptionalVoiceBot() {
+  const names = ["DISCORD_BOT_TOKEN", "DISCORD_GUILD_ID", "DISCORD_VOICE_CHANNEL_ID"];
+  const present = names.filter(name => Boolean(process.env[name]));
+  if (!present.length) {
+    console.log("Discord voice bot disabled (no environment variables).");
+    return;
+  }
+  if (present.length !== names.length) {
+    console.warn("Discord voice bot disabled: incomplete environment variables.");
+    return;
+  }
+  const { fork } = require("child_process");
+  voiceBotStatus = "starting";
+  voiceBotError = "";
+  voiceBotProcess = fork(path.join(__dirname, "voice-bot", "bot.js"), [], {
+    env: process.env,
+    stdio: ["inherit", "inherit", "inherit", "ipc"],
+  });
+  voiceBotProcess.on("message", handleDiscordVoiceMessage);
+  voiceBotProcess.on("error", err => console.error("Discord voice bot process:", err.message));
+  voiceBotProcess.on("exit", (code, signal) => {
+    console.warn("Discord voice bot exited:", code, signal);
+    voiceBotProcess = null;
+    voiceBotStatus = "unavailable";
+    voiceBotError = "Discord-бот зупинено.";
+    voiceLastEvent = 0;
+    clearDiscordSpeaking();
+  });
+}
+storage
+  .init()
+  .then(() =>
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`SMOKERLOL v3.0.0-rc: http://0.0.0.0:${PORT}`);
+      if (!HOST_KEY) console.warn('HOST_KEY is not set: anyone can create rooms, manage seasons and read game answers.');
+  startOptionalVoiceBot();}),
+  )
+  .catch(err => {
+    console.error("Storage init failed:", err);
+    process.exit(1);
+  });
+
+function shutdown(signal) {
+  if (voiceBotProcess) {
+    voiceBotProcess.kill("SIGTERM");
+    voiceBotProcess = null;
+  }
+  console.log(`${signal}: завершуємо роботу сервера...`);
+  for (const room of rooms.values()) {
+    if (room.finalTimer) clearInterval(room.finalTimer);
+    if (room.firstTurnTimer) clearTimeout(room.firstTurnTimer);
+  }
+  io.emit("serverRestarting", { message: "Сервер перезапускається. Спробуйте перепідключитися через кілька секунд." });
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 25000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

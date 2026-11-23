@@ -1,0 +1,3 @@
+PASS: themed link/manual-code login, no partial/duplicate/idle lookups, theme-only public response, no seat/subscription, inputs preserved, stale responses ignored, real join
+ReferenceError: fs is not defined
+    at main (C:\Users\user\smokerlol-local\tests\ai_repro\player_join_theme.js:129:9)

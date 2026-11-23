@@ -1,0 +1,6 @@
+PASS: desktop player joined
+PASS: HOST-only audio, no PLAYER controls/local start, server authorization, play/pause/seek
+PASS: 50 routine states and actual PLAYER reconnect paused/playing
+PASS: controlled autoplay denial and click recovery
+PASS: command context checks and superseded metadata callbacks
+PASS: desktop audio recovery checks (isolated Edge; physical audio/OBS not tested)

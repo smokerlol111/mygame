@@ -1,0 +1,74 @@
+[
+  {
+    "id": "kinohardkor",
+    "title": "Кінохардкор",
+    "icon": "🎬",
+    "description": "Фільми, франшизи та кінофакти",
+    "file": "kinohardkor.json",
+    "enabled": true
+  },
+  {
+    "id": "general-knowledge",
+    "title": "Загальні знання",
+    "icon": "🧠",
+    "description": "Шкільні знання, логіка, факти та пастки",
+    "file": "general_knowledge.json",
+    "enabled": true
+  },
+  {
+    "id": "back-to-2000s-test",
+    "title": "Назад у 2000-ні",
+    "icon": "📼",
+    "description": "SMOKERLOL QUIZ #3 — музика, кіно, ігри та культура нульових",
+    "file": "back_to_2000s_test.json",
+    "enabled": true
+  },
+  {
+    "id": "friends-super-final",
+    "title": "Friends Super Final",
+    "icon": "🏆",
+    "description": "SMOKERLOL QUIZ #4 — суперфінал друзів",
+    "file": "friends_super_final.json",
+    "enabled": true
+  },
+  {
+    "id": "season2-kinohardkor-2",
+    "title": "КІНОХАРДКОР 2.0",
+    "icon": "🎬",
+    "description": "Сезон 2 • Гра #1 • Відбір до Grand Final",
+    "file": "season2_kinohardkor_2_0.json",
+    "enabled": true
+  },
+  {
+    "id": "season2-general-knowledge-2",
+    "title": "ЗАГАЛЬНІ ЗНАННЯ 2.0",
+    "icon": "🧠",
+    "description": "Сезон 2 • Гра #2 • Шкільні знання, логіка, факти та пастки",
+    "file": "season2_general_knowledge_2_0.json",
+    "enabled": true
+  },
+  {
+    "id": "season2-memes-internet",
+    "title": "МЕМИ ТА ІНТЕРНЕТ",
+    "icon": "🌐",
+    "description": "Сезон 2 • Гра #3 • Меми, ностальгія та інтернет-культура",
+    "file": "season2_memes_internet.json",
+    "enabled": true
+  },
+  {
+    "id": "season2-grand-final",
+    "title": "GRAND FINAL — ТЕСТ (СЕЗОН 2)",
+    "icon": "🏆",
+    "description": "Грандфінал 29.10.2026 • усі 50 основних, стартове, фінальне та 2 глядацькі раунди внесені • тестова версія",
+    "file": "season2_grand_final.json",
+    "enabled": true
+  },
+  {
+    "id": "halloween-special-2026",
+    "title": "HALLOWEEN SPECIAL — ТЕСТ 50 ПИТАНЬ",
+    "icon": "🎃",
+    "description": "🎃 Halloween Special 2026 • 50 питань у двох основних раундах • фото, аудіо, STOP-відео, audioReveal • триває тестування",
+    "file": "halloween_special_2026.json",
+    "enabled": true
+  }
+]

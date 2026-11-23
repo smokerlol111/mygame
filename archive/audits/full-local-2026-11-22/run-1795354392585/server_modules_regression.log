@@ -1,0 +1,2 @@
+PASS: page/static routes, no-cache headers, catalog, HOST access and public answer/special-cell secrecy
+PASS: HOST authorization, default/unknown/explicit game selection, live health room count and seasons API

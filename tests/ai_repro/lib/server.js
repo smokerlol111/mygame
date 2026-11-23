@@ -8,6 +8,8 @@ const os = require('os');
 const path = require('path');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+// Replay the frozen completed packs; the production catalog can intentionally be empty.
+const REPLAY_CATALOG = path.join(REPO_ROOT, 'archive/completed-games/2026-11-22/games/index.json');
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -21,9 +23,12 @@ function freePort() {
 async function startServer(overrides = {}) {
   const port = await freePort();
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'smokerlol-repro-'));
-  const env = { ...process.env, PUBLIC_URL: '', FUNNEL_URL_FILE: path.join(dataDir, '.funnel-url'), ...overrides, PORT: String(port), DATA_DIR: dataDir, DOTENV_CONFIG_PATH: path.join(dataDir, '.env') };
+  const env = { ...process.env, PUBLIC_URL: '', FUNNEL_URL_FILE: path.join(dataDir, '.funnel-url'),
+    GAMES_INDEX_FILE: fs.existsSync(REPLAY_CATALOG) ? REPLAY_CATALOG : path.join(REPO_ROOT, 'games/index.json'),
+    ...overrides, PORT: String(port), DATA_DIR: dataDir, DOTENV_CONFIG_PATH: path.join(dataDir, '.env') };
   for (const key of ['DATABASE_URL', 'PGSSL', 'DISCORD_BOT_TOKEN', 'DISCORD_GUILD_ID', 'DISCORD_VOICE_CHANNEL_ID']) delete env[key];
-  const child = spawn(process.execPath, ['server.js'], { cwd: REPO_ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
+  const entry = process.env.QUIZ_TEST_SERVER_ENTRY || 'server.js';
+  const child = spawn(process.execPath, [entry], { cwd: REPO_ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   child.stdout.on('data', d => { output += d; });
   child.stderr.on('data', d => { output += d; });
@@ -36,7 +41,7 @@ async function startServer(overrides = {}) {
     await new Promise(r => setTimeout(r, 200));
   }
   return {
-    url, port, dataDir, repoRoot: REPO_ROOT,
+    url, port, dataDir, repoRoot: REPO_ROOT, catalogPath: env.GAMES_INDEX_FILE,
     stop() {
       child.kill();
       try { fs.rmSync(dataDir, { recursive: true, force: true }); } catch { /* best effort */ }
@@ -44,4 +49,4 @@ async function startServer(overrides = {}) {
   };
 }
 
-module.exports = { startServer, REPO_ROOT };
+module.exports = { startServer, REPO_ROOT, REPLAY_CATALOG };

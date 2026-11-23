@@ -1,0 +1,24 @@
+PASS halloween-special-2026 0:0:4 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 0:2:0 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 0:2:1 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 0:2:4 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 0:4:4 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:1:3 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:1:4 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:2:0 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:3:2 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:4:1 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:4:3 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS halloween-special-2026 1:4:4 audioReveal: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 0:0:4 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 0:2:3 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 0:2:4 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 0:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 0:3:4 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:0:0 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:0:3 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:2:1 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:2:4 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board
+PASS season2-grand-final 1:3:3 video: native decode, controls, 50 service updates, reconnect, answer and board
+PASS: all 23 media questions

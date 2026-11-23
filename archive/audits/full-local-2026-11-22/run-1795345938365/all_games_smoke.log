@@ -1,0 +1,21 @@
+PASS kinohardkor: round 1, 25 cumulative cells
+PASS general-knowledge: round 1, 25 cumulative cells
+PASS back-to-2000s-test: round 1, 25 cumulative cells
+PASS kinohardkor: round 2, 50 cumulative cells
+PASS general-knowledge: round 2, 50 cumulative cells
+PASS back-to-2000s-test: round 2, 50 cumulative cells
+PASS friends-super-final: round 1, 25 cumulative cells
+PASS season2-kinohardkor-2: round 1, 25 cumulative cells
+PASS season2-general-knowledge-2: round 1, 25 cumulative cells
+PASS friends-super-final: round 2, 50 cumulative cells
+PASS season2-kinohardkor-2: round 2, 50 cumulative cells
+PASS season2-general-knowledge-2: round 2, 50 cumulative cells
+PASS season2-memes-internet: round 1, 25 cumulative cells
+PASS season2-grand-final: round 1, 25 cumulative cells
+PASS halloween-special-2026: round 1, 25 cumulative cells
+PASS season2-memes-internet: round 2, 50 cumulative cells
+PASS season2-grand-final: round 2, 50 cumulative cells
+PASS halloween-special-2026: round 2, 50 cumulative cells
+GAME SUMMARY: [{"gameId":"kinohardkor","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":0,"assets":1,"formats":["text","imageReveal","duel","cat","va_bank"],"fallbacks":[]},{"gameId":"general-knowledge","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":2,"formats":["text","numericClosest","imageReveal","duel","cat","va_bank"],"fallbacks":[]},{"gameId":"back-to-2000s-test","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":24,"formats":["text","audio","video","audioReveal","imageReveal","va_bank","numericClosest","duel","numeric"],"fallbacks":[{"tile":"1:4:1","type":"numeric","observedPhase":"question"}]},{"gameId":"friends-super-final","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":13,"formats":["text","numericClosest","audio","imageReveal","va_bank","cat","audioReveal","duel","video"],"fallbacks":[]},{"gameId":"season2-kinohardkor-2","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":10,"formats":["text","emoji","cat","imageReveal","duel","numericClosest","audio","triplet","va_bank","video","audioReveal"],"fallbacks":[]},{"gameId":"season2-general-knowledge-2","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":6,"formats":["text","cat","emoji","numericClosest","video","audio","va_bank","triplet","duel","imageReveal"],"fallbacks":[]},{"gameId":"season2-memes-internet","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":23,"formats":["text","va_bank","imageReveal","audio","cat","duel","numericClosest","emoji","video","audioReveal","triplet"],"fallbacks":[]},{"gameId":"season2-grand-final","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":29,"formats":["cat","emoji","imageReveal","text","video","duel","triplet","audio","va_bank","numericClosest"],"fallbacks":[]},{"gameId":"halloween-special-2026","passed":true,"checked":50,"firstTurn":true,"audienceQuestions":6,"assets":28,"formats":["text","imageReveal","video","va_bank","audio","duel","cat","numericClosest","emoji","triplet","audioReveal"],"fallbacks":[]}]
+PASS: 9 enabled games, 450 cells, 48 audience questions, first turns/finals, four players per room, no saved seasons
+DATA FINDING: unsupported legacy types use the existing normal-question fallback; see all-games-summary.json and validate_games.log

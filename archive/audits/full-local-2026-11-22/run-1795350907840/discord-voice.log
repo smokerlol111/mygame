@@ -1,0 +1,24 @@
+✔ continuous speech stays highlighted for 45 seconds without another start event (18.6117ms)
+✔ periodic snapshots stay fresh through silence without inventing speakers (1.4464ms)
+✔ overlapping speakers stop independently and end excludes the user before map removal (1.6204ms)
+✔ temporary connection loss clears highlighting and ready restores an ongoing speaker (3.746ms)
+✔ outage beyond 30 seconds retries automatically and ignores old receiver events (1.7417ms)
+✔ HOST disable cancels a scheduled network retry (1.6264ms)
+✔ transient fetch failure retries but missing access stops retries (1.3842ms)
+✔ gateway recovery after the initial ready event still resumes voice retries (1.6545ms)
+✔ failed joins back off and keep trying beyond multiple 30-second deadlines (3.8991ms)
+✔ administrative disconnect stops retries even when only the reason changes (1.6898ms)
+✔ manual disconnect stops heartbeat and recovery and cannot rejoin by itself (1.7998ms)
+✔ disabling during a pending guild fetch cancels the join (1.1765ms)
+✔ quick disable/enable while fetching creates just the newest connection (1.6347ms)
+✔ enable before login is honored on ready, unless HOST disabled in the meantime (1.8168ms)
+✔ disable before login prevents a late ready event from joining (1.1633ms)
+✔ server accepts fresh heartbeat snapshots, deduplicates browser updates, and still clears stale IPC (6.5963ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 472.7264

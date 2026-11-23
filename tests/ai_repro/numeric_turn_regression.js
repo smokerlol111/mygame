@@ -1,18 +1,14 @@
 // RULE-03: numeric questions always advance the turn, regardless of the winner.
 // Usage: node tests/ai_repro/numeric_turn_regression.js (about 32 seconds).
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
+const { createBoardHelpers } = require('../../server/modes/board/helpers');
+const { registerNumericHandlers } = require('../../server/modes/board/numeric');
 const { io } = require('../../node_modules/socket.io/client-dist/socket.io.js');
 const { startServer } = require('./lib/server');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function checkTurnCases() {
-  const source = fs.readFileSync('server.js', 'utf8');
-  const start = source.search(/  socket\.on\(["']finishNumericResult["']/);
-  const end = source.indexOf('\n  });', start) + '\n  });'.length;
-  assert.ok(start >= 0 && end > start);
-  const advance = source.slice(source.indexOf('function advanceTurn('), source.indexOf('function finishTile('));
+  const { advanceTurn } = createBoardHelpers();
   for (const [ids, chooser, results, expected] of [
     [['A', 'B', 'C'], 'A', [], 'B'],
     [['A', 'B', 'C'], 'B', [], 'C'],
@@ -31,9 +27,8 @@ function checkTurnCases() {
       numericResults: [...results, ...ids.filter(id => !results.some(r => r.id === id)).map(id => ({ id, noAnswer: true }))],
     };
     room.numericRevealCount = room.numericResults.length;
-    vm.runInNewContext(advance + source.slice(start, end), {
-      socket: { on: (_, callback) => { handler = callback; } },
-      getRoom: () => room, isHost: () => true, emitState: () => {},
+    registerNumericHandlers({ on(event, callback) { if (event === 'finishNumericResult') handler = callback; } }, {
+      getRoom: () => room, isHost: () => true, emitState: () => {}, advanceTurn,
     });
     let response;
     const finish = () => handler({ code: 'TEST' }, result => { response = result; });

@@ -1,0 +1,2 @@
+PASS: themed link/manual-code login, no partial/duplicate/idle lookups, theme-only public response, no seat/subscription, inputs preserved, stale responses ignored, real join
+PASS: actual Edge pre-join form, one lookup, 3.5 s idle without repeated theme commands/assets; screenshot saved

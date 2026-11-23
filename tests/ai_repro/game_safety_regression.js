@@ -5,28 +5,29 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { io } = require('socket.io-client');
 const { startServer, REPO_ROOT } = require('./lib/server');
+const { createBoardTimers } = require('../../server/modes/board/timers');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function pausedTimers() {
-  const source = fs.readFileSync(path.join(REPO_ROOT, 'server.js'), 'utf8');
-  const start = source.indexOf('function startNumericCountdown(');
-  const end = source.indexOf('function randomSpecialCells(');
   let now = 1000, nextTimer = 0;
   const timers = new Map(), rooms = new Map();
-  const sandbox = {
-    module: { exports: {} }, rooms, Date: { now: () => now }, emitState() {},
+  const clock = {
+    Date: { now: () => now },
     setTimeout(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, at: now + ms }); return id; },
-    clearTimeout(id) { timers.delete(id); }, clearInterval() {},
-    expireFirstTurn() {}, startFirstTurnCountdown() {}, startFinalCountdown() {},
+    setInterval(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, at: now + ms, repeat: ms }); return id; },
+    clearTimeout(id) { timers.delete(id); }, clearInterval(id) { timers.delete(id); },
   };
-  vm.runInNewContext(source.slice(start, end) + '\nmodule.exports={pauseRoom,resumeRoom,startNumericCountdown,startAudienceCountdown};', sandbox);
-  const { pauseRoom, resumeRoom, startNumericCountdown, startAudienceCountdown } = sandbox.module.exports;
+  const { pauseRoom, resumeRoom, startNumericCountdown, startAudienceCountdown,
+    startFirstTurnCountdown, startFinalCountdown } = createBoardTimers({ rooms, emitState() {}, clock });
   const advance = ms => {
     const target = now + ms;
     for (;;) {
       const due = [...timers].filter(([, t]) => t.at <= target).sort((a, b) => a[1].at - b[1].at)[0];
       if (!due) break;
-      timers.delete(due[0]); now = due[1].at; due[1].fn();
+      now = due[1].at;
+      if (due[1].repeat) due[1].at += due[1].repeat;
+      else timers.delete(due[0]);
+      due[1].fn();
     }
     now = target;
   };
@@ -50,7 +51,23 @@ function pausedTimers() {
   const closed = { code: 'closed', phase: 'audience_question' };
   rooms.set('closed', closed); startAudienceCountdown(closed, 1000); rooms.delete('closed');
   advance(1000); assert.equal(closed.phase, 'audience_question', 'expired timer must not mutate a closed room');
-  console.log('PASS: actual timer/pause functions preserve numeric and audience time, exclude paused response time, ignore closed rooms');
+  const firstTurn = { phase: 'first_turn_quiz', paused: false };
+  startFirstTurnCountdown(firstTurn, 30000);
+  advance(4000); pauseRoom(firstTurn); advance(40000); resumeRoom(firstTurn);
+  assert.equal(firstTurn.firstTurnEndsAt - now, 26000);
+  advance(26000);
+  assert.equal(firstTurn.firstTurnTimerStatus, 'expired');
+  const final = { phase: 'final_question', paused: false, finalSeconds: 30 };
+  startFinalCountdown(final);
+  advance(4000); pauseRoom(final); advance(40000);
+  assert.equal(final.finalSeconds, 26);
+  resumeRoom(final); advance(26000);
+  assert.equal(final.finalSeconds, 0);
+  assert.equal(final.phase, 'final_question', 'existing final answer grace window stays open at zero');
+  advance(1999); assert.equal(final.phase, 'final_question');
+  advance(1); assert.equal(final.phase, 'final_review');
+  assert.equal(timers.size, 0, 'all completed countdowns release their timers');
+  console.log('PASS: numeric/audience/first-turn/final pause preserves time, final keeps its 2-second grace window, closed audience timers are ignored');
 }
 
 async function storageRaces() {

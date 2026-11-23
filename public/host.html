@@ -8,6 +8,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/public-config.js"></script>
     <script src="/common.js?v=308"></script>
+    <script src="/board-random.js"></script>
     <script src="/themes/theme.js"></script>
     <script src="/themes/halloween/preview.js"></script>
     <style>
@@ -432,11 +433,15 @@ function setNetBadge(ok){
               `<button class="gameCard" data-game="${GameUI.esc(g.id)}"><div class="gameIcon">${GameUI.esc(g.icon || "🎮")}</div><div><h2>${GameUI.esc(g.title)}</h2><p class="muted">${GameUI.esc(g.description || "")}</p></div><div class="gamePlay">Грати →</div></button>`,
           )
           .join("");
-        app.innerHTML = `<div class="menuHero"><div><h2>🎮 Оберіть гру</h2><p class="muted">Створіть кімнату з потрібним набором категорій і запитань.</p></div></div>
- <div class="gameMenu">${cards || "<p>Немає доступних ігор.</p>"}</div>
+        app.innerHTML = `<div class="menuHero"><div><h2>🎮 Оберіть тип гри</h2><p class="muted">Два формати для гри з ведучим.</p></div></div>
+ <div class="panel"><h2>Класичний квіз</h2><p class="muted">Команди пишуть відповіді. На кожне питання — 60 секунд, рішення приймає ведучий.</p><a class="btn" href="/classic/host">Створити класичний квіз →</a></div>
+ <h2>Гра з категоріями</h2><p class="muted">Таблиця питань, BUZZ і спецмеханіки.</p>
+ <div class="panel" id="randomBoardSetup"></div>
+ <div class="gameMenu">${cards || '<div class="panel"><h3>Поки немає активних ігор</h3><p class="muted">Завершені ігри збережено в архіві. Нові набори з’являться тут після підготовки.</p></div>'}</div>
  <div class="panel" style="margin-top:22px"><h2 style="margin-top:0">🏆 Керування сезонами</h2><div id="startSeasonAdmin"><p class="muted">Завантаження сезонів…</p></div></div>
  <div class="row" style="margin-top:20px"><a class="btn gold" href="/seasons" target="_blank">🏆 Публічні сезони та результати</a></div>`;
         document.querySelectorAll(".gameCard").forEach(b => (b.onclick = () => createRoom(b.dataset.game)));
+        window.BoardRandom?.mount({container:document.getElementById('randomBoardSetup'),socket,hostKey,createRoom});
         loadStartSeasonAdmin();
       }
 
@@ -527,9 +532,10 @@ function setNetBadge(ok){
         selectedGameId = gameId;
         try { if (!await loadGameData(gameId)) return; }
         catch (error) { console.error(error); alert("Не вдалося завантажити гру. Спробуйте ще раз."); return; }
-        socket.emit("createRoom", { hostToken: crypto.randomUUID(), gameId ,hostKey}, r => {
+        return new Promise(resolve => socket.emit("createRoom", { hostToken: crypto.randomUUID(), gameId ,hostKey}, r => {
           if (!r.ok) {
             alert(r.error || "Не вдалося створити кімнату");
+            resolve(false);
             return;
           }
           code = r.code;
@@ -540,7 +546,8 @@ function setNetBadge(ok){
           localStorage.setItem("sgRoomCode", code);
           renderRoom();
           render();
-        });
+          resolve(true);
+        }));
       }
       function renderRoom() {
         if (roomBox.dataset.roomCode === code && document.getElementById("toggleTheme")) {

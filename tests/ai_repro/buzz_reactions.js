@@ -133,16 +133,13 @@ async function main() {
     assert.equal(ui.wrongAnswerClass(wrongPlayer, { phase: 'result', current: { type: 'final' }, answeringLocked: ['A'] }), '');
 
     // Exercise the actual special-question judging handlers without starting another game.
-    const serverSource = fs.readFileSync('server.js', 'utf8');
+    const { registerSpecialQuestionHandlers } = require('../../server/modes/board/special-questions');
     for (const event of ['judgeCat','judgeVaBank']) {
-      const start = serverSource.search(new RegExp(`  socket\\.on\\(["']${event}["']`));
-      const end = serverSource.indexOf('\n  });', start) + '\n  });'.length;
-      assert.ok(start >= 0 && end > start);
       for (const correct of [false,true]) {
         let handler;
         const room = { phase: event === 'judgeCat' ? 'cat_question' : 'va_bank_question', catReceiver: 'A', vaBankPlayer: 'A', vaBankBet: 100, current: { value: 100 }, players: [{ id: 'A', score: 200 }], answeringLocked: new Set() };
-        vm.runInNewContext(serverSource.slice(start,end), {
-          socket: { on: (_, fn) => { handler = fn; } }, getRoom: () => room,
+        registerSpecialQuestionHandlers({ on(name, fn) { if (name === event) handler = fn; } }, {
+          getRoom: () => room,
           isHost: () => true, emitState: () => {}
         });
         handler({ code: 'TEST', correct });

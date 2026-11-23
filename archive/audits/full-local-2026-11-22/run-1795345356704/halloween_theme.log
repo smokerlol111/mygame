@@ -1,0 +1,9 @@
+PASS: syntax and explicit allowlisted theme opt-in
+PASS: real first-turn sorting and secret-key reconnect retain all camera slots and scores
+PASS: leaving/replacing a player does not shift the other camera
+PASS: actual OBS photo rendering, escaping, stable/empty slots, media preservation, 18 phases and theme cleanup
+PASS: real HOST/PLAYER previews, 25 tiles, BUZZ states, theme reset, persistent PLAYER video and untouched saved sessions
+PASS: normal Grand Final OBS stays unthemed; static resources return HTTP 200
+PASS: HOST-only theme control, server authorization, room isolation, all three screens, reconnect, focused answers, running timer and media preservation
+PASS: 50 PLAYER geometry comparisons against standard at 320/390/768/1280/1920 px, touch and desktop; login/lobby/board/photo/BUZZ/long text/pause/video/bet/final input
+THEME_TRAFFIC: {"idleMs":3500,"idleThemeHttpRequests":[0,0,0],"idleThemeCommands":[0,0,0],"noopRendering":{"iterations":500,"elapsedMs":7.7,"mutations":0,"sameEmblem":true},"noopThemeHttpRequests":0,"photoRendering":{"iterations":500,"elapsedMs":13.1,"mutations":0,"sameImage":true},"photoThemeHttpRequests":0,"duplicateThemeBroadcasts":[0,0,0],"commandsPerClick":1,"updatesPerScreen":[1,1,1],"maxThemeEventBytes":51,"fullStateBroadcastsOnClick":[0,0,0]}

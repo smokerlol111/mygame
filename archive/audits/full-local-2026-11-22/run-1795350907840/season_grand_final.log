@@ -1,0 +1,2 @@
+PASS: legacy history, existing Season 2, arbitrary future season name, persistence, archive and tie validation
+PASS: three qualifiers, zero starting scores, automatic Grand Final, tie resolution, no double points, canonical champion on HOST/public/OBS, duplicate/extra game guards, correction/deletion

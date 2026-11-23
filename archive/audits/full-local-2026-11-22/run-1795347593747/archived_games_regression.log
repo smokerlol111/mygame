@@ -1,0 +1,5 @@
+Verify: 152 ZIP entries
+PASS: immutable game copies, question bank, every ZIP entry and ZIP SHA-256
+PASS: nine original game packs, 516 records, all triplet/cat prompts and answers, frozen/shared banks and 152 verified ZIP entries
+PASS: empty HOST catalog, season controls remain available, all archived IDs blocked, bank/ZIP private and server healthy
+PASS: adding a future enabled game works alongside nine archived packs; archived IDs never start the fallback game

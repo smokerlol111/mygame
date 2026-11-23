@@ -6,3 +6,5 @@ npm-debug.log*
 local-server.log
 local-server-error.log
 data/seasons.json
+archive/completed-games/**/*.zip
+archive/completed-games/**/ARCHIVE.sha256

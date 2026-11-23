@@ -1,0 +1,29 @@
+
+### kinohardkor (kinohardkor.json) enabled=true
+ (no issues found)
+
+### general-knowledge (general_knowledge.json) enabled=true
+ (no issues found)
+
+### back-to-2000s-test (back_to_2000s_test.json) enabled=true
+ - 1:4:1 unknown type "numeric" -> server plays it as a normal buzz question
+
+### friends-super-final (friends_super_final.json) enabled=true
+ (no issues found)
+
+### season2-kinohardkor-2 (season2_kinohardkor_2_0.json) enabled=true
+ (no issues found)
+
+### season2-general-knowledge-2 (season2_general_knowledge_2_0.json) enabled=true
+ (no issues found)
+
+### season2-memes-internet (season2_memes_internet.json) enabled=true
+ (no issues found)
+
+### season2-grand-final (season2_grand_final.json) enabled=true
+ (no issues found)
+
+### halloween-special-2026 (halloween_special_2026.json) enabled=true
+ (no issues found)
+
+1 issue(s) total

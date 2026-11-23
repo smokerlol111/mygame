@@ -36,6 +36,16 @@ try {
     Invoke-WebRequest -Uri 'http://127.0.0.1:3100/health' -UseBasicParsing -TimeoutSec 2 | Out-Null
     $listener = $true
 } catch {}
+if ($listener) {
+    try {
+        $capabilities = Invoke-RestMethod -Uri 'http://127.0.0.1:3100/api/capabilities' -TimeoutSec 3
+    } catch {
+        throw 'An older game server is already running on port 3100. Restart the local server, then refresh the game page.'
+    }
+    if (-not $capabilities.classicRandomPool -or -not $capabilities.randomBoard) {
+        throw 'The running game server does not support all random game modes. Restart the local server, then refresh the game page.'
+    }
+}
 if (-not $listener) {
     Start-Process -FilePath (Get-Command node.exe).Source -ArgumentList 'server.js' -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -RedirectStandardOutput "$PSScriptRoot/local-server.log" -RedirectStandardError "$PSScriptRoot/local-server-error.log"
     $ready = $false

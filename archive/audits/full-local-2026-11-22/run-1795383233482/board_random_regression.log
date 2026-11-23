@@ -1,0 +1,4 @@
+PASS: all 540 topic references, 8 themes, 100 unique 50-cell boards, source prompts/answers, difficulty rows, all supported formats and scaled reveal/triplet values
+PASS random-board-12dd1b84-19b7-47fa-8a0b-aa1ab223cae0: round 1, 25 cumulative cells
+PASS random-board-12dd1b84-19b7-47fa-8a0b-aa1ab223cae0: round 2, 50 cumulative cells
+PASS: HOST authorization, generated-game HTTP privacy, empty archived menu, bounded previews, active-room retention and replay, room cleanup and all 50 cells/start/6 audience questions/final

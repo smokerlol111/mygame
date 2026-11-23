@@ -1,0 +1,163 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T13:33:12.703Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M .gitignore\n M AGENTS.md\n M CHANGELOG.md\n M README.md\n M archive/README.md\n M games/index.json\n M public/host.html\n M public/play.html\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/QUESTION_BANK.md\n?? archive/audits/classic-quiz-2026-11-22/\n?? archive/audits/full-local-2026-11-22/\n?? archive/audits/game-archive-2026-11-22/\n?? archive/completed-games/\n?? public/classic/\n?? scripts/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/archived_games_regression.js\n?? tests/ai_repro/classic_quiz_regression.js\n?? tests/ai_repro/classic_ui_regression.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "server-registration",
+      "command": [
+        "node",
+        "--test",
+        "tests/ai_repro/server_registration_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:12.760Z",
+      "durationMs": 811,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server-registration.log",
+      "artifacts": "server-registration",
+      "tail": [
+        "✔ separate server instances keep independent rooms, HOST access and Discord status (17.7993ms)",
+        "ℹ tests 2",
+        "ℹ suites 0",
+        "ℹ pass 2",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 688.5422"
+      ]
+    },
+    {
+      "id": "server_modules_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/server_modules_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:13.572Z",
+      "durationMs": 2540,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server_modules_regression.log",
+      "artifacts": "server_modules_regression",
+      "tail": [
+        "PASS: page/static routes, no-cache headers, catalog, HOST access and public answer/special-cell secrecy",
+        "PASS: HOST authorization, default/unknown/explicit game selection, live health room count and seasons API"
+      ]
+    },
+    {
+      "id": "archived_games_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/archived_games_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:16.113Z",
+      "durationMs": 6489,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "archived_games_regression.log",
+      "artifacts": "archived_games_regression",
+      "tail": [
+        "Verify: 152 ZIP entries",
+        "PASS: immutable game copies, question bank, every ZIP entry and ZIP SHA-256",
+        "PASS: nine original game packs, 516 records, all triplet/cat prompts and answers, immutable bank prefix with appendable approved entries and 152 verified ZIP entries",
+        "PASS: empty HOST catalog, season controls remain available, all archived IDs blocked, bank/ZIP private and server healthy",
+        "PASS: adding a future enabled game works alongside nine archived packs; archived IDs never start the fallback game"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:12.749Z",
+      "durationMs": 9986,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "artifacts": "static-preflight",
+      "tail": [
+        "PASS: syntax of 84 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    },
+    {
+      "id": "classic_ui_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_ui_regression.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:12.782Z",
+      "durationMs": 12453,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_ui_regression.log",
+      "artifacts": "classic_ui_regression",
+      "tail": [
+        "PASS: real Edge HOST/captain/OBS flow, JSON upload, draft/focus preservation, reconnect, judging, scores, native media control and responsive layout",
+        "ARTIFACTS: archive\\audits\\full-local-2026-11-22\\run-1795354392585\\classic_ui_regression"
+      ]
+    },
+    {
+      "id": "classic_quiz_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_quiz_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T13:33:12.770Z",
+      "durationMs": 61292,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_quiz_regression.log",
+      "artifacts": "classic_quiz_regression",
+      "tail": [
+        "PASS: arbitrary pool size, 60-second authoritative deadline, pause/resume, last-ms/late/stale packets, private answers, five teams, manual judgments, idempotent scoring, tied places and timer cleanup",
+        "PASS: real HTTP/Socket.IO, five captains, private responses, secret-key reconnect, old socket revocation, cross-mode/role isolation, manual scoring and stale-question guards",
+        "Waiting for the real 60-second classic answer deadline...",
+        "PASS: real deadline/late rejection, finish, private export history, two-way mode isolation and complete room cleanup"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T13:34:14.109Z",
+  "summary": {
+    "acceptancePassed": 6,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

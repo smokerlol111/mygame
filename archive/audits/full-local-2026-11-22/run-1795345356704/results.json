@@ -1,0 +1,703 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:02:36.824Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M CHANGELOG.md\n M README.md\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? server/\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "discord-voice",
+      "command": [
+        "node",
+        "--test",
+        "tests/ai_repro/discord_voice_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:36.893Z",
+      "durationMs": 432,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "discord-voice.log",
+      "tail": [
+        "✔ server accepts fresh heartbeat snapshots, deduplicates browser updates, and still clears stale IPC (7.7524ms)",
+        "ℹ tests 16",
+        "ℹ suites 0",
+        "ℹ pass 16",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 321.1239"
+      ]
+    },
+    {
+      "id": "server-registration",
+      "command": [
+        "node",
+        "--test",
+        "tests/ai_repro/server_registration_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:36.884Z",
+      "durationMs": 728,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server-registration.log",
+      "tail": [
+        "✔ separate server instances keep independent rooms, HOST access and Discord status (20.9117ms)",
+        "ℹ tests 2",
+        "ℹ suites 0",
+        "ℹ pass 2",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 619.696"
+      ]
+    },
+    {
+      "id": "server_modules_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/server_modules_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:37.326Z",
+      "durationMs": 1498,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server_modules_regression.log",
+      "tail": [
+        "PASS: page/static routes, no-cache headers, catalog, HOST access and public answer/special-cell secrecy",
+        "PASS: HOST authorization, default/unknown/explicit game selection, live health room count and seasons API"
+      ]
+    },
+    {
+      "id": "game_safety_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/game_safety_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:37.613Z",
+      "durationMs": 1302,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "game_safety_regression.log",
+      "tail": [
+        "PASS: numeric/audience/first-turn/final pause preserves time, final keeps its 2-second grace window, closed audience timers are ignored",
+        "PASS: concurrent Grand Final saves and season creation",
+        "PASS: stale/double final/start buttons, missing-bet recovery, PLAYER reconnect, no repeated scoring, test results cannot enter the season, server health"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:36.872Z",
+      "durationMs": 5213,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "tail": [
+        "PASS: syntax of 67 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    },
+    {
+      "id": "buzz_reactions",
+      "command": [
+        "node",
+        "tests/ai_repro/buzz_reactions.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:42.086Z",
+      "durationMs": 5188,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "buzz_reactions.log",
+      "tail": [
+        "PASS: reaction timing, multiple presses, false start, late/locked presses, repeated resets, red markers, result retention, board reset, UI and script syntax"
+      ]
+    },
+    {
+      "id": "audience_public_url",
+      "command": [
+        "node",
+        "tests/ai_repro/audience_public_url.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:47.274Z",
+      "durationMs": 2433,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "audience_public_url.log",
+      "tail": [
+        "PASS: Funnel link and QR match; local host renders public URL; viewer joins and answers.",
+        "PASS: explicit PUBLIC_URL takes precedence over Funnel configuration."
+      ]
+    },
+    {
+      "id": "audience_rejoin_security",
+      "command": [
+        "node",
+        "tests/ai_repro/audience_rejoin_security.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:49.708Z",
+      "durationMs": 680,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "audience_rejoin_security.log",
+      "tail": [
+        "PASS: public-ID impersonation blocked; keys private; winner reconnect and HOST prize preserved."
+      ]
+    },
+    {
+      "id": "season_grand_final",
+      "command": [
+        "node",
+        "tests/ai_repro/season_grand_final.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:50.389Z",
+      "durationMs": 2884,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "season_grand_final.log",
+      "tail": [
+        "PASS: legacy history, existing Season 2, arbitrary future season name, persistence, archive and tie validation",
+        "PASS: three qualifiers, zero starting scores, automatic Grand Final, tie resolution, no double points, canonical champion on HOST/public/OBS, duplicate/extra game guards, correction/deletion"
+      ]
+    },
+    {
+      "id": "host_live_updates",
+      "command": [
+        "node",
+        "tests/ai_repro/host_live_updates.js",
+        "--browser",
+        "--liveness"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:36.903Z",
+      "durationMs": 17916,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "host_live_updates.log",
+      "tail": [
+        "PASS: real 14-second clock-sync expiry and resulting state/hostSecrets preserve controls, draft and focus.",
+        "PASS: identical/network states, HOST reconnect, voice status, three real audience answers, 50 repeated states preserve nodes/drafts/focus; real phase changes render.",
+        "PASS: actual Edge keeps timer/input nodes, draft, focus and scroll through three real audience answers, 50 states and Discord status; one document navigation."
+      ]
+    },
+    {
+      "id": "season_wild_card",
+      "command": [
+        "node",
+        "tests/ai_repro/season_wild_card.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:53.275Z",
+      "durationMs": 3132,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "season_wild_card.log",
+      "tail": [
+        "PASS: audience-only default before/after game 3, points mode rejected, manual winner, HOST token renewal after reconnect, authorization, validation, persistence, unchanged results/leaderboard/room, real HOST/public UI, invalidation and final/archive lock"
+      ]
+    },
+    {
+      "id": "player_join_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/player_join_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:56.408Z",
+      "durationMs": 3384,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_join_regression.log",
+      "tail": [
+        "PASS: manual join and game start render; persistent media elements survive",
+        "PASS: reload restores the same player during the game",
+        "PASS: reconnect restores the session and the host receives the answer",
+        "PASS: live server sends the active prompt to PLAYER, keeps answers hidden and preserves the prompt during BUZZ",
+        "PASS: PLAYER shows its own reaction, red late-press difference, missing-time dash, resets and duel/phase visibility (simulated states)",
+        "PASS: prompt appears once across active question phases, escapes HTML and stays hidden during selection/bets (simulated states)"
+      ]
+    },
+    {
+      "id": "host_reload_repro",
+      "command": [
+        "node",
+        "tests/ai_repro/host_reload_repro.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:59.793Z",
+      "durationMs": 5945,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "host_reload_repro.log",
+      "tail": [
+        "[R19] (EASY-07) Host page reload during audience podium",
+        "  errors: none",
+        "  => NOT REPRODUCED"
+      ]
+    },
+    {
+      "id": "host_review_risks",
+      "command": [
+        "node",
+        "tests/ai_repro/host_review_risks.js",
+        "--fixed"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:03:05.739Z",
+      "durationMs": 4290,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "host_review_risks.log",
+      "tail": [
+        "      \"checked\": false,",
+        "      \"checkedWithHeadHandler\": false",
+        "    },",
+        "    \"voiceCancel\": {",
+        "      \"enabledDuringRecovery\": true,",
+        "      \"sentEnabled\": false",
+        "    }",
+        "  }",
+        "}"
+      ]
+    },
+    {
+      "id": "css_check",
+      "command": [
+        "node",
+        "tests/ai_repro/css_check.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:03:10.029Z",
+      "durationMs": 205,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "FAIL",
+      "log": "css_check.log",
+      "tail": [
+        "    at Module.require (node:internal/modules/cjs/loader:1617:12)",
+        "    at require (node:internal/modules/helpers:153:16)",
+        "    at Object.<anonymous> (C:\\Users\\user\\smokerlol-local\\tests\\ai_repro\\css_check.js:5:17)",
+        "    at Module._compile (node:internal/modules/cjs/loader:1872:14) {",
+        "  code: 'MODULE_NOT_FOUND',",
+        "  requireStack: [ 'C:\\\\Users\\\\user\\\\smokerlol-local\\\\tests\\\\ai_repro\\\\css_check.js' ]",
+        "}",
+        "",
+        "Node.js v24.19.0"
+      ]
+    },
+    {
+      "id": "validate_games",
+      "command": [
+        "node",
+        "tests/ai_repro/validate_games.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:03:10.238Z",
+      "durationMs": 232,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "validate_games.log",
+      "tail": [
+        " (no issues found)",
+        "",
+        "### season2-grand-final (season2_grand_final.json) enabled=true",
+        " (no issues found)",
+        "",
+        "### halloween-special-2026 (halloween_special_2026.json) enabled=true",
+        " (no issues found)",
+        "",
+        "1 issue(s) total"
+      ]
+    },
+    {
+      "id": "numeric_turn_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/numeric_turn_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:38.826Z",
+      "durationMs": 33048,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "numeric_turn_regression.log",
+      "tail": [
+        "PASS: turn rotation with/without a winner, wraparound, one/zero players and repeated-finish guards",
+        "Waiting for the real 30-second numeric timer with no submissions...",
+        "PASS: isolated server, real timer, nobody answers -> next player chooses, tile used, scores unchanged",
+        "PASS: isolated server, B chooses -> A wins +300 -> C chooses next"
+      ]
+    },
+    {
+      "id": "storage_repros",
+      "command": [
+        "node",
+        "tests/ai_repro/storage_repros.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:03:11.875Z",
+      "durationMs": 521,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "storage_repros.log",
+      "tail": [
+        "  => REPRODUCED",
+        "",
+        "[R15] ERROR Error: Спочатку збережіть окрему гру Grand Final, яка визначає чемпіона сезону.",
+        "    at setSeasonStatus (C:\\Users\\user\\smokerlol-local\\storage.js:101:13)",
+        "    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)",
+        "",
+        "[R16] ERROR Error: Спочатку збережіть окрему гру Grand Final, яка визначає чемпіона сезону.",
+        "    at setSeasonStatus (C:\\Users\\user\\smokerlol-local\\storage.js:101:13)",
+        "    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+      ]
+    },
+    {
+      "id": "express_protocol_check",
+      "command": [
+        "node",
+        "tests/ai_repro/express_protocol_check.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:03:12.397Z",
+      "durationMs": 570,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "express_protocol_check.log",
+      "tail": [
+        "[PARK-12] server.js sets 'trust proxy': false; req.protocol with X-Forwarded-Proto: https -> http",
+        "  => REPRODUCED (QR would encode http://)"
+      ]
+    },
+    {
+      "id": "check_doc_refs",
+      "command": [
+        "node",
+        "tests/ai_repro/check_doc_refs.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:03:12.968Z",
+      "durationMs": 165,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "check_doc_refs.log",
+      "tail": [
+        "DRIFT public/play.html:100 expected \"async function ensureGameData\" -> \"        padding: 0;\\r\"",
+        "DRIFT public/screen.html:388 expected \"latest.p.beforeScore\" -> \"        }\\r\"",
+        "DRIFT public/screen.html:327 expected \"roomCode\" -> \"      .obsSegmentMedia .imageRevealImg {\\r\"",
+        "DRIFT public/screen.html:349 expected \"/audience-qr/\" -> \"      .obsSegmentPlayers {\\r\"",
+        "DRIFT public/screen.html:129 expected \"/games/\" -> \"      body.screen .wrap {\\r\"",
+        "DRIFT public/screen.html:75 expected \"cueAudioCtx\" -> \"      .numericWinnerTitle { font-size: clamp(24px, 2.4vw, 42px); font-weight: 900; overflow-wrap: an\"",
+        "DRIFT public/screen.html:161 expected \"mediaPlaybackSnapshot\" -> \"      }\\r\"",
+        "DRIFT public/screen.html:251 expected \"function resumeVideoResult(){}\" -> \"        border-radius: 14px;\\r\"",
+        "98 line references checked, 97 drifted"
+      ]
+    },
+    {
+      "id": "halloween_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/halloween_theme.js",
+        "--player-layout",
+        "--traffic"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:54.820Z",
+      "durationMs": 25030,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "halloween_theme.log",
+      "tail": [
+        "PASS: syntax and explicit allowlisted theme opt-in",
+        "PASS: real first-turn sorting and secret-key reconnect retain all camera slots and scores",
+        "PASS: leaving/replacing a player does not shift the other camera",
+        "PASS: actual OBS photo rendering, escaping, stable/empty slots, media preservation, 18 phases and theme cleanup",
+        "PASS: real HOST/PLAYER previews, 25 tiles, BUZZ states, theme reset, persistent PLAYER video and untouched saved sessions",
+        "PASS: normal Grand Final OBS stays unthemed; static resources return HTTP 200",
+        "PASS: HOST-only theme control, server authorization, room isolation, all three screens, reconnect, focused answers, running timer and media preservation",
+        "PASS: 50 PLAYER geometry comparisons against standard at 320/390/768/1280/1920 px, touch and desktop; login/lobby/board/photo/BUZZ/long text/pause/video/bet/final input",
+        "THEME_TRAFFIC: {\"idleMs\":3500,\"idleThemeHttpRequests\":[0,0,0],\"idleThemeCommands\":[0,0,0],\"noopRendering\":{\"iterations\":500,\"elapsedMs\":7.7,\"mutations\":0,\"sameEmblem\":true},\"noopThemeHttpRequests\":0,\"photoRendering\":{\"iterations\":500,\"elapsedMs\":13.1,\"mutations\":0,\"sameImage\":true},\"photoThemeHttpRequests\":0,\"duplicateThemeBroadcasts\":[0,0,0],\"commandsPerClick\":1,\"updatesPerScreen\":[1,1,1],\"maxThemeEventBytes\":51,\"fullStateBroadcastsOnClick\":[0,0,0]}"
+      ]
+    },
+    {
+      "id": "player_join_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/player_join_theme.js",
+        "--browser"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:03:19.851Z",
+      "durationMs": 7134,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "FAIL",
+      "log": "player_join_theme.log",
+      "tail": [
+        "PASS: themed link/manual-code login, no partial/duplicate/idle lookups, theme-only public response, no seat/subscription, inputs preserved, stale responses ignored, real join",
+        "ReferenceError: fs is not defined",
+        "    at main (C:\\Users\\user\\smokerlol-local\\tests\\ai_repro\\player_join_theme.js:129:9)"
+      ]
+    },
+    {
+      "id": "grand_final_smoke",
+      "command": [
+        "node",
+        "tests/ai_repro/grand_final_smoke.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:02:38.916Z",
+      "durationMs": 57914,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "grand_final_smoke.log",
+      "tail": [
+        "PASS: round 1, 25 cells and 3 audience questions",
+        "PASS: round 2, 25 cells and 3 audience questions",
+        "PASS: 50 cells, formats text, emoji, imageReveal, video, duel, va_bank, triplet, cat, audio, numericClosest, 28 nonempty assets/HTTP 200, first turn, 6 audience questions, real final and server health"
+      ]
+    },
+    {
+      "id": "grand_final_standard_browser",
+      "command": [
+        "node",
+        "tests/ai_repro/grand_final_standard_browser.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:03:26.986Z",
+      "durationMs": 16303,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "grand_final_standard_browser.log",
+      "tail": [
+        "PASS: 198 actual Edge HOST/PLAYER/OBS renders, 54 decoded question images, standard colors/layout unchanged by Halloween CSS; live default room, start and two-way theme change",
+        "PASS: all 29 Grand Final image/audio/video paths decode in Edge and each audio/video advances during muted playback; every configured STOP is inside its file",
+        "PASS: all 6 actual HOST video players pause at their configured STOP during native Edge playback (seek to 0.3 s before the mark; tolerance 0.08 s)"
+      ]
+    },
+    {
+      "id": "server_repros",
+      "command": [
+        "node",
+        "tests/ai_repro/server_repros.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:03:10.473Z",
+      "durationMs": 49941,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "server_repros.log",
+      "tail": [
+        "R07_R08 ?        error",
+        "R09   PARK-05  REPRODUCED",
+        "R10   EASY-03  REPRODUCED",
+        "R13   WORK-02  REPRODUCED",
+        "R17   WORK-05  REPRODUCED",
+        "R18   PARK-07  REPRODUCED",
+        "R20   PARK-06  REPRODUCED",
+        "R11   WORK-04  NOT REPRODUCED",
+        "R21   RULE-03  NOT REPRODUCED"
+      ]
+    },
+    {
+      "id": "media_live_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/media_live_regression.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:03:43.290Z",
+      "durationMs": 52762,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "media_live_regression.log",
+      "tail": [
+        "PASS season2-grand-final 0:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 0:3:4 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:0:0 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:0:3 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:2:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:2:4 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:3:3 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS: all 23 media questions"
+      ]
+    },
+    {
+      "id": "player_audio_host",
+      "command": [
+        "node",
+        "tests/ai_repro/player_audio_host.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:04:36.052Z",
+      "durationMs": 3993,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_audio_host.log",
+      "tail": [
+        "PASS: desktop player joined",
+        "PASS: HOST-only audio, no PLAYER controls/local start, server authorization, play/pause/seek",
+        "PASS: 50 routine states and actual PLAYER reconnect paused/playing",
+        "PASS: controlled autoplay denial and click recovery",
+        "PASS: command context checks and superseded metadata callbacks",
+        "PASS: desktop audio recovery checks (isolated Edge; physical audio/OBS not tested)"
+      ]
+    },
+    {
+      "id": "obs_content_fit",
+      "command": [
+        "node",
+        "tests/ai_repro/obs_content_fit.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:04:40.046Z",
+      "durationMs": 5615,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "obs_content_fit.log",
+      "tail": [
+        "PASS 1024x576 numeric: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-0: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-1: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-2: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-3: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-4: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-no-answers: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 audience: all text fits, no scrolling, fixed camera windows",
+        "PASS real numeric question: 4 submissions, HOST reveals, server tie winner and award match OBS"
+      ]
+    },
+    {
+      "id": "obs_camera_stability",
+      "command": [
+        "node",
+        "tests/ai_repro/obs_camera_stability.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:04:45.662Z",
+      "durationMs": 5895,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "obs_camera_stability.log",
+      "tail": [
+        "PASS: 8 live transitions, player and screen reconnect, room close; fixed windows",
+        "PASS: 1920x1080: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames",
+        "PASS: 1280x720: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:04:51.601Z",
+  "summary": {
+    "acceptancePassed": 22,
+    "acceptanceFailed": 2,
+    "diagnosticsWithFindings": 5,
+    "protectedFilesUnchanged": true
+  }
+}

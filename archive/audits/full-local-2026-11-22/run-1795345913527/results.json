@@ -1,0 +1,44 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:11:53.633Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M CHANGELOG.md\n M README.md\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/audits/full-local-2026-11-22/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:11:53.682Z",
+      "durationMs": 4796,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "tail": [
+        "PASS: syntax of 68 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:11:58.520Z",
+  "summary": {
+    "acceptancePassed": 1,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

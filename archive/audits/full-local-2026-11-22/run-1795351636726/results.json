@@ -1,0 +1,291 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T12:47:17.019Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M .gitignore\n M AGENTS.md\n M CHANGELOG.md\n M README.md\n M archive/README.md\n M games/index.json\n M public/host.html\n M public/play.html\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/QUESTION_BANK.md\n?? archive/audits/classic-quiz-2026-11-22/\n?? archive/audits/full-local-2026-11-22/\n?? archive/audits/game-archive-2026-11-22/\n?? archive/completed-games/\n?? public/classic/\n?? scripts/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/archived_games_regression.js\n?? tests/ai_repro/classic_quiz_regression.js\n?? tests/ai_repro/classic_ui_regression.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "classic_ui_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_ui_regression.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:47:17.106Z",
+      "durationMs": 7021,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_ui_regression.log",
+      "artifacts": "classic_ui_regression",
+      "tail": [
+        "PASS: real Edge HOST/captain/OBS flow, JSON upload, draft/focus preservation, reconnect, judging, scores, native media control and responsive layout",
+        "ARTIFACTS: archive\\audits\\full-local-2026-11-22\\run-1795351636726\\classic_ui_regression"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:47:17.079Z",
+      "durationMs": 9345,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "artifacts": "static-preflight",
+      "tail": [
+        "PASS: syntax of 83 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    },
+    {
+      "id": "host_live_updates",
+      "command": [
+        "node",
+        "tests/ai_repro/host_live_updates.js",
+        "--browser",
+        "--liveness"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:47:24.128Z",
+      "durationMs": 18320,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "host_live_updates.log",
+      "artifacts": "host_live_updates",
+      "tail": [
+        "PASS: real 14-second clock-sync expiry and resulting state/hostSecrets preserve controls, draft and focus.",
+        "PASS: identical/network states, HOST reconnect, voice status, three real audience answers, 50 repeated states preserve nodes/drafts/focus; real phase changes render.",
+        "PASS: actual Edge keeps timer/input nodes, draft, focus and scroll through three real audience answers, 50 states and Discord status; one document navigation."
+      ]
+    },
+    {
+      "id": "halloween_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/halloween_theme.js",
+        "--screenshots",
+        "--traffic"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:47:42.449Z",
+      "durationMs": 33615,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "halloween_theme.log",
+      "artifacts": "halloween_theme",
+      "tail": [
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\host-board.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\host-photo.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-board.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-photo.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-buzz.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-long.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-photo-320.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795351636726\\halloween_theme\\player-paused.png",
+        "PASS: Edge layouts at 320/390/1280/1920 px; PLAYER uses standard theme geometry"
+      ]
+    },
+    {
+      "id": "classic_quiz_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_quiz_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:47:17.095Z",
+      "durationMs": 61275,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_quiz_regression.log",
+      "artifacts": "classic_quiz_regression",
+      "tail": [
+        "PASS: arbitrary pool size, 60-second authoritative deadline, pause/resume, last-ms/late/stale packets, private answers, five teams, manual judgments, idempotent scoring, tied places and timer cleanup",
+        "PASS: real HTTP/Socket.IO, five captains, private responses, secret-key reconnect, old socket revocation, cross-mode/role isolation, manual scoring and stale-question guards",
+        "Waiting for the real 60-second classic answer deadline...",
+        "PASS: real deadline/late rejection, finish, private export history, two-way mode isolation and complete room cleanup"
+      ]
+    },
+    {
+      "id": "player_join_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/player_join_theme.js",
+        "--browser"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:48:16.065Z",
+      "durationMs": 7564,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_join_theme.log",
+      "artifacts": "player_join_theme",
+      "tail": [
+        "PASS: themed link/manual-code login, no partial/duplicate/idle lookups, theme-only public response, no seat/subscription, inputs preserved, stale responses ignored, real join",
+        "PASS: actual Edge pre-join form, one lookup, 3.5 s idle without repeated theme commands/assets; screenshot saved"
+      ]
+    },
+    {
+      "id": "grand_final_standard_browser",
+      "command": [
+        "node",
+        "tests/ai_repro/grand_final_standard_browser.js",
+        "--screenshots"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:48:23.630Z",
+      "durationMs": 21376,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "grand_final_standard_browser.log",
+      "artifacts": "grand_final_standard_browser",
+      "tail": [
+        "PASS: 198 actual Edge HOST/PLAYER/OBS renders, 54 decoded question images, standard colors/layout unchanged by Halloween CSS; live default room, start and two-way theme change",
+        "PASS: all 29 Grand Final image/audio/video paths decode in Edge and each audio/video advances during muted playback; every configured STOP is inside its file",
+        "PASS: all 6 actual HOST video players pause at their configured STOP during native Edge playback (seek to 0.3 s before the mark; tolerance 0.08 s)"
+      ]
+    },
+    {
+      "id": "media_live_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/media_live_regression.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:48:45.007Z",
+      "durationMs": 54011,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "media_live_regression.log",
+      "artifacts": "media_live_regression",
+      "tail": [
+        "PASS season2-grand-final 0:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 0:3:4 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:0:0 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:0:3 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:2:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:2:4 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:3:1 audio: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS season2-grand-final 1:3:3 video: native decode, controls, 50 service updates, reconnect, answer and board",
+        "PASS: all 23 media questions"
+      ]
+    },
+    {
+      "id": "player_audio_host",
+      "command": [
+        "node",
+        "tests/ai_repro/player_audio_host.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:49:39.019Z",
+      "durationMs": 4287,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_audio_host.log",
+      "artifacts": "player_audio_host",
+      "tail": [
+        "PASS: desktop player joined",
+        "PASS: HOST-only audio, no PLAYER controls/local start, server authorization, play/pause/seek",
+        "PASS: 50 routine states and actual PLAYER reconnect paused/playing",
+        "PASS: controlled autoplay denial and click recovery",
+        "PASS: command context checks and superseded metadata callbacks",
+        "PASS: desktop audio recovery checks (isolated Edge; physical audio/OBS not tested)"
+      ]
+    },
+    {
+      "id": "obs_content_fit",
+      "command": [
+        "node",
+        "tests/ai_repro/obs_content_fit.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:49:43.307Z",
+      "durationMs": 6146,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "obs_content_fit.log",
+      "artifacts": "obs_content_fit",
+      "tail": [
+        "PASS 1024x576 numeric: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-0: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-1: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-2: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-3: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-result-4: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 numeric-no-answers: all text fits, no scrolling, fixed camera windows",
+        "PASS 1024x576 audience: all text fits, no scrolling, fixed camera windows",
+        "PASS real numeric question: 4 submissions, HOST reveals, server tie winner and award match OBS"
+      ]
+    },
+    {
+      "id": "obs_camera_stability",
+      "command": [
+        "node",
+        "tests/ai_repro/obs_camera_stability.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T12:49:49.454Z",
+      "durationMs": 6470,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "obs_camera_stability.log",
+      "artifacts": "obs_camera_stability",
+      "tail": [
+        "PASS: 8 live transitions, player and screen reconnect, room close; fixed windows",
+        "PASS: 1920x1080: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames",
+        "PASS: 1280x720: 44 layouts with unchanged window coordinates/owners, standard host area stable; theme change removes frames"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T12:49:55.980Z",
+  "summary": {
+    "acceptancePassed": 11,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

@@ -70,7 +70,7 @@ async function main() {
     const base = await hostPage.evaluate('state');
     base.players.forEach((p,i)=>{p.score=1000+i*100;p.syncReady=true;p.connected=true;});
     base.turnPlayerId=base.players[0].id;
-    const artifactDir = path.join(REPO_ROOT,'archive/audits/grand-final-standard-2026-10-28');
+    const artifactDir = process.env.QUIZ_TEST_ARTIFACT_DIR || path.join(REPO_ROOT,'archive/audits/grand-final-standard-2026-10-28');
     if(process.argv.includes('--screenshots')) fs.mkdirSync(artifactDir,{recursive:true});
     let checks=0, images=0;
     const inspect = async (patch,label) => {

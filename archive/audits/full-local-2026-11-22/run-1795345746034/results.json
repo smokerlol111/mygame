@@ -1,0 +1,64 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:09:06.131Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M CHANGELOG.md\n M README.md\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/audits/full-local-2026-11-22/\n?? server/\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "css_check",
+      "command": [
+        "node",
+        "tests/ai_repro/css_check.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:09:06.173Z",
+      "durationMs": 238,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "css_check.log",
+      "tail": [
+        "=> NOT REPRODUCED (no escaped element selectors)"
+      ]
+    },
+    {
+      "id": "player_join_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/player_join_theme.js",
+        "--browser"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:09:06.184Z",
+      "durationMs": 6777,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_join_theme.log",
+      "tail": [
+        "PASS: themed link/manual-code login, no partial/duplicate/idle lookups, theme-only public response, no seat/subscription, inputs preserved, stale responses ignored, real join",
+        "PASS: actual Edge pre-join form, one lookup, 3.5 s idle without repeated theme commands/assets; screenshot saved"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:09:13.001Z",
+  "summary": {
+    "acceptancePassed": 2,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

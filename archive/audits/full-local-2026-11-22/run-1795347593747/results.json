@@ -1,0 +1,188 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:39:53.861Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M .gitignore\n M CHANGELOG.md\n M README.md\n M games/index.json\n M public/host.html\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/QUESTION_BANK.md\n?? archive/audits/full-local-2026-11-22/\n?? archive/completed-games/\n?? scripts/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/archived_games_regression.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "server-registration",
+      "command": [
+        "node",
+        "--test",
+        "tests/ai_repro/server_registration_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:53.919Z",
+      "durationMs": 583,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server-registration.log",
+      "artifacts": "server-registration",
+      "tail": [
+        "✔ separate server instances keep independent rooms, HOST access and Discord status (11.0182ms)",
+        "ℹ tests 2",
+        "ℹ suites 0",
+        "ℹ pass 2",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 478.1592"
+      ]
+    },
+    {
+      "id": "server_modules_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/server_modules_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:53.927Z",
+      "durationMs": 1365,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "server_modules_regression.log",
+      "artifacts": "server_modules_regression",
+      "tail": [
+        "PASS: page/static routes, no-cache headers, catalog, HOST access and public answer/special-cell secrecy",
+        "PASS: HOST authorization, default/unknown/explicit game selection, live health room count and seasons API"
+      ]
+    },
+    {
+      "id": "game_safety_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/game_safety_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:54.502Z",
+      "durationMs": 1065,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "game_safety_regression.log",
+      "artifacts": "game_safety_regression",
+      "tail": [
+        "PASS: numeric/audience/first-turn/final pause preserves time, final keeps its 2-second grace window, closed audience timers are ignored",
+        "PASS: concurrent Grand Final saves and season creation",
+        "PASS: stale/double final/start buttons, missing-bet recovery, PLAYER reconnect, no repeated scoring, test results cannot enter the season, server health"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:53.907Z",
+      "durationMs": 4978,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "artifacts": "static-preflight",
+      "tail": [
+        "PASS: syntax of 71 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    },
+    {
+      "id": "archived_games_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/archived_games_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:55.293Z",
+      "durationMs": 4056,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "archived_games_regression.log",
+      "artifacts": "archived_games_regression",
+      "tail": [
+        "Verify: 152 ZIP entries",
+        "PASS: immutable game copies, question bank, every ZIP entry and ZIP SHA-256",
+        "PASS: nine original game packs, 516 records, all triplet/cat prompts and answers, frozen/shared banks and 152 verified ZIP entries",
+        "PASS: empty HOST catalog, season controls remain available, all archived IDs blocked, bank/ZIP private and server healthy",
+        "PASS: adding a future enabled game works alongside nine archived packs; archived IDs never start the fallback game"
+      ]
+    },
+    {
+      "id": "player_join_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/player_join_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:58.886Z",
+      "durationMs": 3163,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "player_join_regression.log",
+      "artifacts": "player_join_regression",
+      "tail": [
+        "PASS: manual join and game start render; persistent media elements survive",
+        "PASS: reload restores the same player during the game",
+        "PASS: reconnect restores the session and the host receives the answer",
+        "PASS: live server sends the active prompt to PLAYER, keeps answers hidden and preserves the prompt during BUZZ",
+        "PASS: PLAYER shows its own reaction, red late-press difference, missing-time dash, resets and duel/phase visibility (simulated states)",
+        "PASS: prompt appears once across active question phases, escapes HTML and stays hidden during selection/bets (simulated states)"
+      ]
+    },
+    {
+      "id": "grand_final_smoke",
+      "command": [
+        "node",
+        "tests/ai_repro/grand_final_smoke.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:39:55.568Z",
+      "durationMs": 56916,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "grand_final_smoke.log",
+      "artifacts": "grand_final_smoke",
+      "tail": [
+        "PASS: round 1, 25 cells and 3 audience questions",
+        "PASS: round 2, 25 cells and 3 audience questions",
+        "PASS: 50 cells, formats text, emoji, imageReveal, video, va_bank, triplet, audio, duel, cat, numericClosest, 28 nonempty assets/HTTP 200, first turn, 6 audience questions, real final and server health"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:40:52.527Z",
+  "summary": {
+    "acceptancePassed": 7,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

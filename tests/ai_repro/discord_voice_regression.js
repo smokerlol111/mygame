@@ -7,6 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 const { SpeakingMap, VoiceConnectionDisconnectReason } = require('@discordjs/voice');
+const { createDiscordIntegration } = require('../../server/features/discord');
 
 const source = fs.readFileSync(path.join(__dirname, '../../voice-bot/bot.js'), 'utf8');
 const USER = '123456789012345678';
@@ -216,24 +217,21 @@ test('disable before login prevents a late ready event from joining',async t=>{
 
 test('server accepts fresh heartbeat snapshots, deduplicates browser updates, and still clears stale IPC',async t=>{
   const h=harness(t);
-  const source=fs.readFileSync(path.join(__dirname,'../../server.js'),'utf8');
   const events=[],room={code:'TEST',hostSocket:'host',players:[{id:'player'}],voiceMappings:{player:USER},voiceSpeaking:[]};
-  const context=vm.createContext({
-    rooms:new Map([['TEST',room]]),Date,setInterval,clearInterval,
-    voiceBotStatus:'starting',voiceBotError:'',
-    process:{env:{DISCORD_GUILD_ID:'guild',DISCORD_VOICE_CHANNEL_ID:'channel'}},
+  const bridge=createDiscordIntegration({
+    rootDir:path.join(__dirname,'../..'), rooms:new Map([['TEST',room]]),
+    env:{DISCORD_GUILD_ID:'guild',DISCORD_VOICE_CHANNEL_ID:'channel'},
     io:{to:target=>({emit:(event,payload)=>events.push({target,event,payload})})},
   });
-  vm.runInContext(source.slice(source.indexOf('let voiceLastEvent ='),source.indexOf('// DEV-only: optional bot process')),context);
-  t.after(()=>vm.runInContext('clearInterval(voiceStaleTimer)',context));
-  h.observe(message=>context.handleDiscordVoiceMessage(message));await h.connect();
+  t.after(()=>bridge.stop());
+  h.observe(message=>bridge.handleMessage(message));await h.connect();
   const s=h.connections[0].receiver.speaking;
   for(let elapsed=0;elapsed<45000;elapsed+=50){
     s.onPacket(USER);t.mock.timers.tick(50);
     assert.deepEqual([...room.voiceSpeaking],['player'],`server highlight at ${elapsed+50}ms`);
   }
   assert.equal(events.filter(e=>e.event==='voiceSpeaking').length,1,'unchanged IPC does not rebuild HOST/OBS');
-  context.handleDiscordVoiceMessage({type:'voiceActivity',guildId:'other',channelId:'channel',userIds:[]});
+  bridge.handleMessage({type:'voiceActivity',guildId:'other',channelId:'channel',userIds:[]});
   assert.deepEqual([...room.voiceSpeaking],['player'],'wrong guild ignored');
   h.observe(()=>{}); // Simulate a stuck IPC bridge, not an intentional bot disconnect.
   t.mock.timers.tick(23000);

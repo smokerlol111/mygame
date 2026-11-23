@@ -1,0 +1,86 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T19:58:30.657Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M .gitignore\n M AGENTS.md\n M CHANGELOG.md\n M README.md\n M archive/README.md\n M games/index.json\n M public/host.html\n M public/play.html\n M server.js\n M start-local.ps1\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/QUESTION_BANK.md\n?? archive/audits/board-random-2026-11-22/\n?? archive/audits/classic-quiz-2026-11-22/\n?? archive/audits/full-local-2026-11-22/\n?? archive/audits/game-archive-2026-11-22/\n?? archive/completed-games/\n?? public/board-random.js\n?? public/classic/\n?? scripts/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/archived_games_regression.js\n?? tests/ai_repro/board_random_regression.js\n?? tests/ai_repro/board_random_ui.js\n?? tests/ai_repro/classic_quiz_regression.js\n?? tests/ai_repro/classic_random_pool_regression.js\n?? tests/ai_repro/classic_ui_regression.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "question-topic-index",
+      "command": [
+        "node",
+        "scripts/build-question-topic-index.js",
+        "--verify"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T19:58:30.719Z",
+      "durationMs": 139,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "question-topic-index.log",
+      "artifacts": "question-topic-index",
+      "tail": [
+        "PASS: all 540 references classified; immutable bank prefix preserved"
+      ]
+    },
+    {
+      "id": "board_random_ui",
+      "command": [
+        "node",
+        "tests/ai_repro/board_random_ui.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T19:58:30.735Z",
+      "durationMs": 5802,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "board_random_ui.log",
+      "artifacts": "board_random_ui",
+      "tail": [
+        "PASS: real Edge topic selection, preview, room/HOST reload, 390px PLAYER and 1080p OBS, board values and hidden answers"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T19:58:30.707Z",
+      "durationMs": 8487,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "artifacts": "static-preflight",
+      "tail": [
+        "PASS: syntax of 94 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T19:58:39.258Z",
+  "summary": {
+    "acceptancePassed": 3,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

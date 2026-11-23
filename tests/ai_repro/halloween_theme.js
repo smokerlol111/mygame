@@ -7,6 +7,8 @@ const vm = require('node:vm');
 const { io } = require('socket.io-client');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { startServer, REPO_ROOT } = require('./lib/server');
+const { createBoardState } = require('../../server/modes/board/state');
+const { createStatePublisher } = require('../../server/transport/publish-state');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function waitFor(check, label) {
@@ -23,30 +25,31 @@ async function main() {
       new vm.Script(match[1], { filename: file });
   }
   // Check that arbitrary theme names cannot select arbitrary scripts/resources.
-  const source = fs.readFileSync(path.join(REPO_ROOT, 'server.js'), 'utf8');
   let game = { title: 'Fixture', rounds: [] };
-  const context = vm.createContext({ getRoomGame: () => game });
-  vm.runInContext(source.slice(source.indexOf('function publicState('), source.indexOf('function emitState(')), context);
+  const publicState = createBoardState({ getRoomGame: () => game });
   const room = { players: [], audienceRoundIndex: null, answeringLocked: new Set(), gameId: 'fixture' };
-  assert.equal(context.publicState(room).uiTheme, null);
+  assert.equal(publicState(room).uiTheme, null);
   game.uiTheme = 'halloween';
-  assert.equal(context.publicState(room).uiTheme, 'halloween');
+  assert.equal(publicState(room).uiTheme, 'halloween');
   room.uiTheme = null;
-  assert.equal(context.publicState(room).uiTheme, null, 'HOST can select standard over a Halloween game default');
+  assert.equal(publicState(room).uiTheme, null, 'HOST can select standard over a Halloween game default');
   room.uiTheme = 'halloween';
   game.uiTheme = undefined;
-  assert.equal(context.publicState(room).uiTheme, 'halloween', 'HOST can select Halloween over a standard game default');
+  assert.equal(publicState(room).uiTheme, 'halloween', 'HOST can select Halloween over a standard game default');
   delete room.uiTheme;
   game.uiTheme = '../../untrusted';
-  assert.equal(context.publicState(room).uiTheme, null);
+  assert.equal(publicState(room).uiTheme, null);
   const presenceTargets = [];
-  context.io = { to(target) { return { emit(event, payload) { presenceTargets.push({ target, event, payload }); } }; } };
-  vm.runInContext(source.slice(source.indexOf('function emitPlayerPresence('), source.indexOf('function getRoom(')), context);
+  const { emitPlayerPresence } = createStatePublisher({
+    getRoomGame: () => game,
+    publicState,
+    io: { to(target) { return { emit(event, payload) { presenceTargets.push({ target, event, payload }); } }; } },
+  });
   const presenceRoom = { code: 'TEST', hostSocket: 'host' };
-  context.emitPlayerPresence(presenceRoom, { id: 'player', connected: false });
+  emitPlayerPresence(presenceRoom, { id: 'player', connected: false });
   assert.equal(presenceTargets.at(-1).target, 'host', 'default presence still goes only to HOST');
   game.uiTheme = 'halloween';
-  context.emitPlayerPresence(presenceRoom, { id: 'player', connected: true });
+  emitPlayerPresence(presenceRoom, { id: 'player', connected: true });
   assert.equal(presenceTargets.at(-1).target, 'TEST', 'Halloween OBS receives presence without full state updates');
   console.log('PASS: syntax and explicit allowlisted theme opt-in');
 
@@ -343,7 +346,7 @@ async function main() {
     if (process.argv.some(arg => ['--screenshots', '--traffic', '--traffic-baseline', '--player-layout'].includes(arg))) {
       const { startEdge } = require('./lib/edge');
       const browser = await startEdge();
-      const directory = path.join(REPO_ROOT, 'themes/halloween/previews');
+      const directory = process.env.QUIZ_TEST_ARTIFACT_DIR || path.join(REPO_ROOT, 'themes/halloween/previews');
       fs.mkdirSync(directory, { recursive: true });
       try {
         if (process.argv.includes('--player-layout') || process.argv.includes('--screenshots')) {

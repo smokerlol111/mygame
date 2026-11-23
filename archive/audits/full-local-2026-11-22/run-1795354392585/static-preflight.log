@@ -1,0 +1,1 @@
+PASS: syntax of 84 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check

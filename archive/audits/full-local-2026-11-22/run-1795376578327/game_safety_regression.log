@@ -1,0 +1,3 @@
+PASS: numeric/audience/first-turn/final pause preserves time, final keeps its 2-second grace window, closed audience timers are ignored
+PASS: concurrent Grand Final saves and season creation
+PASS: stale/double final/start buttons, missing-bet recovery, PLAYER reconnect, no repeated scoring, test results cannot enter the season, server health

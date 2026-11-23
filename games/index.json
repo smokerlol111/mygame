@@ -5,7 +5,10 @@
     "icon": "🎬",
     "description": "Фільми, франшизи та кінофакти",
     "file": "kinohardkor.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "general-knowledge",
@@ -13,7 +16,10 @@
     "icon": "🧠",
     "description": "Шкільні знання, логіка, факти та пастки",
     "file": "general_knowledge.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "back-to-2000s-test",
@@ -21,7 +27,10 @@
     "icon": "📼",
     "description": "SMOKERLOL QUIZ #3 — музика, кіно, ігри та культура нульових",
     "file": "back_to_2000s_test.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "friends-super-final",
@@ -29,7 +38,10 @@
     "icon": "🏆",
     "description": "SMOKERLOL QUIZ #4 — суперфінал друзів",
     "file": "friends_super_final.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "season2-kinohardkor-2",
@@ -37,7 +49,10 @@
     "icon": "🎬",
     "description": "Сезон 2 • Гра #1 • Відбір до Grand Final",
     "file": "season2_kinohardkor_2_0.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "season2-general-knowledge-2",
@@ -45,7 +60,10 @@
     "icon": "🧠",
     "description": "Сезон 2 • Гра #2 • Шкільні знання, логіка, факти та пастки",
     "file": "season2_general_knowledge_2_0.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "season2-memes-internet",
@@ -53,7 +71,10 @@
     "icon": "🌐",
     "description": "Сезон 2 • Гра #3 • Меми, ностальгія та інтернет-культура",
     "file": "season2_memes_internet.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "season2-grand-final",
@@ -61,7 +82,10 @@
     "icon": "🏆",
     "description": "Грандфінал 29.10.2026 • усі 50 основних, стартове, фінальне та 2 глядацькі раунди внесені • тестова версія",
     "file": "season2_grand_final.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   },
   {
     "id": "halloween-special-2026",
@@ -69,6 +93,9 @@
     "icon": "🎃",
     "description": "🎃 Halloween Special 2026 • 50 питань у двох основних раундах • фото, аудіо, STOP-відео, audioReveal • триває тестування",
     "file": "halloween_special_2026.json",
-    "enabled": true
+    "enabled": false,
+    "archived": true,
+    "archivedAt": "2026-11-22",
+    "archive": "archive/completed-games/2026-11-22"
   }
 ]

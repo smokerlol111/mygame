@@ -1,0 +1,194 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T21:33:53.606Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M .gitignore\n M AGENTS.md\n M CHANGELOG.md\n M README.md\n M archive/README.md\n M games/index.json\n M public/host.html\n M public/play.html\n M server.js\n M start-local.ps1\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/QUESTION_BANK.md\n?? archive/QUESTION_BANK_RULES.md\n?? archive/audits/board-random-2026-11-22/\n?? archive/audits/classic-quiz-2026-11-22/\n?? archive/audits/full-local-2026-11-22/\n?? archive/audits/game-archive-2026-11-22/\n?? archive/completed-games/\n?? public/board-random.js\n?? public/classic/\n?? scripts/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/archived_games_regression.js\n?? tests/ai_repro/board_random_regression.js\n?? tests/ai_repro/board_random_ui.js\n?? tests/ai_repro/classic_quiz_regression.js\n?? tests/ai_repro/classic_random_pool_regression.js\n?? tests/ai_repro/classic_ui_regression.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/question_bank_approval_regression.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "question-topic-index",
+      "command": [
+        "node",
+        "scripts/build-question-topic-index.js",
+        "--verify"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:53.666Z",
+      "durationMs": 217,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "question-topic-index.log",
+      "artifacts": "question-topic-index",
+      "tail": [
+        "PASS: approved-entry categories and thematic index verified; immutable bank prefix preserved"
+      ]
+    },
+    {
+      "id": "question_bank_approval_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/question_bank_approval_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:53.675Z",
+      "durationMs": 358,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "question_bank_approval_regression.log",
+      "artifacts": "question_bank_approval_regression",
+      "tail": [
+        "PASS: required themes/subcategories/levels, unique IDs, approval metadata, similarity references and reuse approval; nested themes; new entries in topic index and compatible random pools; immutable sources"
+      ]
+    },
+    {
+      "id": "classic_random_pool_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_random_pool_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:53.884Z",
+      "durationMs": 1492,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_random_pool_regression.log",
+      "artifacts": "classic_random_pool_regression",
+      "tail": [
+        "PASS: 271 compatible original questions, exact duplicate filtering, unapproved/special/media exclusions, random unique counts/order, HOST-only access, archived games hidden, random room and private answers, unchanged source data"
+      ]
+    },
+    {
+      "id": "board_random_ui",
+      "command": [
+        "node",
+        "tests/ai_repro/board_random_ui.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:53.686Z",
+      "durationMs": 6699,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "board_random_ui.log",
+      "artifacts": "board_random_ui",
+      "tail": [
+        "PASS: real Edge topic selection, preview, room/HOST reload, 390px PLAYER and 1080p OBS, board values and hidden answers"
+      ]
+    },
+    {
+      "id": "archived_games_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/archived_games_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:55.377Z",
+      "durationMs": 6067,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "archived_games_regression.log",
+      "artifacts": "archived_games_regression",
+      "tail": [
+        "Verify: 152 ZIP entries",
+        "PASS: immutable game copies, question bank, every ZIP entry and ZIP SHA-256",
+        "PASS: nine original game packs, 516 records, all triplet/cat prompts and answers, immutable bank prefix with appendable approved entries and 152 verified ZIP entries",
+        "PASS: empty HOST catalog, season controls remain available, all archived IDs blocked, bank/ZIP private and server healthy",
+        "PASS: adding a future enabled game works alongside nine archived packs; archived IDs never start the fallback game"
+      ]
+    },
+    {
+      "id": "static-preflight",
+      "command": [
+        "node",
+        "tests/ai_repro/full_local_suite.js",
+        "--static"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:53.652Z",
+      "durationMs": 9574,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "static-preflight.log",
+      "artifacts": "static-preflight",
+      "tail": [
+        "PASS: syntax of 96 JavaScript files and 6 inline scripts; 10 game JSON files parse; git diff --check"
+      ]
+    },
+    {
+      "id": "classic_ui_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/classic_ui_regression.js"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:34:00.386Z",
+      "durationMs": 17037,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "classic_ui_regression.log",
+      "artifacts": "classic_ui_regression",
+      "tail": [
+        "PASS: random existing-question preview, real Edge HOST/captain/OBS flow, JSON upload, draft/focus preservation, reconnect, judging, scores, native media control and responsive layout",
+        "ARTIFACTS: archive\\audits\\full-local-2026-11-22\\run-1795383233482\\classic_ui_regression"
+      ]
+    },
+    {
+      "id": "board_random_regression",
+      "command": [
+        "node",
+        "tests/ai_repro/board_random_regression.js"
+      ],
+      "lane": "core",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T21:33:54.034Z",
+      "durationMs": 62900,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "board_random_regression.log",
+      "artifacts": "board_random_regression",
+      "tail": [
+        "PASS: all 540 topic references, 8 themes, 100 unique 50-cell boards, source prompts/answers, difficulty rows, all supported formats and scaled reveal/triplet values",
+        "PASS random-board-12dd1b84-19b7-47fa-8a0b-aa1ab223cae0: round 1, 25 cumulative cells",
+        "PASS random-board-12dd1b84-19b7-47fa-8a0b-aa1ab223cae0: round 2, 50 cumulative cells",
+        "PASS: HOST authorization, generated-game HTTP privacy, empty archived menu, bounded previews, active-room retention and replay, room cleanup and all 50 cells/start/6 audience questions/final"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T21:34:56.988Z",
+  "summary": {
+    "acceptancePassed": 8,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

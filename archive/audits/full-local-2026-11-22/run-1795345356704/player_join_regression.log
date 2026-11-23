@@ -1,0 +1,6 @@
+PASS: manual join and game start render; persistent media elements survive
+PASS: reload restores the same player during the game
+PASS: reconnect restores the session and the host receives the answer
+PASS: live server sends the active prompt to PLAYER, keeps answers hidden and preserves the prompt during BUZZ
+PASS: PLAYER shows its own reaction, red late-press difference, missing-time dash, resets and duel/phase visibility (simulated states)
+PASS: prompt appears once across active question phases, escapes HTML and stays hidden during selection/bets (simulated states)

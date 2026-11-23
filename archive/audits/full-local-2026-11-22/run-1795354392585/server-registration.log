@@ -1,0 +1,10 @@
+✔ all 87 existing and 17 classic commands are registered exactly once without listening or starting the bot (24.8284ms)
+✔ separate server instances keep independent rooms, HOST access and Discord status (17.7993ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 688.5422

@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "code": "24UA",
+  "checks": [
+    "JSON file upload",
+    "HOST reload",
+    "captain reconnect",
+    "draft/focus",
+    "private responses",
+    "judging",
+    "scores",
+    "text/image/audio/video",
+    "HOST-only media",
+    "mobile layout",
+    "1080p OBS layout",
+    "finished export availability"
+  ],
+  "screenshots": [
+    "captain-finished-320.png",
+    "captain-image-390.png",
+    "captain-result-390.png",
+    "captain-video-390.png",
+    "host-paused.png",
+    "host-review.png",
+    "screen-image-1920.png",
+    "screen-result-1920.png",
+    "screen-video-1920.png"
+  ]
+}

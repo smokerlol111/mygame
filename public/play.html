@@ -403,6 +403,11 @@
         if (!/^[A-Z0-9]{4}$/.test(entered) || !socket.connected) return;
         socket.timeout(5000).emit("getRoomTheme", { code: entered }, (error, result) => {
           if (joined || request !== loginThemeRequest || field !== document.getElementById("code") || field.value.trim().toUpperCase() !== entered) return;
+          if (!error && result?.ok && result.gameType === 'classic') {
+            sessionStorage.setItem('classicSuggestedName', document.getElementById('name')?.value || '');
+            location.replace('/classic/play?room=' + encodeURIComponent(entered));
+            return;
+          }
           if (error) loginThemeCode = ""; // A later user edit/reconnect can retry; no polling.
           QuizTheme.apply(!error && result?.ok && result.code === entered ? { uiTheme: result.uiTheme, phase: "login" } : null);
         });

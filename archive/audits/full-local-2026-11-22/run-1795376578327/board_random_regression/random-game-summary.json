@@ -1,0 +1,21 @@
+{
+  "gameId": "random-board-a1d21c8d-0716-4060-8009-3c1acc8b8fa1",
+  "passed": true,
+  "checked": 50,
+  "firstTurn": true,
+  "audienceQuestions": 6,
+  "assets": 8,
+  "formats": [
+    "text",
+    "imageReveal",
+    "cat",
+    "duel",
+    "emoji",
+    "audioReveal",
+    "numericClosest",
+    "va_bank",
+    "video",
+    "audio"
+  ],
+  "fallbacks": []
+}

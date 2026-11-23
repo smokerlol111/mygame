@@ -1,0 +1,18 @@
+
+[R12] (PARK-08) Corrupted seasons.json is silently replaced; history is gone
+  expected: startup refuses or keeps the data
+  actual:   12 games before (file cut in half) -> 0 games after init, seasons=["Сезон 1"]
+  => REPRODUCED
+
+[R14] (RULE-01) Tied final scores get different places/season points (alphabetical)
+  expected: equal scores -> equal points (or an explicit tie-break)
+  actual:   [{"name":"Андрій","score":1000,"place":1,"seasonPoints":10},{"name":"Богдан","score":1000,"place":2,"seasonPoints":7}]
+  => REPRODUCED
+
+[R15] ERROR Error: Спочатку збережіть окрему гру Grand Final, яка визначає чемпіона сезону.
+    at setSeasonStatus (C:\Users\user\smokerlol-local\storage.js:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[R16] ERROR Error: Спочатку збережіть окрему гру Grand Final, яка визначає чемпіона сезону.
+    at setSeasonStatus (C:\Users\user\smokerlol-local\storage.js:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

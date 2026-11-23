@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "checks": [
+    "8 themes",
+    "legacy capability check",
+    "five-theme validation",
+    "50-question preview",
+    "room creation",
+    "HOST reload by dynamic ID",
+    "PLAYER and OBS board",
+    "hidden answers",
+    "room close"
+  ]
+}

@@ -1,0 +1,2 @@
+[PARK-12] server.js sets 'trust proxy': false; req.protocol with X-Forwarded-Proto: https -> http
+  => REPRODUCED (QR would encode http://)

@@ -1,0 +1,77 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:15:51.183Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M CHANGELOG.md\n M README.md\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/grand_final_standard_browser.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/audits/full-local-2026-11-22/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_lifecycle_regression.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "halloween_theme",
+      "command": [
+        "node",
+        "tests/ai_repro/halloween_theme.js",
+        "--screenshots",
+        "--traffic"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:15:51.221Z",
+      "durationMs": 28096,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "halloween_theme.log",
+      "artifacts": "halloween_theme",
+      "tail": [
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\host-board.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\host-photo.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-board.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-photo.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-buzz.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-long.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-photo-320.png",
+        "SCREENSHOT: C:\\Users\\user\\smokerlol-local\\archive\\audits\\full-local-2026-11-22\\run-1795346151098\\halloween_theme\\player-paused.png",
+        "PASS: Edge layouts at 320/390/1280/1920 px; PLAYER uses standard theme geometry"
+      ]
+    },
+    {
+      "id": "grand_final_standard_browser",
+      "command": [
+        "node",
+        "tests/ai_repro/grand_final_standard_browser.js",
+        "--screenshots"
+      ],
+      "lane": "browser",
+      "diagnostic": false,
+      "startedAt": "2026-11-22T11:16:19.318Z",
+      "durationMs": 16972,
+      "exitCode": 0,
+      "timedOut": false,
+      "launchError": null,
+      "status": "PASS",
+      "log": "grand_final_standard_browser.log",
+      "artifacts": "grand_final_standard_browser",
+      "tail": [
+        "PASS: 198 actual Edge HOST/PLAYER/OBS renders, 54 decoded question images, standard colors/layout unchanged by Halloween CSS; live default room, start and two-way theme change",
+        "PASS: all 29 Grand Final image/audio/video paths decode in Edge and each audio/video advances during muted playback; every configured STOP is inside its file",
+        "PASS: all 6 actual HOST video players pause at their configured STOP during native Edge playback (seek to 0.3 s before the mark; tolerance 0.08 s)"
+      ]
+    }
+  ],
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:16:36.336Z",
+  "summary": {
+    "acceptancePassed": 2,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 0,
+    "protectedFilesUnchanged": true
+  }
+}

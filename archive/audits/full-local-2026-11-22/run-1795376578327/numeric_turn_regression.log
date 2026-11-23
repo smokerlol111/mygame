@@ -1,0 +1,4 @@
+PASS: turn rotation with/without a winner, wraparound, one/zero players and repeated-finish guards
+Waiting for the real 30-second numeric timer with no submissions...
+PASS: isolated server, real timer, nobody answers -> next player chooses, tile used, scores unchanged
+PASS: isolated server, B chooses -> A wins +300 -> C chooses next

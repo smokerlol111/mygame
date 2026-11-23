@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "code": "A6SW",
+  "checks": [
+    "JSON file upload",
+    "HOST reload",
+    "captain reconnect",
+    "draft/focus",
+    "server draft restoration",
+    "automatic unsent answer",
+    "separate thirds tables",
+    "hidden ordinary scores",
+    "last-to-first final ceremony",
+    "ceremony HOST reload",
+    "private responses",
+    "judging",
+    "scores",
+    "text/image/audio/video",
+    "HOST-only media",
+    "mobile layout",
+    "1080p OBS layout",
+    "finished export"
+  ],
+  "screenshots": [
+    "captain-finished-320.png",
+    "captain-image-390.png",
+    "captain-result-390.png",
+    "captain-video-390.png",
+    "final-last-place-1920.png",
+    "final-winner-1920.png",
+    "host-paused.png",
+    "host-review.png",
+    "random-pool-preview.png",
+    "screen-image-1920.png",
+    "screen-result-1920.png",
+    "screen-video-1920.png",
+    "standings-after-2-1920.png",
+    "standings-after-2-390.png",
+    "standings-after-3-1920.png",
+    "standings-after-3-390.png"
+  ]
+}

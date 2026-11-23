@@ -1,5 +1,6 @@
 // Public pre-join theme lookup + actual PLAYER login. Uses isolated rooms/data.
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { io } = require('socket.io-client');
 const { JSDOM, VirtualConsole } = require('jsdom');
@@ -125,7 +126,9 @@ async function main() {
         assert.equal(lookupCount(),1,'real Edge has no idle theme polling on login');
         assert.equal(tab.requests.slice(count).filter(request=>request.url.includes('/themes/')).length,0);
         assert.equal(host.state.players.length,1,'browser login form did not join automatically');
-        await tab.screenshot(path.join(REPO_ROOT,'themes/halloween/previews/player-join-halloween.png'));
+        const artifactDir=process.env.QUIZ_TEST_ARTIFACT_DIR || path.join(REPO_ROOT,'themes/halloween/previews');
+        fs.mkdirSync(artifactDir,{recursive:true});
+        await tab.screenshot(path.join(artifactDir,'player-join-halloween.png'));
         console.log('PASS: actual Edge pre-join form, one lookup, 3.5 s idle without repeated theme commands/assets; screenshot saved');
       } finally {if(tab)await tab.close();browser.stop();}
     }

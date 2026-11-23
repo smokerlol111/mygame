@@ -1,0 +1,56 @@
+{
+  "clientDate": "2026-11-22",
+  "timezone": "Europe/Kiev",
+  "startedAt": "2026-11-22T11:11:53.836Z",
+  "head": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+  "workingTree": " M CHANGELOG.md\n M README.md\n M server.js\n M tests/ai_repro/README.md\n M tests/ai_repro/buzz_reactions.js\n M tests/ai_repro/discord_voice_regression.js\n M tests/ai_repro/game_safety_regression.js\n M tests/ai_repro/halloween_theme.js\n M tests/ai_repro/lib/server.js\n M tests/ai_repro/numeric_turn_regression.js\n M tests/ai_repro/player_join_theme.js\n?? archive/audits/full-local-2026-11-22/\n?? server/\n?? tests/ai_repro/all_games_smoke.js\n?? tests/ai_repro/full_local_suite.js\n?? tests/ai_repro/server_modules_regression.js\n?? tests/ai_repro/server_registration_regression.js\n",
+  "node": "v24.19.0",
+  "scope": "Isolated local servers, throwaway JSON storage, jsdom and headless Edge; no live server/Funnel, production database, real Discord, phones or OBS compositor.",
+  "excluded": [
+    "tailscale_media_preflight.js (uses the existing server/Funnel)",
+    "host_review_risks.js without --fixed (expects repaired defects)",
+    "PostgreSQL integration (no isolated PostgreSQL configured)"
+  ],
+  "results": [
+    {
+      "id": "server_repros",
+      "command": [
+        "node",
+        "tests/ai_repro/server_repros.js"
+      ],
+      "lane": "core",
+      "diagnostic": true,
+      "startedAt": "2026-11-22T11:11:53.935Z",
+      "durationMs": 49412,
+      "exitCode": 1,
+      "timedOut": false,
+      "launchError": null,
+      "status": "DIAGNOSTIC_FINDINGS",
+      "log": "server_repros.log",
+      "tail": [
+        "R07_R08 ?        error",
+        "R09   PARK-05  REPRODUCED",
+        "R10   EASY-03  REPRODUCED",
+        "R13   WORK-02  REPRODUCED",
+        "R17   WORK-05  REPRODUCED",
+        "R18   PARK-07  REPRODUCED",
+        "R20   PARK-06  REPRODUCED",
+        "R11   WORK-04  NOT REPRODUCED",
+        "R21   RULE-03  NOT REPRODUCED"
+      ]
+    }
+  ],
+  "baselineServer": {
+    "sha": "48f500f62e167eed52da60e9612c2aa2fd74699e",
+    "source": "server-before-refactor.js",
+    "sha256": "a21d91b6f776039ece2eb9d28f5bd4b141808a647bce5789f28c98653bc0117f"
+  },
+  "protectedFilesChanged": [],
+  "completedAt": "2026-11-22T11:12:43.398Z",
+  "summary": {
+    "acceptancePassed": 0,
+    "acceptanceFailed": 0,
+    "diagnosticsWithFindings": 1,
+    "protectedFilesUnchanged": true
+  }
+}

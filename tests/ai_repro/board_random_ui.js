@@ -1,0 +1,62 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {startServer,REPO_ROOT}=require('./lib/server');
+const {startEdge}=require('./lib/edge');
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const artifacts=process.env.QUIZ_TEST_ARTIFACT_DIR||path.join(REPO_ROOT,'archive/audits/board-random-2026-11-22','ui-'+Date.now());
+fs.mkdirSync(artifacts,{recursive:true});
+async function until(page,condition) {const end=Date.now()+12000;while(!await page.evaluate(condition)){assert.ok(Date.now()<end,condition);await sleep(50);}}
+async function main() {
+  const key='random-board-ui',server=await startServer({HOST_KEY:key,GAMES_INDEX_FILE:path.join(REPO_ROOT,'games/index.json')});
+  let edge,host;const pages=[];
+  try {
+    edge=await startEdge({muteAudio:true});
+    const page=async(route,width,height,ready)=>{const value=await edge.page(server.url+route,width,height,{ready});pages.push(value);return value;};
+    host=await page('/host?key='+key,1440,1080,'!!document.getElementById("randomBoardOptions") && socket.connected');
+    assert.equal(await host.evaluate('document.querySelectorAll(".gameCard").length'),0);
+    await host.evaluate(`window.realFetch=fetch;window.fetch=(url,options)=>String(url).includes('/api/capabilities')?Promise.resolve(new Response(JSON.stringify({classicRandomPool:true}),{status:200})):realFetch(url,options);document.getElementById('randomBoardOptions').click()`);
+    await until(host,'document.getElementById("randomBoardNotice").textContent.includes("перезапустити")');
+    await host.evaluate(`window.fetch=window.realFetch;document.getElementById('randomBoardOptions').click()`);
+    await until(host,'document.querySelectorAll("#randomBoardThemes input").length===8');
+    await host.evaluate(`for(const input of document.querySelectorAll('#randomBoardThemes input')){input.checked=['cinema','music','technology','science'].includes(input.value);input.dispatchEvent(new Event('change'))}`);
+    assert.equal(await host.evaluate('document.getElementById("randomBoardGenerate").disabled'),true);
+    await host.evaluate(`const input=document.querySelector('#randomBoardThemes input[value="world"]');input.checked=true;input.dispatchEvent(new Event('change'));document.getElementById('randomBoardGenerate').click()`);
+    await until(host,'!document.getElementById("randomBoardCreate").hidden && !document.getElementById("randomBoardCreate").disabled');
+    const exported=await host.evaluate(`(async()=>{let output;const original=URL.createObjectURL,click=HTMLAnchorElement.prototype.click;URL.createObjectURL=blob=>{output=blob;return 'blob:fixture'};HTMLAnchorElement.prototype.click=function(){};document.getElementById('randomBoardDownload').click();URL.createObjectURL=original;HTMLAnchorElement.prototype.click=click;return JSON.parse(await output.text())})()`);
+    assert.equal(exported.rounds.flatMap(round=>round.categories.flatMap(category=>category.questions)).length,50);
+    assert.ok(exported.id.startsWith('random-board-'));
+    await host.evaluate(`document.getElementById('randomBoardPreview').open=true`);
+    await host.screenshot(path.join(artifacts,'host-preview.png'));
+    await host.evaluate(`document.getElementById('randomBoardCreate').click()`);
+    await until(host,'typeof state!=="undefined" && state?.phase==="lobby"');
+    const code=await host.evaluate('code'),gameId=await host.evaluate('state.gameId');
+    assert.ok(gameId.startsWith('random-board-'));
+    const player=await page('/play?room='+code,390,844,'!!document.getElementById("join")');
+    await player.evaluate(`document.getElementById('name').value='Random player';document.getElementById('join').click()`,{userGesture:true});
+    await until(player,'joined && state?.phase==="lobby"');
+    const screen=await page('/screen/'+code,1920,1080,'typeof state!=="undefined" && state?.phase==="lobby"');
+    await host.close();
+    host=await page('/host',1440,1080,'typeof state!=="undefined" && state?.phase==="lobby"');
+    assert.equal(await host.evaluate('data.rounds.length'),2,'generated game reloaded by ID');
+    await host.evaluate(`document.getElementById('start').click()`);
+    await until(host,'state.phase==="first_turn_quiz"');
+    await host.evaluate(`document.getElementById('skipFirst').click()`);
+    await until(host,'state.phase==="board"');
+    await until(screen,'state.phase==="board"');
+    assert.deepEqual(await screen.evaluate('state.board.map(category=>category.questions.map(question=>question.value))'),Array.from({length:5},()=>[100,200,300,400,500]));
+    await screen.screenshot(path.join(artifacts,'screen-board.png'));
+    await player.screenshot(path.join(artifacts,'player-board-390.png'));
+    const chosen=await host.evaluate(`(()=>{for(let ci=0;ci<data.rounds[0].categories.length;ci++)for(let qi=0;qi<5;qi++){const q=data.rounds[0].categories[ci].questions[qi];if(!hostSpecialCells['0:'+ci+':'+qi]&&(!q.type||q.type==='text')&&!q.media)return {ci,qi,a:q.a}}})()`);
+    assert.ok(chosen);
+    const opened=await host.evaluate(`socket.timeout(5000).emitWithAck('chooseTile',{code,ci:${chosen.ci},qi:${chosen.qi}})`);assert.equal(opened.ok,true);
+    await until(player,'state.current?.q && state.phase!=="board"');
+    assert.equal(await player.evaluate('state.current.a'),'');
+    assert.equal(await screen.evaluate('state.current.a'),'');
+    const closed=await host.evaluate(`socket.timeout(4000).emitWithAck('closeRoom',{code})`);assert.equal(closed.ok,true);
+    for(const item of pages)assert.deepEqual(item.errors,[],'no runtime errors');
+    fs.writeFileSync(path.join(artifacts,'summary.json'),JSON.stringify({status:'PASS',checks:['8 themes','legacy capability check','five-theme validation','50-question preview','room creation','HOST reload by dynamic ID','PLAYER and OBS board','hidden answers','room close']},null,2));
+    console.log('PASS: real Edge topic selection, preview, room/HOST reload, 390px PLAYER and 1080p OBS, board values and hidden answers');
+  } finally {for(const item of pages){try{await item.close();}catch{}}edge?.stop();server.stop();}
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

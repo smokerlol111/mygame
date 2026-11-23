@@ -1,0 +1,3 @@
+PASS: real 14-second clock-sync expiry and resulting state/hostSecrets preserve controls, draft and focus.
+PASS: identical/network states, HOST reconnect, voice status, three real audience answers, 50 repeated states preserve nodes/drafts/focus; real phase changes render.
+PASS: actual Edge keeps timer/input nodes, draft, focus and scroll through three real audience answers, 50 states and Discord status; one document navigation.
